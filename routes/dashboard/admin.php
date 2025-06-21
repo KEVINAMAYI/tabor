@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
+
+// Group all admin routes under the 'admin' prefix
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+
+    // Route to manage students
+    Volt::route('students', 'students.index')->name('students.index');
+
+    // Route to manage courses
+    Volt::route('courses', 'courses.index')->name('courses.index');
+
+    // Route to manage lecturers
+    Volt::route('lecturers', 'lecturers.index')->name('lecturers.index');
+
+    // Route to manage financial records
+    Volt::route('financials', 'financials.index')->name('financials.index');
+
+    // Route to manage exams
+    Volt::route('exams', 'exams.index')->name('exams.index');
+
+    // Route to manage attendance
+    Volt::route('attendance', 'attendance.index')->name('attendance.index');
+
+    // Route to manage classes
+    Volt::route('classes', 'classes.index')->name('classes.index');
+
+    // Route to manage library resources
+    Volt::route('library', 'library.index')->name('library.index');
+
+    // Route to manage library resources
+    Volt::route('payments', 'payments.index')->name('payments.index');
+});
