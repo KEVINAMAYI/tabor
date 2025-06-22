@@ -139,7 +139,7 @@
                        href="javascript:void(0)"
                        aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}">
                         <iconify-icon icon="solar:wallet-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Financials</span>
+                        <span class="hide-menu">Payments</span>
                     </a>
                     <ul aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}"
                         class="collapse first-level {{ request()->routeIs('payments.*') ? 'in' : '' }}">
@@ -155,20 +155,20 @@
 
 
                 {{-- Library --}}
-                <li class="sidebar-item {{ request()->routeIs('library.*') ? 'active' : '' }}">
-                    <a class="sidebar-link has-arrow {{ request()->routeIs('library.*') ? 'active' : '' }}"
+                <li class="sidebar-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <a class="sidebar-link has-arrow {{ request()->routeIs('reports.*') ? 'active' : '' }}"
                        href="javascript:void(0)"
-                       aria-expanded="{{ request()->routeIs('library.*') ? 'true' : 'false' }}">
+                       aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
                         <iconify-icon icon="solar:book-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Library</span>
+                        <span class="hide-menu">Reports</span>
                     </a>
-                    <ul aria-expanded="{{ request()->routeIs('library.*') ? 'true' : 'false' }}"
-                        class="collapse first-level {{ request()->routeIs('library.*') ? 'in' : '' }}">
+                    <ul aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}"
+                        class="collapse first-level {{ request()->routeIs('reports.*') ? 'in' : '' }}">
                         <li class="sidebar-item">
-                            <a class="sidebar-link {{ request()->routeIs('library.index') ? 'active' : '' }}"
-                               href="{{ route('library.index') }}">
+                            <a class="sidebar-link {{ request()->routeIs('reports.index') ? 'active' : '' }}"
+                               href="{{ route('reports.index') }}">
                                 <span class="icon-small"></span>
-                                <span class="hide-menu">Issue Book</span>
+                                <span class="hide-menu">View Reports</span>
                             </a>
                         </li>
                     </ul>

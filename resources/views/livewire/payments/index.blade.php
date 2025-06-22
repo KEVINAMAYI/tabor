@@ -94,349 +94,114 @@ new class extends Component {
                 <div class="table-responsive">
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                        <th>
-                            <div class="n-chk align-self-center text-center">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input primary" id="contact-check-all" />
-                                    <label class="form-check-label" for="contact-check-all"></label>
-                                    <span class="new-control-indicator"></span>
+                        <tr>
+                            <th>
+                                <div class="form-check text-center">
+                                    <input type="checkbox" class="form-check-input primary" />
                                 </div>
-                            </div>
-                        </th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Location</th>
-                        <th>Phone</th>
-                        <th>Action</th>
+                            </th>
+                            <th>Course</th> <!-- New Column -->
+                            <th>Payer</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Paid On</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
-                        <!-- start row -->
-                        <tr class="search-items">
+                        <!-- Row 1 -->
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" />
+                            </td>
+                            <td><span class="badge bg-light text-dark">Web Development</span></td>
                             <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox1" />
-                                        <label class="form-check-label" for="checkbox1"></label>
-                                    </div>
+                                <div class="user-meta-info">
+                                    <h6 class="user-name mb-0">John Doe</h6>
+                                    <span class="user-work fs-3">TX12345</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-10.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Emma Adams">Emma Adams</h6>
-                                            <span class="user-work fs-3" data-occupation="Web Developer">Web Developer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="adams@mail.com">adams@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Boston, USA">Boston, USA</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+1 (070) 123-4567">+91 (070) 123-4567</span>
-                            </td>
+                            <td><span class="badge bg-secondary">KES 5,000</span></td>
+                            <td><span class="badge bg-warning text-dark">M-Pesa</span></td>
+                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                            <td>2024-05-01</td>
                             <td>
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" class="text-primary edit">
                                         <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
-                        <!-- end row -->
-                        <!-- start row -->
-                        <tr class="search-items">
+                        <!-- Row 2 -->
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" />
+                            </td>
+                            <td><span class="badge bg-light text-dark">Graphic Design</span></td>
                             <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox2" />
-                                        <label class="form-check-label" for="checkbox2"></label>
-                                    </div>
+                                <div class="user-meta-info">
+                                    <h6 class="user-name mb-0">Jane Smith</h6>
+                                    <span class="user-work fs-3">TX12346</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-2.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Olivia Allen">Olivia Allen</h6>
-                                            <span class="user-work fs-3" data-occupation="Web Designer">Web Designer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="allen@mail.com">allen@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Sydney, Australia">Sydney, Australia</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (125) 450-1500">+91 (125) 450-1500</span>
-                            </td>
+                            <td><span class="badge bg-secondary">KES 3,200</span></td>
+                            <td><span class="badge bg-primary-subtle text-primary">Bank</span></td>
+                            <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                            <td>2024-05-03</td>
                             <td>
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" class="text-primary edit">
                                         <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
-                        <!-- end row -->
-                        <!-- start row -->
-                        <tr class="search-items">
+                        <!-- Row 3 -->
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" />
+                            </td>
+                            <td><span class="badge bg-light text-dark">Data Science</span></td>
                             <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox3" />
-                                        <label class="form-check-label" for="checkbox3"></label>
-                                    </div>
+                                <div class="user-meta-info">
+                                    <h6 class="user-name mb-0">Ali Mwana</h6>
+                                    <span class="user-work fs-3">TX12347</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-3.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Isabella Anderson"> Isabella Anderson </h6>
-                                            <span class="user-work fs-3" data-occupation="UX/UI Designer">UX/UI Designer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="anderson@mail.com">anderson@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Miami, USA">Miami, USA</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (100) 154-1254">+91 (100) 154-1254</span>
-                            </td>
+                            <td><span class="badge bg-secondary">KES 1,800</span></td>
+                            <td><span class="badge bg-info-subtle text-info">Cash</span></td>
+                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                            <td>2024-05-05</td>
                             <td>
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" class="text-primary edit">
                                         <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
-                        <!-- end row -->
-                        <!-- start row -->
-                        <tr class="search-items">
+                        <!-- Row 4 -->
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" />
+                            </td>
+                            <td><span class="badge bg-light text-dark">Cybersecurity</span></td>
                             <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox4" />
-                                        <label class="form-check-label" for="checkbox4"></label>
-                                    </div>
+                                <div class="user-meta-info">
+                                    <h6 class="user-name mb-0">Mary Njoki</h6>
+                                    <span class="user-work fs-3">TX12348</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-4.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Amelia Armstrong"> Amelia Armstrong </h6>
-                                            <span class="user-work fs-3" data-occupation="Ethical Hacker">Ethical Hacker</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="armstrong@mail.com">armstrong@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Tokyo, Japan">Tokyo, Japan</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (154) 199- 1540">+91 (154) 199- 1540</span>
-                            </td>
+                            <td><span class="badge bg-secondary">KES 4,000</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger">Card</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger">Failed</span></td>
+                            <td>2024-05-07</td>
                             <td>
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" class="text-primary edit">
                                         <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- end row -->
-                        <!-- start row -->
-                        <tr class="search-items">
-                            <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox5" />
-                                        <label class="form-check-label" for="checkbox5"></label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-5.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Emily Atkinson"> Emily Atkinson </h6>
-                                            <span class="user-work fs-3" data-occupation="Web developer">Web developer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="atkinson@mail.com">atkinson@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Edinburgh, UK">Edinburgh, UK</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (900) 150- 1500">+91 (900) 150- 1500</span>
-                            </td>
-                            <td>
-                                <div class="action-btn">
-                                    <a href="javascript:void(0)" class="text-primary edit">
-                                        <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- end row -->
-                        <!-- start row -->
-                        <tr class="search-items">
-                            <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox6" />
-                                        <label class="form-check-label" for="checkbox6"></label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-12.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="John Deo">John Deo</h6>
-                                            <span class="user-work fs-3" data-occupation="UX/UI Designer">UX/UI Designer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="bailey@mail.com">bailey@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="New York, USA">New York, USA</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (001) 160- 1845">+91 (001) 160- 1845</span>
-                            </td>
-                            <td>
-                                <div class="action-btn">
-                                    <a href="javascript:void(0)" class="text-primary edit">
-                                        <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="search-items">
-                            <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox7" />
-                                        <label class="form-check-label" for="checkbox7"></label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-2.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Victoria Sharma"> Victoria Sharma </h6>
-                                            <span class="user-work fs-3" data-occupation="Project Manager">Project Manager</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="sharma@mail.com">sharma@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Miami, USA">Miami, USA</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (110) 180- 1600">+91 (110) 180- 1600</span>
-                            </td>
-                            <td>
-                                <div class="action-btn">
-                                    <a href="javascript:void(0)" class="text-primary edit">
-                                        <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="search-items">
-                            <td>
-                                <div class="n-chk align-self-center text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input contact-chkbox primary" id="checkbox8" />
-                                        <label class="form-check-label" for="checkbox8"></label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="../assets/images/profile/user-3.jpg" alt="avatar" class="rounded-circle" width="35" />
-                                    <div class="ms-3">
-                                        <div class="user-meta-info">
-                                            <h6 class="user-name mb-0" data-name="Penelope Baker"> Penelope Baker </h6>
-                                            <span class="user-work fs-3" data-occupation="Web Developer">Web Developer</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="usr-email-addr" data-email="baker@mail.com">baker@mail.com</span>
-                            </td>
-                            <td>
-                                <span class="usr-location" data-location="Edinburgh, UK">Edinburgh, UK</span>
-                            </td>
-                            <td>
-                                <span class="usr-ph-no" data-phone="+91 (405) 483- 4512">+91 (405) 483- 4512</span>
-                            </td>
-                            <td>
-                                <div class="action-btn">
-                                    <a href="javascript:void(0)" class="text-primary edit">
-                                        <i class="ti ti-eye fs-5"></i>
-                                    </a>
-                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                        <i class="ti ti-trash fs-5"></i>
                                     </a>
                                 </div>
                             </td>

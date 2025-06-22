@@ -243,7 +243,7 @@ new class extends Component {
                                 <td>KES {{ number_format($course->price, 2) }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="{{ route('courses.view') }}"
+                                        <a href="{{ route('courses.view',$course->id) }}"
                                            class="text-info">
                                             <i class="ti ti-eye fs-5"></i>
                                         </a>

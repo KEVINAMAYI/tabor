@@ -12,13 +12,13 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
     // Route to manage courses
     Volt::route('courses', 'courses.index')->name('courses.index');
-    Volt::route('courses/view/', 'courses.view')->name('courses.view');
+    Volt::route('courses/view/{course_id}', 'courses.view')->name('courses.view');
 
     // Route to manage lecturers
     Volt::route('lecturers', 'lecturers.index')->name('lecturers.index');
 
     // Route to manage financial records
-    Volt::route('financials', 'financials.index')->name('financials.index');
+    Volt::route('payments', 'payments.index')->name('payments.index');
 
     // Route to manage exams
     Volt::route('exams', 'exams.index')->name('exams.index');
@@ -29,9 +29,9 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // Route to manage classes
     Volt::route('classes', 'classes.index')->name('classes.index');
 
-    // Route to manage library resources
-    Volt::route('library', 'library.index')->name('library.index');
+    // Route to manage reports resources
+    Volt::route('reports', 'reports.index')->name('reports.index');
 
-    // Route to manage library resources
+    // Route to manage reports resources
     Volt::route('payments', 'payments.index')->name('payments.index');
 });
