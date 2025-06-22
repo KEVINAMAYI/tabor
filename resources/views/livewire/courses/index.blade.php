@@ -243,9 +243,13 @@ new class extends Component {
                                 <td>KES {{ number_format($course->price, 2) }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="javascript:void(0)" wire:click="editCourse({{ $course->id }})"
-                                           class="text-primary">
+                                        <a href="{{ route('courses.view') }}"
+                                           class="text-info">
                                             <i class="ti ti-eye fs-5"></i>
+                                        </a>
+                                        <a href="javascript:void(0)" wire:click="editCourse({{ $course->id }})"
+                                           class="text-primary ms-2 ">
+                                            <i class="ti ti-pencil  fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteCourse({{ $course->id }})"
                                            class="text-dark ms-2">

@@ -174,28 +174,6 @@
                     </ul>
                 </li>
 
-
-                {{-- Exams --}}
-                <li class="sidebar-item {{ request()->routeIs('exams.*') ? 'active' : '' }}">
-                    <a class="sidebar-link has-arrow {{ request()->routeIs('exams.*') ? 'active' : '' }}"
-                       href="javascript:void(0)"
-                       aria-expanded="{{ request()->routeIs('exams.*') ? 'true' : 'false' }}">
-                        <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Exams</span>
-                    </a>
-                    <ul aria-expanded="{{ request()->routeIs('exams.*') ? 'true' : 'false' }}"
-                        class="collapse first-level {{ request()->routeIs('exams.*') ? 'in' : '' }}">
-                        <li class="sidebar-item">
-                            <a class="sidebar-link {{ request()->routeIs('exams.index') ? 'active' : '' }}"
-                               href="{{ route('exams.index') }}">
-                                <span class="icon-small"></span>
-                                <span class="hide-menu">Exam Results</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="javascript:void(0)" aria-expanded="false">
                         <iconify-icon icon="solar:settings-line-duotone"></iconify-icon>

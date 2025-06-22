@@ -8,9 +8,11 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
     // Route to manage students
     Volt::route('students', 'students.index')->name('students.index');
+    Volt::route('students/view/{student_id}', 'students.view')->name('students.view');
 
     // Route to manage courses
     Volt::route('courses', 'courses.index')->name('courses.index');
+    Volt::route('courses/view/', 'courses.view')->name('courses.view');
 
     // Route to manage lecturers
     Volt::route('lecturers', 'lecturers.index')->name('lecturers.index');

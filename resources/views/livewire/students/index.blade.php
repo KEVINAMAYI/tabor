@@ -319,9 +319,13 @@ new class extends Component {
                                 <td>{{ \Carbon\Carbon::parse($student->date_of_birth)->format('jS M Y') }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="javascript:void(0)" wire:click="editStudent({{ $student->id }})"
+                                        <a href="{{ route('students.view',$student->id) }}"
                                            class="text-primary">
                                             <i class="ti ti-eye fs-5"></i>
+                                        </a>
+                                        <a href="javascript:void(0)" wire:click="editStudent({{ $student->id }})"
+                                           class="text-primary">
+                                            <i class="ti ti-pencil fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteStudent({{ $student->id }})"
                                            class="text-dark ms-2">
