@@ -224,10 +224,12 @@
                                    class="p-2 dropdown-item h6 rounded-1">
                                     Account Settings
                                 </a>
-                                <a href="default-sidebar/authentication-login2.html"
-                                   class="p-2 dropdown-item h6 rounded-1">
-                                    Sign Out
-                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="p-2 dropdown-item h6 rounded-1 w-100 text-start border-0 bg-transparent">
+                                        Sign Out
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
