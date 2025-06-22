@@ -1,25 +1,64 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>
-        @include('partials.head')
+<html lang="en" dir="ltr" data-bs-theme="light" data-color-theme="Blue_Theme" data-layout="vertical">
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+<head>
+    @include('partials.head')
 
-    </head>
-    <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
-        <div class="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div class="flex w-full max-w-sm flex-col gap-2">
-                <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium" wire:navigate>
-                    <span class="flex h-9 w-9 mb-1 items-center justify-center rounded-md">
-                        <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
-                    </span>
-                    <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
-                </a>
-                <div class="flex flex-col gap-6">
-                    {{ $slot }}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+
+    <style>
+        body {
+            color: rgb(11, 41, 71);
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div id="main-wrapper">
+    <div class="position-relative overflow-hidden radial-gradient min-vh-100 w-100">
+        <div class="position-relative z-index-5">
+            <div class="row gx-0">
+
+                <div class="col-lg-6 col-xl-5 col-xxl-4">
+                    <div class="min-vh-100 bg-body row justify-content-center align-items-center p-5">
+                        <div class="col-12 auth-card">
+                            <div class="d-flex justify-content-center mb-4">
+                                <a href="../main/index.html" class="text-nowrap">
+                                    <img src="../assets/images/logos/logo-icon.svg" class="dark-logo" alt="Logo-Dark"/>
+                                </a>
+                            </div>
+                            <div class="px-10 py-8">{{ $slot }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-xl-7 col-xxl-8 position-relative overflow-hidden d-none d-lg-block"
+                     style="background: url('../images/backgrounds/graduation.jpg') center center / cover no-repeat;">
                 </div>
             </div>
         </div>
-        @fluxScripts
-    </body>
+    </div>
+</div>
+<div class="dark-transparent sidebartoggler"></div>
+<!-- Import Js Files -->
+<script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/libs/simplebar/dist/simplebar.min.js"></script>
+<script src="../assets/js/theme/app.init.js"></script>
+<script src="../assets/js/theme/theme.js"></script>
+<script src="../assets/js/theme/app.min.js"></script>
+
+<!-- solar icons -->
+<script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+
+@fluxScripts
+
+</body>
 </html>
+
+
+
+
