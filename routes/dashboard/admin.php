@@ -32,6 +32,9 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // Route to manage reports resources
     Volt::route('reports', 'reports.index')->name('reports.index');
 
-    // Route to manage reports resources
+    // Route to manage payments
     Volt::route('payments', 'payments.index')->name('payments.index');
+
+    // Route to manage intakes
+    Volt::route('intakes', 'intakes.index')->name('intakes.index');
 });

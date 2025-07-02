@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,11 +12,11 @@ return new class extends Migration
     {
         Schema::create('assessments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('module_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['CAT', 'Exam']);
             $table->string('title');
-            $table->date('date');
-            $table->decimal('total_marks', 5, 2)->default(100);
+            $table->foreignId('intake_module_id')->constrained()->onDelete('cascade');
+            $table->date('due_on')->nullable();
+            $table->unsignedSmallInteger('max_marks')->default(100);
             $table->timestamps();
         });
 

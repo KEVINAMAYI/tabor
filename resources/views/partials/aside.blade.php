@@ -5,23 +5,16 @@
 
     <div>
 
-        <div class="brand-logo d-flex align-items-center">
-            <a href="default-sidebar/index.html" class="text-nowrap logo-img">
-                <img src="assets/images/logos/logo.svg" alt="Logo"/>
-            </a>
-
+        <div class="brand-logo mb-3 mt-3 d-flex justify-content-center align-items-center" style="height: 100px;">
+            <img height="120" width="120" src="assets/images/logos/tabor_logo.png" alt="Logo"/>
         </div>
+
 
         <!-- ---------------------------------- -->
         <!-- Dashboard -->
         <!-- ---------------------------------- -->
         <nav class="sidebar-nav scroll-sidebar" data-simplebar>
             <ul class="sidebar-menu" id="sidebarnav">
-
-                <li class="nav-small-cap">
-                    <iconify-icon icon="solar:menu-dots-linear" class="mini-icon"></iconify-icon>
-                    <span class="hide-menu">Dashboards</span>
-                </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="javascript:void(0)" id="get-url" aria-expanded="false">
@@ -86,6 +79,26 @@
                                href="{{ route('courses.index') }}">
                                 <span class="icon-small"></span>
                                 <span class="hide-menu">List Courses</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+
+                {{-- Courses Menu --}}
+                <li class="sidebar-item {{ request()->routeIs('intakes.*') ? 'active' : '' }}">
+                    <a class="sidebar-link has-arrow {{ request()->routeIs('intakes.*') ? 'active' : '' }}"
+                       href="javascript:void(0)"
+                       aria-expanded="{{ request()->routeIs('intakes.*') ? 'true' : 'false' }}">
+                        <iconify-icon icon="solar:download-line-duotone" width="24" height="24"></iconify-icon>                        <span class="hide-menu">Intakes</span>
+                    </a>
+                    <ul aria-expanded="{{ request()->routeIs('intakes.*') ? 'true' : 'false' }}"
+                        class="collapse first-level {{ request()->routeIs('intakes.*') ? 'in' : '' }}">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->routeIs('intakes.index') ? 'active' : '' }}"
+                               href="{{ route('intakes.index') }}">
+                                <span class="icon-small"></span>
+                                <span class="hide-menu">List Intakes</span>
                             </a>
                         </li>
                     </ul>

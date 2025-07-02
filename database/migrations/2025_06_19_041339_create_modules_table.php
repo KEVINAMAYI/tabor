@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('course_id')->constrained()->onDelete('cascade');
+            $table->string('code')->nullable();
             $table->string('title');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable(); // Optional if module can be paid separately
             $table->timestamps();
+            $table->unique(['course_id','code']);
         });
 
     }

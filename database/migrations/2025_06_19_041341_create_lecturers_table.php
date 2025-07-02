@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
+            $table->string('kra_pin')->nullable();
+            $table->string('id_number')->nullable();
+            $table->string('next_of_kin')->nullable();
+            $table->string('alternative_contact')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

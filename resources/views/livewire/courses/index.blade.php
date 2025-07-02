@@ -187,7 +187,7 @@ new class extends Component {
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <input type="number" step="0.01" wire:model.live="price" class="form-control"
-                                               placeholder="Price"/>
+                                               placeholder="Fee"/>
                                         @error('price') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-12 mb-3">
@@ -225,7 +225,7 @@ new class extends Component {
                             </th>
                             <th>Title</th>
                             <th>Description</th>
-                            <th>Price</th>
+                            <th>Fee</th>
                             <th>Action</th>
                         </tr>
                         </thead>

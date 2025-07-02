@@ -13,11 +13,6 @@
 
 <body class="link-sidebar">
 
-<!-- Preloader -->
-<div class="preloader">
-    <img src="assets/images/logos/favicon.png" alt="loader" class="lds-ripple img-fluid"/>
-</div>
-
 <div id="main-wrapper">
     <!-- Sidebar Start -->
     @include('partials.aside')
@@ -43,7 +38,7 @@
                     <nav class="sidebar-nav scroll-sidebar">
                         <div class="offcanvas-header justify-content-between">
                             <a href="default-sidebar/index.html" class="text-nowrap logo-img">
-                                <img src="assets/images/logos/logo-icon.svg" alt="Logo"/>
+                                <img src="assets/images/logos/tabor_logo.png" alt="Logo"/>
                             </a>
                             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
                                     aria-label="Close"></button>
@@ -194,7 +189,7 @@
                         </li>
                         <li class="nav-item d-none d-xl-flex align-items-center">
                             <a href="horizontal/index.html" class="text-nowrap nav-link">
-                                <img src="assets/images/logos/logo.svg" alt="matdash-img"/>
+                                <img src="assets/images/logos/tabor_logo.png" alt="matdash-img"/>
                             </a>
                         </li>
                         <li class="nav-item d-none d-xl-flex align-items-center nav-icon-hover-bg rounded-circle">
@@ -342,7 +337,7 @@
                     </ul>
                     <div class="d-block d-xl-none">
                         <a href="default-sidebar/index.html" class="text-nowrap nav-link">
-                            <img src="assets/images/logos/logo.svg" alt="matdash-img"/>
+                            <img src="assets/images/logos/tabor_logo.png" alt="matdash-img"/>
                         </a>
                     </div>
                     <a class="navbar-toggler nav-icon-hover p-0 border-0 nav-icon-hover-bg rounded-circle"

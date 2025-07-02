@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('enrollments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('course_id')->constrained()->onDelete('cascade');
+            $table->foreignId('intake_id')->constrained()->onDelete('cascade');
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->morphs('payable'); // payable_type (e.g. Course/Module), payable_id
-            $table->decimal('amount', 10, 2);
-            $table->string('method'); // e.g., Mpesa, Card
-            $table->string('reference')->nullable();
-            $table->boolean('is_paid')->default(false);
-            $table->timestamp('paid_at')->nullable();
+            $table->timestamp('enrolled_at')->nullable();
             $table->timestamps();
         });
 
@@ -30,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('course_student');
     }
 };

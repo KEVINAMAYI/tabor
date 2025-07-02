@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('module_id')->constrained()->onDelete('cascade');
-            $table->date('date');
-            $table->enum('status', ['present', 'absent', 'late', 'excused']);
+            $table->foreignId('module_session_id')->constrained()->onDelete('cascade');
+            $table->foreignId('enrollment_id')->constrained()->onDelete('cascade');
+            $table->enum('status', ['present','absent','late'])->default('present');
+            $table->unique(['module_session_id','enrollment_id']);
             $table->timestamps();
         });
 

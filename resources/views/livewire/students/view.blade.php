@@ -158,7 +158,7 @@ new class extends Component {
 
                 </div>
                 <div class="row">
-                    @foreach($courses as $course)
+                    @foreach($student->courses as $course)
                         <div class="col-lg-4 col-md-6">
                             <div class="card">
                                 <img src="{{ $course->image_url ?? '../assets/images/blog/blog-img5.jpg' }}"
@@ -448,23 +448,18 @@ new class extends Component {
                                                 <span class="usr-email-addr" data-email="$1,500">$1,500</span>
                                             </td>
                                             <td>
-                                                <span class="usr-location"
-                                                      data-location="Payment 1: $500 (Jan 10, 2025)">Payment 1: $500 (Jan 10, 2025)</span><br>
-                                                <span class="usr-location"
-                                                      data-location="Payment 2: $500 (Feb 5, 2025)">Payment 2: $500 (Feb 5, 2025)</span><br>
-                                                <span class="usr-location"
-                                                      data-location="Payment 3: $500 (Mar 1, 2025)">Payment 3: $500 (Mar 1, 2025)</span>
+                                                <span class="usr-location">Payment 1: $500 (Jan 10, 2025)</span><br>
+                                                <span class="usr-location">Payment 2: $500 (Feb 5, 2025)</span><br>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$500">$500</span>
                                             </td>
                                             <td>
                                                 <div class="action-btn">
-                                                    <a href="javascript:void(0)" class="text-primary edit">
-                                                        <i class="ti ti-eye fs-5"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                                        <i class="ti ti-trash fs-5"></i>
+                                                    <a href="#"
+                                                       class="btn btn-warning btn-sm">
+                                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                     </a>
                                                 </div>
                                             </td>
@@ -497,19 +492,17 @@ new class extends Component {
                                                 <span class="usr-email-addr" data-email="$500">$500</span>
                                             </td>
                                             <td>
-                                                <span class="usr-location"
-                                                      data-location="Payment 1: $500 (Nov 5, 2024)">Payment 1: $500 (Nov 5, 2024)</span>
+                                                <span class="usr-location" data-location="Payment 1: $500 (Nov 5, 2024)">Payment 1: $500 (Nov 5, 2024)</span><br>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$500">$500</span>
                                             </td>
                                             <td>
                                                 <div class="action-btn">
-                                                    <a href="javascript:void(0)" class="text-primary edit">
-                                                        <i class="ti ti-eye fs-5"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                                        <i class="ti ti-trash fs-5"></i>
+                                                    <a href="#"
+                                                       class="btn btn-warning btn-sm">
+                                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                     </a>
                                                 </div>
                                             </td>
@@ -543,18 +536,17 @@ new class extends Component {
                                             </td>
                                             <td>
                                                 <span class="usr-location"
-                                                      data-location="Payment 1: $1,000 (Dec 15, 2024)">Payment 1: $1,000 (Dec 15, 2024)</span>
+                                                      data-location="Payment 1: $1,000 (Dec 15, 2024)">Payment 1: $1,000 (Dec 15, 2024)</span><br>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$0">$0</span>
                                             </td>
                                             <td>
                                                 <div class="action-btn">
-                                                    <a href="javascript:void(0)" class="text-primary edit">
-                                                        <i class="ti ti-eye fs-5"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                                        <i class="ti ti-trash fs-5"></i>
+                                                    <a href="#"
+                                                       class="btn btn-warning btn-sm">
+                                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                     </a>
                                                 </div>
                                             </td>
@@ -605,6 +597,80 @@ new class extends Component {
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Sub-Payments Breakdown</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>$500</td>
+                            <td>Jan 10, 2025</td>
+                            <td>  <a href="#"
+                                     class="btn btn-warning btn-sm">
+                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>$500</td>
+                            <td>Feb 5, 2025</td>
+                            <td>  <a href="#"
+                                     class="btn btn-warning btn-sm">
+                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>$500</td>
+                            <td>Mar 1, 2025</td>
+                            <td>  <a href="#"
+                                     class="btn btn-warning btn-sm">
+                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>$500</td>
+                            <td>Apr 1, 2025</td>
+                            <td>  <a href="#"
+                                     class="btn btn-warning btn-sm">
+                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                </a>
+                            </td>
+                        </tr>
+                        <!-- Add more rows as needed -->
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="1">Total</th>
+                            <th colspan="2">$2000</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
