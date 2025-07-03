@@ -16,6 +16,7 @@ class Student extends Model
         'phone',
         'dob',
         'user_id',
+        'class_group_id',
     ];
 
     /* -----------------------------------------------------------------
@@ -89,5 +90,12 @@ class Student extends Model
             ->withPivot('status')
             ->withTimestamps();
     }
+
+
+    public function classGroup()
+    {
+        return $this->belongsTo(ClassGroup::class);
+    }
+
 }
 

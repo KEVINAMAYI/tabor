@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->date('dob')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('class_group_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();
         });
 

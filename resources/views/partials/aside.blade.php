@@ -105,18 +105,18 @@
                 </li>
 
                 {{-- Classes/Year Menu --}}
-                <li class="sidebar-item {{ request()->routeIs('classes.*') ? 'active' : '' }}">
-                    <a class="sidebar-link has-arrow {{ request()->routeIs('classes.*') ? 'active' : '' }}"
+                <li class="sidebar-item {{ request()->routeIs('class_groups.*') ? 'active' : '' }}">
+                    <a class="sidebar-link has-arrow {{ request()->routeIs('class_groups.*') ? 'active' : '' }}"
                        href="javascript:void(0)"
-                       aria-expanded="{{ request()->routeIs('classes.*') ? 'true' : 'false' }}">
+                       aria-expanded="{{ request()->routeIs('class_groups.*') ? 'true' : 'false' }}">
                         <iconify-icon icon="solar:clipboard-text-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Classes/Year</span>
+                        <span class="hide-menu">Class/Year Groups</span>
                     </a>
-                    <ul aria-expanded="{{ request()->routeIs('classes.*') ? 'true' : 'false' }}"
-                        class="collapse first-level {{ request()->routeIs('classes.*') ? 'in' : '' }}">
+                    <ul aria-expanded="{{ request()->routeIs('class_groups.*') ? 'true' : 'false' }}"
+                        class="collapse first-level {{ request()->routeIs('class_groups.*') ? 'in' : '' }}">
                         <li class="sidebar-item">
-                            <a class="sidebar-link {{ request()->routeIs('classes.index') ? 'active' : '' }}"
-                               href="{{ route('classes.index') }}">
+                            <a class="sidebar-link {{ request()->routeIs('class_groups.index') ? 'active' : '' }}"
+                               href="{{ route('class_groups.index') }}">
                                 <span class="icon-small"></span>
                                 <span class="hide-menu">List Classes/Year</span>
                             </a>

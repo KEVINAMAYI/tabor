@@ -26,8 +26,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // Route to manage attendance
     Volt::route('attendance', 'attendance.index')->name('attendance.index');
 
-    // Route to manage classes
-    Volt::route('classes', 'classes.index')->name('classes.index');
+    // Route to manage class_groups
+    Volt::route('class_groups', 'class_groups.index')->name('class_groups.index');
 
     // Route to manage reports resources
     Volt::route('reports', 'reports.index')->name('reports.index');

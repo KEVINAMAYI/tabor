@@ -110,4 +110,10 @@ class Module extends Model
     }
 
 
+    public function classGroups()
+    {
+        return $this->belongsToMany(ClassGroup::class, 'class_group_module')->withTimestamps();
+    }
+
+
 }

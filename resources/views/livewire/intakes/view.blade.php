@@ -32,10 +32,10 @@ new class extends Component {
         $this->intakeStudents = Intake::with('students')->findOrFail($intake_id)->students;
         $this->intakeId = $intake_id;
         $this->courses = Course::orderBy('title')->get(['id', 'title']);
-        $this->activeCourseId = $this->courses[0]->id;
-        $this->activeStudentId = $this->intakeStudents[0]->id;
+        $this->activeCourseId = $this->courses[0]->id ?? '';
+        $this->activeStudentId = $this->intakeStudents[0]->id ?? '';
         $this->selectCourse($this->activeCourseId);
-        $this->selectStudent($this->activeCourseId);
+        $this->selectStudent($this->activeStudentId);
     }
 
 
@@ -55,12 +55,15 @@ new class extends Component {
 
     public function selectStudent($studentId)
     {
-        $this->activeStudentId = $studentId;
-        $this->activeStudent = Student::with([
-            'enrollments.course.modules',
-            'enrollments.intake',
-        ])->findOrFail($studentId);
+        if (!empty($studentId)) {
+            $this->activeStudentId = $studentId;
+            $this->activeStudent = Student::with([
+                'enrollments.course.modules',
+                'enrollments.intake',
+            ])->findOrFail($studentId);
+        }
 
+        return;
     }
 
 
@@ -295,7 +298,10 @@ new class extends Component {
 
                                                                             <div
                                                                                 class="d-flex align-items-center justify-content-start">
-                                                                                <div class="rounded-1 text-bg-light" data-bs-toggle="offcanvas" data-bs-target="#moduleAssessments" aria-controls="moduleAssessments">
+                                                                                <div class="rounded-1 text-bg-light"
+                                                                                     data-bs-toggle="offcanvas"
+                                                                                     data-bs-target="#moduleAssessments"
+                                                                                     aria-controls="moduleAssessments">
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-adobe.svg"
                                                                                         alt="adobe-icon" width="20"
@@ -303,7 +309,10 @@ new class extends Component {
                                                                                 </div>
 
                                                                                 <div
-                                                                                    class="rounded-1 text-bg-light mx-2" data-bs-toggle="offcanvas" data-bs-target="#moduleMaterial" aria-controls="moduleMaterial" >
+                                                                                    class="rounded-1 text-bg-light mx-2"
+                                                                                    data-bs-toggle="offcanvas"
+                                                                                    data-bs-target="#moduleMaterial"
+                                                                                    aria-controls="moduleMaterial">
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-zip-folder.svg"
                                                                                         alt="zip-icon" width="20"
@@ -432,8 +441,9 @@ new class extends Component {
                                                        id="chat_user_{{ $student->id }}"
                                                        data-user-id="{{ $student->id }}">
                                                        <span class="position-relative">
-                                                      <div class="rounded-circle d-flex justify-content-center align-items-center"
-                                                      style="background-color: {{ $bgColor }}; width: 40px; height: 40px; color: white; font-weight: bold;">
+                                                      <div
+                                                          class="rounded-circle d-flex justify-content-center align-items-center"
+                                                          style="background-color: {{ $bgColor }}; width: 40px; height: 40px; color: white; font-weight: bold;">
                                                       {{ $initial }}
                                                       </div>
                                                        </span>
@@ -442,7 +452,8 @@ new class extends Component {
                                                                 data-username="{{ $student->first_name.' '.$student->last_name }}">
                                                                 {{ $student->first_name.' '.$student->last_name }}
                                                             </h6>
-                                                            <span class="fs-2 text-body-color d-block">{{ $student->email }}</span>
+                                                            <span
+                                                                class="fs-2 text-body-color d-block">{{ $student->email }}</span>
                                                         </div>
                                                     </a>
                                                 </li>
@@ -456,7 +467,8 @@ new class extends Component {
                                 <div class="chat-container h-100 w-100">
                                     <div class="chat-box-inner-part h-100">
                                         <div class="chatting-box app-email-chatting-box">
-                                            <div class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
+                                            <div
+                                                class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
                                                 <h5 class="text-dark mb-0 fs-5">Student Details</h5>
                                             </div>
 
@@ -464,8 +476,10 @@ new class extends Component {
                                                 <div class="position-relative">
                                                     <div class="chat-box email-box mh-n100 p-9" data-simplebar="init">
                                                         @if($activeStudent)
-                                                            <div class="chat-list chat active-chat" data-user-id="{{ $activeStudent->id }}">
-                                                                <div class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
+                                                            <div class="chat-list chat active-chat"
+                                                                 data-user-id="{{ $activeStudent->id }}">
+                                                                <div
+                                                                    class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
                                                                     <div class="d-flex align-items-center gap-3">
                                                                         {{-- Circle avatar with initial --}}
                                                                         @php
@@ -473,8 +487,9 @@ new class extends Component {
                                                                             $colors = ['#FF6B6B', '#6BCB77', '#4D96FF', '#FFB562', '#A66DD4', '#00C1D4'];
                                                                             $bgColor = $colors[$activeStudent->id % count($colors)];
                                                                         @endphp
-                                                                        <div class="rounded-circle d-flex justify-content-center align-items-center"
-                                                                             style="background-color: {{ $bgColor }}; width: 72px; height: 72px; color: white; font-weight: bold; font-size: 28px;">
+                                                                        <div
+                                                                            class="rounded-circle d-flex justify-content-center align-items-center"
+                                                                            style="background-color: {{ $bgColor }}; width: 72px; height: 72px; color: white; font-weight: bold; font-size: 28px;">
                                                                             {{ $initial }}
                                                                         </div>
                                                                         <div>
@@ -891,7 +906,8 @@ new class extends Component {
     <!-- ===================================================================== -->
 
     <!-- 3 -->
-    <div style="width: 80vw; max-width: 1000px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleMaterial" aria-labelledby="moduleMaterialLabel">
+    <div style="width: 80vw; max-width: 1000px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleMaterial"
+         aria-labelledby="moduleMaterialLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="offcanvasExampleLabel">
                 Module Materials
@@ -994,7 +1010,8 @@ new class extends Component {
     </div>
 
     <!-- 4 -->
-    <div style="width: 80vw; max-width: 900px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleAssessments" aria-labelledby="moduleAssessmentsLabel">
+    <div style="width: 80vw; max-width: 900px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleAssessments"
+         aria-labelledby="moduleAssessmentsLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="moduleAssessmentsLabel">Module Assessments</h5>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
