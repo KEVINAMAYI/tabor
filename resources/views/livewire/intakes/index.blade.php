@@ -1,215 +1,259 @@
 <?php
 
+use App\Models\Intake;
 use Livewire\Volt\Component;
+use Livewire\Attributes\On;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-new class extends Component {
+new class extends Component
+{
+    /* ───────── Public props ─────────────────────────── */
+    public $intakes = [];
+    public $selectAll = false;
+    public $name, $starts_at, $ends_at;
+    public $editId = null;
+    public $selected = [];
+    public $search = '';
+
+    /* ───────── Validation rules ─────────────────────── */
+    public function rules()
+    {
+        return [
+            'name'      => 'required|string|max:255',
+            'starts_at' => 'required|date',
+            'ends_at'   => 'nullable|date|after_or_equal:starts_at',
+        ];
+    }
+
+    /* ───────── Lifecycle ────────────────────────────── */
+    public function mount()  { $this->loadIntakes(); }
+
+    #[On('search')] public function search()  { $this->loadIntakes(); }
+
+    /* ───────── Load records ─────────────────────────── */
+    public function loadIntakes()
+    {
+        $this->intakes = Intake::when($this->search, fn ($q) =>
+        $q->where('name', 'like', "%{$this->search}%"))
+            ->latest()->get();
+    }
+
+    /* ───────── Create ──────────────────────────────── */
+    public function addIntake()
+    {
+        $this->validate();
+
+        try {
+            Intake::create([
+                'name'      => $this->name,
+                'starts_at' => $this->starts_at,
+                'ends_at'   => $this->ends_at,
+            ]);
+
+            $this->resetForm();
+            $this->loadIntakes();
+            $this->dispatch('hide-intake-modal');
+        } catch (\Exception $e) {
+            Log::error('Error adding intake: '.$e->getMessage());
+            session()->flash('error', 'Failed to add intake.');
+        }
+    }
+
+    /* ───────── Edit ─────────────────────────────────── */
+    public function editIntake($id)
+    {
+        $intake        = Intake::findOrFail($id);
+        $this->editId  = $intake->id;
+        $this->name    = $intake->name;
+        $this->starts_at = $intake->starts_at->format('Y-m-d');
+        $this->ends_at   = optional($intake->ends_at)->format('Y-m-d');
+
+        $this->dispatch('show-intake-modal');
+    }
+
+    public function updateIntake()
+    {
+        $this->validate();
+
+        try {
+            $intake = Intake::findOrFail($this->editId);
+            $intake->update([
+                'name'      => $this->name,
+                'starts_at' => $this->starts_at,
+                'ends_at'   => $this->ends_at,
+            ]);
+
+            $this->resetForm();
+            $this->loadIntakes();
+            $this->dispatch('hide-intake-modal');
+        } catch (\Exception $e) {
+            Log::error('Failed to update intake: '.$e->getMessage());
+            session()->flash('error', 'Update failed. Please try again.');
+        }
+    }
+
+    /* ───────── Delete ───────────────────────────────── */
+    public function deleteIntake($id)
+    {
+        Intake::findOrFail($id)->delete();
+        $this->loadIntakes();
+    }
+
+    public function deleteSelected()
+    {
+        Intake::whereIn('id', $this->selected)->delete();
+        $this->selected = [];  $this->selectAll = false;
+        $this->loadIntakes();
+    }
+
+    /* ───────── Helpers ─────────────────────────────── */
+    private function resetForm()
+    {
+        $this->name = $this->starts_at = $this->ends_at = null;
+        $this->editId = null;
+    }
+
+    #[On('select-all')] public function selectAll()
+    {
+        $this->selected = $this->selectAll
+            ? $this->intakes->pluck('id')->map(fn ($id) => (string) $id)->toArray()
+            : [];
+    }
+
 }; ?>
 
+    <!-- ====================  Blade / HTML  ==================== -->
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
+
+            <!-- ─── Search + Add button bar ───────────────────── -->
             <div class="card card-body">
                 <div class="row">
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
-                            <input type="text" class="form-control product-search ps-5" id="input-search" placeholder="Search Contacts..." />
+                            <input type="text" class="form-control product-search ps-5"
+                                   placeholder="Search Intakes..." wire:model="search"
+                                   wire:keyup.debounce.100ms="$dispatch('search')">
                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
                     </div>
                     <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
-                        <div class="action-btn show-btn">
-                            <a href="javascript:void(0)" class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
-                                <i class="ti ti-trash me-1 fs-5"></i> Delete All Row
+                        @if (count($selected))
+                            <a href="#" class="delete-multiple bg-danger-subtle btn me-2 text-danger"
+                               wire:click.prevent="deleteSelected">
+                                <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                             </a>
-                        </div>
-                        <a href="javascript:void(0)" id="btn-add-contact" class="btn btn-primary d-flex align-items-center">
-                            <i class="ti ti-users text-white me-1 fs-5"></i> Add Contact
+                        @endif
+                        <a href="javascript:void(0)" class="btn btn-primary d-flex align-items-center"
+                           wire:click="$dispatch('show-intake-modal')">
+                            <i class="ti ti-calendar-plus text-white me-1 fs-5"></i> Add Intake
                         </a>
                     </div>
                 </div>
             </div>
-            <!-- Modal -->
-            <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-labelledby="addContactModalTitle" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+
+            <!-- ─── Add / Edit Modal ──────────────────────────── -->
+            <div class="modal fade" id="addIntakeModal" tabindex="-1" wire:ignore.self>
+                <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">
-                        <div class="modal-header d-flex align-items-center">
-                            <h5 class="modal-title">Contact</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-header"><h5 class="modal-title">Intake</h5>
+                            <button class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <div class="add-contact-box">
-                                <div class="add-contact-content">
-                                    <form id="addContactModalTitle">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3 contact-name">
-                                                    <input type="text" id="c-name" class="form-control" placeholder="Name" />
-                                                    <span class="validation-text text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3 contact-email">
-                                                    <input type="text" id="c-email" class="form-control" placeholder="Email" />
-                                                    <span class="validation-text text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3 contact-occupation">
-                                                    <input type="text" id="c-occupation" class="form-control" placeholder="Occupation" />
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3 contact-phone">
-                                                    <input type="text" id="c-phone" class="form-control" placeholder="Phone" />
-                                                    <span class="validation-text text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="mb-3 contact-location">
-                                                    <input type="text" id="c-location" class="form-control" placeholder="Location" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
+                        <form wire:submit.prevent="{{ $editId ? 'updateIntake' : 'addIntake' }}">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Name (e.g. Jan 2026)"
+                                           wire:model.live="name">
+                                    @error('name') <small class="text-danger">{{ $message }}</small>@enderror
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label small">Starts At</label>
+                                        <input type="date" class="form-control" wire:model.live="starts_at">
+                                        @error('starts_at') <small class="text-danger">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label small">Ends At</label>
+                                        <input type="date" class="form-control" wire:model.live="ends_at">
+                                        @error('ends_at') <small class="text-danger">{{ $message }}</small>@enderror
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <div class="d-flex gap-6 m-0">
-                                <button id="btn-add" class="btn btn-success">Add</button>
-                                <button id="btn-edit" class="btn btn-success">Save</button>
-                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal"> Discard
+                            <div class="modal-footer d-flex gap-6">
+                                <button class="btn btn-success" type="submit">
+                                    {{ $editId ? 'Save' : 'Add' }}
                                 </button>
+                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard</button>
                             </div>
-
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
+
+            <!-- ─── Intakes table ─────────────────────────────── -->
             <div class="card card-body">
                 <div class="table-responsive">
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
                             <th>
-                                <div class="form-check text-center">
-                                    <input type="checkbox" class="form-check-input primary" />
-                                </div>
+                                <input type="checkbox" class="form-check-input text-center"
+                                       wire:click="$dispatch('select-all')" wire:model="selectAll">
                             </th>
-                            <th>Course</th> <!-- New Column -->
-                            <th>Payer</th>
-                            <th>Amount</th>
-                            <th>Method</th>
-                            <th>Status</th>
-                            <th>Paid On</th>
+                            <th>Name</th>
+                            <th>Starts</th>
+                            <th>Ends</th>
                             <th>Action</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <!-- Row 1 -->
-                        <tr>
-                            <td class="text-center">
-                                <input type="checkbox" class="form-check-input" />
-                            </td>
-                            <td><span class="badge bg-light text-dark">Web Development</span></td>
-                            <td>
-                                <div class="user-meta-info">
-                                    <h6 class="user-name mb-0">John Doe</h6>
-                                    <span class="user-work fs-3">TX12345</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-secondary">KES 5,000</span></td>
-                            <td><span class="badge bg-warning text-dark">M-Pesa</span></td>
-                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
-                            <td>2024-05-01</td>
-                            <td>  <a href="#"
-                                     class="btn btn-info btn-sm">
-                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                </a>
-                            </td>
-                        </tr>
-                        <!-- Row 2 -->
-                        <tr>
-                            <td class="text-center">
-                                <input type="checkbox" class="form-check-input" />
-                            </td>
-                            <td><span class="badge bg-light text-dark">Graphic Design</span></td>
-                            <td>
-                                <div class="user-meta-info">
-                                    <h6 class="user-name mb-0">Jane Smith</h6>
-                                    <span class="user-work fs-3">TX12346</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-secondary">KES 3,200</span></td>
-                            <td><span class="badge bg-primary-subtle text-primary">Bank</span></td>
-                            <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
-                            <td>2024-05-03</td>
-                            <td>  <a href="#"
-                                     class="btn btn-info btn-sm">
-                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                </a>
-                            </td>
-                        </tr>
-                        <!-- Row 3 -->
-                        <tr>
-                            <td class="text-center">
-                                <input type="checkbox" class="form-check-input" />
-                            </td>
-                            <td><span class="badge bg-light text-dark">Data Science</span></td>
-                            <td>
-                                <div class="user-meta-info">
-                                    <h6 class="user-name mb-0">Ali Mwana</h6>
-                                    <span class="user-work fs-3">TX12347</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-secondary">KES 1,800</span></td>
-                            <td><span class="badge bg-info-subtle text-info">Cash</span></td>
-                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
-                            <td>2024-05-05</td>
-                            <td>  <a href="#"
-                                     class="btn btn-info btn-sm">
-                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                </a>
-                            </td>
-                        </tr>
-                        <!-- Row 4 -->
-                        <tr>
-                            <td class="text-center">
-                                <input type="checkbox" class="form-check-input" />
-                            </td>
-                            <td><span class="badge bg-light text-dark">Cybersecurity</span></td>
-                            <td>
-                                <div class="user-meta-info">
-                                    <h6 class="user-name mb-0">Mary Njoki</h6>
-                                    <span class="user-work fs-3">TX12348</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-secondary">KES 4,000</span></td>
-                            <td><span class="badge bg-danger-subtle text-danger">Card</span></td>
-                            <td><span class="badge bg-danger-subtle text-danger">Failed</span></td>
-                            <td>2024-05-07</td>
-                            <td>  <a href="#"
-                                     class="btn btn-info btn-sm">
-                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                </a>
-                            </td>
-                        </tr>
+                        @forelse($intakes as $intake)
+                            <tr class="search-items">
+                                <td>
+                                    <div class="form-check text-center">
+                                    <input type="checkbox" class="form-check-input"
+                                           wire:model="selected" value="{{ (string)$intake->id }}">
+                                    </div>
+                                </td>
+                                <td>{{ $intake->name }}</td>
+                                <td>{{ $intake->starts_at->format('j M Y') }}</td>
+                                <td>{{ optional($intake->ends_at)->format('j M Y') ?? '—' }}</td>
+                                <td>
+                                    <div class="action-btn">
+                                        <a href="{{ route('intakes.view',$intake->id) }}"
+                                           class="text-primary">
+                                            <i class="ti ti-eye fs-5"></i>
+                                        </a>
+                                        <a href="javascript:void(0)" wire:click="editIntake({{ $intake->id }})" class="text-primary">
+                                            <i class="ti ti-pencil fs-5"></i>
+                                        </a>
+                                        <a href="javascript:void(0)" wire:click="deleteIntake({{ $intake->id }})" class="text-dark ms-2">
+                                            <i class="ti ti-trash fs-5"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="text-center">No intakes found.</td></tr>
+                        @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
 @push('scripts')
-    <script src="assets/js/apps/contact.js"></script>
+    <script>
+        window.addEventListener('show-intake-modal', () => {
+            new bootstrap.Modal(document.getElementById('addIntakeModal')).show();
+        });
+        window.addEventListener('hide-intake-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('addIntakeModal'))?.hide();
+        });
+    </script>
 @endpush
-
-
-
-

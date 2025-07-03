@@ -1,0 +1,718 @@
+<?php
+
+use Livewire\Volt\Component;
+
+
+new class extends Component {
+}; ?>
+
+<div class="col-12">
+    <div class="container-fluid">
+        <div class="card card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-12">
+                    <div class="d-sm-flex align-items-center justify-space-between">
+                        <h4 class="mb-4 mb-sm-0 card-title">January 2025 Intake</h4>
+                        <nav aria-label="breadcrumb" class="ms-auto">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item d-flex align-items-center">
+                                    <a class="text-muted text-decoration-none d-flex" href="../main/index.html">
+                                        <iconify-icon icon="solar:home-2-line-duotone" class="fs-6"></iconify-icon>
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item" aria-current="page">
+                        <span class="badge fw-medium fs-2 bg-primary-subtle text-primary">
+                          January 2025 Intake
+                        </span>
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="card-body p-0">
+                <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid">
+                <div class="row align-items-center">
+                    <div class="col-lg-4 order-lg-1 order-2">
+                        <div class="d-flex align-items-center justify-content-around m-4">
+                            <div class="text-center">
+                                <i class="ti ti-file-description fs-6 d-block mb-2"></i>
+                                <h4 class="mb-0 fw-semibold lh-1">6</h4>
+                                <p class="mb-0 ">Courses</p>
+                            </div>
+                            <div class="text-center">
+                                <i class="ti ti-user-circle fs-6 d-block mb-2"></i>
+                                <h4 class="mb-0 fw-semibold lh-1">100</h4>
+                                <p class="mb-0 ">Students</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mt-n3 order-lg-2 order-1">
+                        <div class="mt-n5">
+                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                <div class="d-flex align-items-center justify-content-center round-110">
+                                    <div
+                                        class="border border-4 border-white d-flex align-items-center justify-content-center rounded-circle overflow-hidden"
+                                        style="background-color: #f0f0f0; width: 100px; height: 100px;">
+                                        <i class="ti ti-calendar-event text-primary"
+                                           style="font-size: 3rem; line-height:1;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <h5 class="mb-0">January 2025 Intake</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 order-last">
+                    </div>
+                </div>
+                <ul class="nav nav-pills user-profile-tab justify-content-end mt-2 bg-primary-subtle rounded-2 rounded-top-0"
+                    id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active hstack gap-2 rounded-0 fs-12 py-6" id="pills-courses-tab"
+                                data-bs-toggle="pill" data-bs-target="#pills-courses" type="button" role="tab"
+                                aria-controls="pills-courses" aria-selected="true">
+                            <i class="ti ti-book fs-5"></i>
+                            <span class="d-none d-md-block">Courses</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link hstack gap-2 rounded-0 fs-12 py-6" id="pills-students-tab"
+                                data-bs-toggle="pill" data-bs-target="#pills-students" type="button" role="tab"
+                                aria-controls="pills-students" aria-selected="false">
+                            <i class="ti ti-calendar-check fs-5"></i>
+                            <span class="d-none d-md-block">Students</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link hstack gap-2 rounded-0 fs-12 py-6" id="pills-payments-tab"
+                                data-bs-toggle="pill" data-bs-target="#pills-payments" type="button" role="tab"
+                                aria-controls="pills-payments" aria-selected="false">
+                            <i class="ti ti-credit-card fs-5"></i> <!-- Credit card icon for Payments -->
+                            <span class="d-none d-md-block">Payments</span>
+                        </button>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-courses" role="tabpanel"
+                 aria-labelledby="pills-courses-tab"
+                 tabindex="0">
+                <div class="card overflow-hidden chat-application">
+                    <div class="d-flex align-items-center justify-content-between gap-6 m-3 d-lg-none">
+                        <button class="btn btn-primary d-flex" type="button" data-bs-toggle="offcanvas"
+                                data-bs-target="#chat-sidebar" aria-controls="chat-sidebar">
+                            <i class="ti ti-menu-2 fs-5"></i>
+                        </button>
+                        <form class="position-relative w-100">
+                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh"
+                                   placeholder="Search Contact">
+                            <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                        </form>
+                    </div>
+                    <div class="d-flex w-100">
+                        <div class="d-flex w-100">
+                            <div class="min-width-340">
+                                <div class="border-end user-chat-box h-100">
+                                    <div class="px-4 pt-9 pb-6 d-none d-lg-block">
+                                        <form class="position-relative">
+                                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh"
+                                                   placeholder="Search"/>
+                                            <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                                        </form>
+                                    </div>
+                                    <div class="app-chat">
+                                        <ul class="chat-users mh-n100" data-simplebar>
+                                            <li>
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle"
+                                                   id="chat_user_1" data-user-id="1">
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Computer Science
+                                                        </h6>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
+                                                   id="chat_user_2" data-user-id="2">
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Electrical Engineering
+                                                        </h6>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
+                                                   id="chat_user_3" data-user-id="3">
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Civil Engineering
+                                                        </h6>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-100">
+                                <div class="chat-container h-100 w-100">
+                                    <div class="chat-box-inner-part h-100">
+                                        <div class="chatting-box app-email-chatting-box">
+                                            <div
+                                                class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
+                                                <h5 class="text-dark mb-0 fs-5">Modules</h5>
+                                            </div>
+                                            <div class="position-relative overflow-hidden">
+                                                <div class="position-relative">
+                                                    <div class="row">
+                                                        <ul class="chat-users mh-n100" data-simplebar>
+                                                            <li>
+                                                                <a href="javascript:void(0)"
+                                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-start chat-user bg-light-subtle"
+                                                                   id="chat_user_1" data-user-id="1">
+                                                                    <div class="form-check mb-0 mt-1">
+                                                                        <input class="form-check-input" type="checkbox"
+                                                                               value="" id="flexCheckDefault"/>
+                                                                    </div>
+
+                                                                    <div class="position-relative w-100 ms-2">
+                                                                        <div
+                                                                            class="d-flex align-items-center justify-content-between mb-2">
+                                                                            <h6 class="mb-0">Artificial Intelligence
+                                                                                Introduction</h6>
+
+                                                                            <span class="d-flex align-items-center gap-2">
+                                                                              <span class="badge bg-primary text-white">MTH101</span>
+                                                                              <span class="status-dot rounded-circle bg-secondary" style="width:8px; height:8px;" title="Active"></span>
+                                                                            </span>
+
+                                                                        </div>
+
+                                                                        <h6 class="fw-semibold text-dark">
+                                                                            Lecturer - Dr Musungu Kevin
+                                                                        </h6>
+                                                                        <div class="d-flex align-items-center justify-content-start">
+                                                                            <div class="rounded-1 text-bg-light">
+                                                                                <img src="../assets/images/chat/icon-adobe.svg" alt="matdash-img" width="20" height="20" />
+                                                                            </div>
+                                                                            <div class="rounded-1 text-bg-light mx-2">
+                                                                                <img src="../assets/images/chat/icon-zip-folder.svg" alt="matdash-img" width="20" height="20" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </li>
+                                                            <!-- INACTIVE / “DULL” ROW -->
+                                                            <li>
+                                                                <a href="javascript:void(0)"
+                                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-start chat-user bg-light-subtle opacity-50"
+                                                                   id="chat_user_1" data-user-id="1">
+                                                                    <div class="form-check mb-0 mt-1">
+                                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
+                                                                    </div>
+
+                                                                    <div class="position-relative w-100 ms-2">
+                                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                            <h6 class="mb-0">Artificial Intelligence Introduction</h6>
+
+                                                                            <!-- Course badge + grey status dot -->
+                                                                            <span class="d-flex align-items-center gap-2">
+                                                                              <span class="badge bg-primary text-white">MTH101</span>
+                                                                              <span class="status-dot rounded-circle bg-warning" style="width:8px; height:8px;" title="Inactive"></span>
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <h6 class="fw-semibold text-dark mb-2">Lecturer – Dr Musungu Kevin</h6>
+
+                                                                        <div class="d-flex align-items-center">
+                                                                            <div class="rounded-1 text-bg-light">
+                                                                                <img src="../assets/images/chat/icon-adobe.svg" alt="material" width="20" height="20" />
+                                                                            </div>
+                                                                            <div class="rounded-1 text-bg-light ms-2">
+                                                                                <img src="../assets/images/chat/icon-zip-folder.svg" alt="material" width="20" height="20" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </li>
+
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="offcanvas offcanvas-start user-chat-box" tabindex="-1" id="chat-sidebar"
+                             aria-labelledby="offcanvasExampleLabel">
+                            <div class="offcanvas-header">
+                                <h5 class="offcanvas-title" id="offcanvasExampleLabel"> Contact </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="px-9 pt-4 pb-3">
+                                <button class="btn btn-primary fw-semibold py-8 w-100">Add New Contact</button>
+                            </div>
+                            <ul class="list-group h-n150" data-simplebar>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-inbox fs-5"></i>All Contacts
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-star"></i>Starred
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-file-text fs-5"></i>Pening Approval
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-alert-circle"></i>Blocked
+                                    </a>
+                                </li>
+                                <li class="border-bottom my-3"></li>
+                                <li class="fw-semibold text-dark text-uppercase mx-9 my-2 px-3 fs-2">CATEGORIES</li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-primary"></i>Engineers
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-warning"></i>Support Staff
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-success"></i>Sales Team
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab"
+                 tabindex="0">
+                <div class="card overflow-hidden chat-application">
+                    <div class="d-flex align-items-center justify-content-between gap-6 m-3 d-lg-none">
+                        <button class="btn btn-primary d-flex" type="button" data-bs-toggle="offcanvas" data-bs-target="#chat-sidebar" aria-controls="chat-sidebar">
+                            <i class="ti ti-menu-2 fs-5"></i>
+                        </button>
+                        <form class="position-relative w-100">
+                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh" placeholder="Search Contact">
+                            <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                        </form>
+                    </div>
+                    <div class="d-flex w-100">
+                        <div class="d-flex w-100">
+                            <div class="min-width-340">
+                                <div class="border-end user-chat-box h-100">
+                                    <div class="px-4 pt-9 pb-6 d-none d-lg-block">
+                                        <form class="position-relative">
+                                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh" placeholder="Search" />
+                                            <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                                        </form>
+                                    </div>
+                                    <div class="app-chat">
+                                        <ul class="chat-users mh-n100" data-simplebar>
+                                            <li>
+                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle" id="chat_user_1" data-user-id="1">
+                            <span class="position-relative">
+                              <img src="../assets/images/profile/user-3.jpg" alt="user-4" width="40" height="40" class="rounded-circle">
+                            </span>
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Dr. Bonnie Barstow
+                                                        </h6>
+                                                        <span class="fs-2 text-body-color d-block">barstow@ modernize.com</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user" id="chat_user_2" data-user-id="2">
+                            <span class="position-relative">
+                              <img src="../assets/images/profile/user-5.jpg" alt="user4" width="40" height="40" class="rounded-circle">
+                            </span>
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Jonathan Higgins
+                                                        </h6>
+                                                        <span class="fs-2 text-body-color d-block">jonathan_hig@modernize.com</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user" id="chat_user_3" data-user-id="3">
+                            <span class="position-relative">
+                              <img src="../assets/images/profile/user-6.jpg" alt="user3" width="40" height="40" class="rounded-circle">
+                            </span>
+                                                    <div class="ms-6 d-inline-block w-75">
+                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Michael Knight
+                                                        </h6>
+                                                        <span class="fs-2 text-body-color d-block">michale-knight@gmail.com</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-100">
+                                <div class="chat-container h-100 w-100">
+                                    <div class="chat-box-inner-part h-100">
+                                        <div class="chatting-box app-email-chatting-box">
+                                            <div class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
+                                                <h5 class="text-dark mb-0 fs-5">Contact Details</h5>
+                                                <ul class="list-unstyled mb-0 d-flex align-items-center">
+                                                    <li class="d-lg-none d-block">
+                                                        <a class="text-dark back-btn px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                            <i class="ti ti-arrow-left"></i>
+                                                        </a>
+                                                    </li>
+                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="important">
+                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                            <i class="ti ti-star"></i>
+                                                        </a>
+                                                    </li>
+                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                                                        <a class="d-block text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                            <i class="ti ti-pencil"></i>
+                                                        </a>
+                                                    </li>
+                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
+                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                            <i class="ti ti-trash"></i>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="position-relative overflow-hidden">
+                                                <div class="position-relative">
+                                                    <div class="chat-box email-box mh-n100 p-9" data-simplebar="init">
+
+                                                        <div class="chat-list chat active-chat" data-user-id="1">
+                                                            <div class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
+                                                                <div class="d-flex align-items-center gap-3">
+                                                                    <img src="../assets/images/profile/user-3.jpg" alt="user4" width="72" height="72" class="rounded-circle">
+                                                                    <div>
+                                                                        <h6 class="fw-semibold fs-4 mb-0">Dr. Bonnie Barstow </h6>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-4 mb-7">
+                                                                    <p class="mb-1 fs-2">Phone number</p>
+                                                                    <h6 class="fw-semibold mb-0">+1 (203) 3458</h6>
+                                                                </div>
+                                                                <div class="col-8 mb-7">
+                                                                    <p class="mb-1 fs-2">Email address</p>
+                                                                    <h6 class="fw-semibold mb-0">alexandra@modernize.com</h6>
+                                                                </div>
+                                                                <div class="col-12 mb-9">
+                                                                    <p class="mb-1 fs-2">Date of Birth</p>
+                                                                    <h6 class="fw-semibold mb-0">312, Imperical Arc, New western corner</h6>
+                                                                </div>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-6">
+                                                                <button class="btn btn-primary" fdprocessedid="pk6kl8">View</button>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="offcanvas offcanvas-start user-chat-box" tabindex="-1" id="chat-sidebar" aria-labelledby="offcanvasExampleLabel">
+                            <div class="offcanvas-header">
+                                <h5 class="offcanvas-title" id="offcanvasExampleLabel"> Contact </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                            </div>
+                            <div class="px-9 pt-4 pb-3">
+                                <button class="btn btn-primary fw-semibold py-8 w-100">Add New Contact</button>
+                            </div>
+                            <ul class="list-group h-n150" data-simplebar>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-inbox fs-5"></i>All Contacts
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-star"></i>Starred
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-file-text fs-5"></i>Pening Approval
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-alert-circle"></i>Blocked
+                                    </a>
+                                </li>
+                                <li class="border-bottom my-3"></li>
+                                <li class="fw-semibold text-dark text-uppercase mx-9 my-2 px-3 fs-2">CATEGORIES</li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-primary"></i>Engineers
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-warning"></i>Support Staff
+                                    </a>
+                                </li>
+                                <li class="list-group-item border-0 p-0 mx-9">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                        <i class="ti ti-bookmark fs-5 text-success"></i>Sales Team
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="pills-payments" role="tabpanel" aria-labelledby="pills-payments-tab"
+                 tabindex="0">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="widget-content searchable-container list">
+                            <div class="card card-body">
+                                <div class="row">
+                                    <div class="col-md-4 col-xl-3">
+                                        <form class="position-relative">
+                                            <input type="text" class="form-control product-search ps-5" id="input-search" placeholder="Search Contacts..." />
+                                            <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+                                        <div class="action-btn show-btn">
+                                            <a href="javascript:void(0)" class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
+                                                <i class="ti ti-trash me-1 fs-5"></i> Delete All Row
+                                            </a>
+                                        </div>
+                                        <a href="javascript:void(0)" id="btn-add-contact" class="btn btn-primary d-flex align-items-center">
+                                            <i class="ti ti-users text-white me-1 fs-5"></i> Add Contact
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Modal -->
+                            <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-labelledby="addContactModalTitle" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header d-flex align-items-center">
+                                            <h5 class="modal-title">Contact</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="add-contact-box">
+                                                <div class="add-contact-content">
+                                                    <form id="addContactModalTitle">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3 contact-name">
+                                                                    <input type="text" id="c-name" class="form-control" placeholder="Name" />
+                                                                    <span class="validation-text text-danger"></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3 contact-email">
+                                                                    <input type="text" id="c-email" class="form-control" placeholder="Email" />
+                                                                    <span class="validation-text text-danger"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3 contact-occupation">
+                                                                    <input type="text" id="c-occupation" class="form-control" placeholder="Occupation" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3 contact-phone">
+                                                                    <input type="text" id="c-phone" class="form-control" placeholder="Phone" />
+                                                                    <span class="validation-text text-danger"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-12">
+                                                                <div class="mb-3 contact-location">
+                                                                    <input type="text" id="c-location" class="form-control" placeholder="Location" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <div class="d-flex gap-6 m-0">
+                                                <button id="btn-add" class="btn btn-success">Add</button>
+                                                <button id="btn-edit" class="btn btn-success">Save</button>
+                                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal"> Discard
+                                                </button>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card card-body">
+                                <div class="table-responsive">
+                                    <table class="table search-table align-middle text-nowrap">
+                                        <thead class="header-item">
+                                        <tr>
+                                            <th>
+                                                <div class="form-check text-center">
+                                                    <input type="checkbox" class="form-check-input primary" />
+                                                </div>
+                                            </th>
+                                            <th>Course</th>
+                                            <th>Student</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
+                                            <th>Status</th>
+                                            <th>Paid On</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <!-- Row 1 -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" class="form-check-input" />
+                                            </td>
+                                            <td><span class="badge bg-light text-dark">Web Development</span></td>
+                                            <td>
+                                                <div class="user-meta-info">
+                                                    <h6 class="user-name mb-0">John Doe</h6>
+                                                    <span class="user-work fs-3">TX12345</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-secondary">KES 5,000</span></td>
+                                            <td><span class="badge bg-warning text-dark">M-Pesa</span></td>
+                                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                            <td>2024-05-01</td>
+                                            <td>  <a href="#"
+                                                     class="btn btn-info btn-sm">
+                                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 2 -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" class="form-check-input" />
+                                            </td>
+                                            <td><span class="badge bg-light text-dark">Graphic Design</span></td>
+                                            <td>
+                                                <div class="user-meta-info">
+                                                    <h6 class="user-name mb-0">Jane Smith</h6>
+                                                    <span class="user-work fs-3">TX12346</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-secondary">KES 3,200</span></td>
+                                            <td><span class="badge bg-primary-subtle text-primary">Bank</span></td>
+                                            <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                                            <td>2024-05-03</td>
+                                            <td>  <a href="#"
+                                                     class="btn btn-info btn-sm">
+                                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 3 -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" class="form-check-input" />
+                                            </td>
+                                            <td><span class="badge bg-light text-dark">Data Science</span></td>
+                                            <td>
+                                                <div class="user-meta-info">
+                                                    <h6 class="user-name mb-0">Ali Mwana</h6>
+                                                    <span class="user-work fs-3">TX12347</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-secondary">KES 1,800</span></td>
+                                            <td><span class="badge bg-info-subtle text-info">Cash</span></td>
+                                            <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                                            <td>2024-05-05</td>
+                                            <td>  <a href="#"
+                                                     class="btn btn-info btn-sm">
+                                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 4 -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" class="form-check-input" />
+                                            </td>
+                                            <td><span class="badge bg-light text-dark">Cybersecurity</span></td>
+                                            <td>
+                                                <div class="user-meta-info">
+                                                    <h6 class="user-name mb-0">Mary Njoki</h6>
+                                                    <span class="user-work fs-3">TX12348</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-secondary">KES 4,000</span></td>
+                                            <td><span class="badge bg-danger-subtle text-danger">Card</span></td>
+                                            <td><span class="badge bg-danger-subtle text-danger">Failed</span></td>
+                                            <td>2024-05-07</td>
+                                            <td>  <a href="#"
+                                                     class="btn btn-info btn-sm">
+                                                    <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+

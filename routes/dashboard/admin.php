@@ -37,4 +37,5 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
     // Route to manage intakes
     Volt::route('intakes', 'intakes.index')->name('intakes.index');
+    Volt::route('intakes/view/{intake_id}', 'intakes.view')->name('intakes.view');
 });

@@ -109,14 +109,5 @@ class Module extends Model
         )->distinct();
     }
 
-    /* -----------------------------------------------------------------
-     |  Helpers
-     |------------------------------------------------------------------
-     */
 
-    public function getCodeAttribute(): string
-    {
-        // Derive a short code from the title if you don’t store a code column
-        return strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $this->title), 0, 5));
-    }
 }
