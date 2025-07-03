@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Module;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class IntakeModule extends Pivot
 {
 
+    protected $table = 'intake_modules'; // ✅ your actual pivot table name
 
     // we kept an auto‑increment id, so leave $incrementing = true
     protected $fillable = [
@@ -53,6 +56,32 @@ class IntakeModule extends Pivot
     public function assessments()
     {
         return $this->hasMany(Assessment::class);
+    }
+
+
+    /**
+     * Get a unique collection of Course models for a given intake.
+     */
+    public function scopeCoursesForIntake(Builder $query, int $intakeId)
+    {
+        return $query->where('intake_id', $intakeId)
+            ->with('module.course')
+            ->get()
+            ->pluck('module.course')
+            ->unique('id')
+            ->values();
+    }
+
+
+    public static function getModulesForIntakeCourse(int $intakeId, int $courseId)
+    {
+        return Module::where('course_id', $courseId)
+            ->whereIn('id', function ($query) use ($intakeId) {
+                $query->select('module_id')
+                    ->from('intake_modules')
+                    ->where('intake_id', $intakeId);
+            })
+            ->get();
     }
 }
 

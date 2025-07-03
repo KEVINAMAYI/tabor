@@ -1,9 +1,90 @@
 <?php
 
+use App\Models\Course;
+use App\Models\Intake;
+use App\Models\IntakeModule;
 use Livewire\Volt\Component;
-
+use Livewire\Attributes\On;
+use Illuminate\Support\Facades\Log;
 
 new class extends Component {
+
+    /* ---------- public state ---------- */
+    public $courses;           // collection of Course
+    public $intakeId;           // collection of Course
+    public $modules = [];      // collection of Module (for the chosen course)
+    public $intakeCourses = [];
+    public $activeCourseModules = [];
+    public $activeCourseId;
+
+    public $selectedCourse = '';  // <select> binding
+    public $selected = [];        // row checkboxes
+    public $selectAll = false;    // header checkbox
+
+    /* ---------- mount ---------- */
+    public function mount($intake_id)
+    {
+        $this->intakeCourses = IntakeModule::coursesForIntake($intake_id);
+        $this->intakeId = $intake_id;
+        $this->courses = Course::orderBy('title')->get(['id', 'title']);
+        $this->activeCourseId = $this->courses[0]->id;
+        $this->selectCourse($this->activeCourseId);
+    }
+
+
+    #[On('update-selected-course')]
+    public function setSelectedCourse(): void
+    {
+        $this->selectAll = count($this->selected) === $this->modules->count();
+    }
+
+
+    public function selectCourse($courseId)
+    {
+        $this->activeCourseId = $courseId;
+        $this->activeCourseModules = IntakeModule::getModulesForIntakeCourse($this->intakeId, $courseId);
+    }
+
+
+    /* ---------- watchers ---------- */
+    #[On('update-course')]
+    public function updateCourse($courseId)
+    {
+        $this->modules = Course::with('modules')
+            ->find($courseId)?->modules ?? collect();
+
+        $this->selected = [];
+        $this->selectAll = false;
+    }
+
+    #[On('select-all-courses')]
+    public function selectAllModules()
+    {
+        if ($this->selectAll) {
+            $this->selected = $this->modules->pluck('id')->map(fn($id) => (string)$id)->toArray();
+        } else {
+            $this->selected = [];
+        }
+    }
+
+
+    public function addModulesToIntake(): void
+    {
+
+        if (empty($this->selected)) {
+            $this->dispatch('toast', title: 'Nothing selected', type: 'warning');
+            return;
+        }
+
+        $intake = Intake::findOrFail($this->intakeId);
+        $intake->modules()->syncWithoutDetaching($this->selected);
+
+        $this->reset('selected', 'selectAll');
+        $this->dispatch('hide-course-modal');
+
+    }
+
+
 }; ?>
 
 <div class="col-12">
@@ -129,39 +210,28 @@ new class extends Component {
                                     </div>
                                     <div class="app-chat">
                                         <ul class="chat-users mh-n100" data-simplebar>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle"
-                                                   id="chat_user_1" data-user-id="1">
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Computer Science
-                                                        </h6>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
-                                                   id="chat_user_2" data-user-id="2">
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Electrical Engineering
-                                                        </h6>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
-                                                   id="chat_user_3" data-user-id="3">
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Civil Engineering
-                                                        </h6>
-                                                    </div>
-                                                </a>
-                                            </li>
+                                            @forelse ($intakeCourses as $course)
+                                                <li>
+                                                    <a href="javascript:void(0)"
+                                                       class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user
+                                                       {{ $activeCourseId === $course->id ? 'bg-light-subtle' : '' }}"
+                                                       id="chat_user_{{ $course->id }}"
+                                                       data-user-id="{{ $course->id }}"
+                                                       wire:click="selectCourse({{ $course->id }})"
+                                                       wire:key="course-{{ $course->id }}">
+                                                        <div class="ms-6 d-inline-block w-75">
+                                                            <h6 class="mb-1 fw-semibold chat-title"
+                                                                data-username="{{ $course->title }}">
+                                                                {{ $course->title }}
+                                                            </h6>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            @empty
+                                                <li class="text-center py-4 text-muted">
+                                                    No courses assigned to this intake yet.
+                                                </li>
+                                            @endforelse
                                         </ul>
                                     </div>
                                 </div>
@@ -173,82 +243,64 @@ new class extends Component {
                                             <div
                                                 class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
                                                 <h5 class="text-dark mb-0 fs-5">Modules</h5>
+                                                <a href="javascript:void(0)"
+                                                   wire:click="$dispatch('show-course-modal')"
+                                                   class="btn btn-primary d-flex align-items-center">
+                                                    <i class="ti ti-layout-grid text-white me-1 fs-5"></i> Manage
+                                                    Modules
+                                                </a>
                                             </div>
                                             <div class="position-relative overflow-hidden">
                                                 <div class="position-relative">
                                                     <div class="row">
                                                         <ul class="chat-users mh-n100" data-simplebar>
-                                                            <li>
-                                                                <a href="javascript:void(0)"
-                                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-start chat-user bg-light-subtle"
-                                                                   id="chat_user_1" data-user-id="1">
-                                                                    <div class="form-check mb-0 mt-1">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                               value="" id="flexCheckDefault"/>
-                                                                    </div>
+                                                            @forelse($activeCourseModules as $module)
+                                                                <li>
+                                                                    <a href="javascript:void(0)"
+                                                                       class="px-4 py-3 bg-hover-light-black d-flex align-items-start chat-user bg-light-subtle">
 
-                                                                    <div class="position-relative w-100 ms-2">
-                                                                        <div
-                                                                            class="d-flex align-items-center justify-content-between mb-2">
-                                                                            <h6 class="mb-0">Artificial Intelligence
-                                                                                Introduction</h6>
 
-                                                                            <span class="d-flex align-items-center gap-2">
-                                                                              <span class="badge bg-primary text-white">MTH101</span>
-                                                                              <span class="status-dot rounded-circle bg-secondary" style="width:8px; height:8px;" title="Active"></span>
-                                                                            </span>
-
-                                                                        </div>
-
-                                                                        <h6 class="fw-semibold text-dark">
-                                                                            Lecturer - Dr Musungu Kevin
-                                                                        </h6>
-                                                                        <div class="d-flex align-items-center justify-content-start">
-                                                                            <div class="rounded-1 text-bg-light">
-                                                                                <img src="../assets/images/chat/icon-adobe.svg" alt="matdash-img" width="20" height="20" />
+                                                                        <div class="position-relative w-100 ms-2">
+                                                                            <div
+                                                                                class="d-flex align-items-center justify-content-between mb-2">
+                                                                                <h6 class="mb-0">{{ $module->title }}</h6>
+                                                                                <span
+                                                                                    class="d-flex align-items-center gap-2">
+                                                                                <span
+                                                                                    class="badge bg-primary text-white">{{ $module->code }}</span>
+                                                                             </span>
                                                                             </div>
-                                                                            <div class="rounded-1 text-bg-light mx-2">
-                                                                                <img src="../assets/images/chat/icon-zip-folder.svg" alt="matdash-img" width="20" height="20" />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </a>
-                                                            </li>
-                                                            <!-- INACTIVE / “DULL” ROW -->
-                                                            <li>
-                                                                <a href="javascript:void(0)"
-                                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-start chat-user bg-light-subtle opacity-50"
-                                                                   id="chat_user_1" data-user-id="1">
-                                                                    <div class="form-check mb-0 mt-1">
-                                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
-                                                                    </div>
 
-                                                                    <div class="position-relative w-100 ms-2">
-                                                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                                                            <h6 class="mb-0">Artificial Intelligence Introduction</h6>
+                                                                            <h6 class="fw-semibold text-dark">
+                                                                                Lecturer - Kevin Amayi Musungu
+                                                                            </h6>
 
-                                                                            <!-- Course badge + grey status dot -->
-                                                                            <span class="d-flex align-items-center gap-2">
-                                                                              <span class="badge bg-primary text-white">MTH101</span>
-                                                                              <span class="status-dot rounded-circle bg-warning" style="width:8px; height:8px;" title="Inactive"></span>
-                                                                            </span>
-                                                                        </div>
-
-                                                                        <h6 class="fw-semibold text-dark mb-2">Lecturer – Dr Musungu Kevin</h6>
-
-                                                                        <div class="d-flex align-items-center">
-                                                                            <div class="rounded-1 text-bg-light">
-                                                                                <img src="../assets/images/chat/icon-adobe.svg" alt="material" width="20" height="20" />
-                                                                            </div>
-                                                                            <div class="rounded-1 text-bg-light ms-2">
-                                                                                <img src="../assets/images/chat/icon-zip-folder.svg" alt="material" width="20" height="20" />
+                                                                            <div
+                                                                                class="d-flex align-items-center justify-content-start">
+                                                                                <div class="rounded-1 text-bg-light">
+                                                                                    <img
+                                                                                        src="../assets/images/chat/icon-adobe.svg"
+                                                                                        alt="adobe-icon" width="20"
+                                                                                        height="20"/>
+                                                                                </div>
+                                                                                <div
+                                                                                    class="rounded-1 text-bg-light mx-2">
+                                                                                    <img
+                                                                                        src="../assets/images/chat/icon-zip-folder.svg"
+                                                                                        alt="zip-icon" width="20"
+                                                                                        height="20"/>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                </a>
-                                                            </li>
-
+                                                                    </a>
+                                                                </li>
+                                                            @empty
+                                                                <li class="text-center py-4 text-muted">
+                                                                    No modules found for this course.
+                                                                </li>
+                                                            @endforelse
                                                         </ul>
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -323,11 +375,13 @@ new class extends Component {
                  tabindex="0">
                 <div class="card overflow-hidden chat-application">
                     <div class="d-flex align-items-center justify-content-between gap-6 m-3 d-lg-none">
-                        <button class="btn btn-primary d-flex" type="button" data-bs-toggle="offcanvas" data-bs-target="#chat-sidebar" aria-controls="chat-sidebar">
+                        <button class="btn btn-primary d-flex" type="button" data-bs-toggle="offcanvas"
+                                data-bs-target="#chat-sidebar" aria-controls="chat-sidebar">
                             <i class="ti ti-menu-2 fs-5"></i>
                         </button>
                         <form class="position-relative w-100">
-                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh" placeholder="Search Contact">
+                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh"
+                                   placeholder="Search Contact">
                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
                     </div>
@@ -337,43 +391,56 @@ new class extends Component {
                                 <div class="border-end user-chat-box h-100">
                                     <div class="px-4 pt-9 pb-6 d-none d-lg-block">
                                         <form class="position-relative">
-                                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh" placeholder="Search" />
+                                            <input type="text" class="form-control search-chat py-2 ps-5" id="text-srh"
+                                                   placeholder="Search"/>
                                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                                         </form>
                                     </div>
                                     <div class="app-chat">
                                         <ul class="chat-users mh-n100" data-simplebar>
                                             <li>
-                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle" id="chat_user_1" data-user-id="1">
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle"
+                                                   id="chat_user_1" data-user-id="1">
                             <span class="position-relative">
-                              <img src="../assets/images/profile/user-3.jpg" alt="user-4" width="40" height="40" class="rounded-circle">
+                              <img src="../assets/images/profile/user-3.jpg" alt="user-4" width="40" height="40"
+                                   class="rounded-circle">
                             </span>
                                                     <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Dr. Bonnie Barstow
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Dr. Bonnie Barstow
                                                         </h6>
                                                         <span class="fs-2 text-body-color d-block">barstow@ modernize.com</span>
                                                     </div>
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user" id="chat_user_2" data-user-id="2">
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
+                                                   id="chat_user_2" data-user-id="2">
                             <span class="position-relative">
-                              <img src="../assets/images/profile/user-5.jpg" alt="user4" width="40" height="40" class="rounded-circle">
+                              <img src="../assets/images/profile/user-5.jpg" alt="user4" width="40" height="40"
+                                   class="rounded-circle">
                             </span>
                                                     <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Jonathan Higgins
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Jonathan Higgins
                                                         </h6>
                                                         <span class="fs-2 text-body-color d-block">jonathan_hig@modernize.com</span>
                                                     </div>
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="javascript:void(0)" class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user" id="chat_user_3" data-user-id="3">
+                                                <a href="javascript:void(0)"
+                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
+                                                   id="chat_user_3" data-user-id="3">
                             <span class="position-relative">
-                              <img src="../assets/images/profile/user-6.jpg" alt="user3" width="40" height="40" class="rounded-circle">
+                              <img src="../assets/images/profile/user-6.jpg" alt="user3" width="40" height="40"
+                                   class="rounded-circle">
                             </span>
                                                     <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title" data-username="James Anderson">Michael Knight
+                                                        <h6 class="mb-1 fw-semibold chat-title"
+                                                            data-username="James Anderson">Michael Knight
                                                         </h6>
                                                         <span class="fs-2 text-body-color d-block">michale-knight@gmail.com</span>
                                                     </div>
@@ -388,26 +455,34 @@ new class extends Component {
                                 <div class="chat-container h-100 w-100">
                                     <div class="chat-box-inner-part h-100">
                                         <div class="chatting-box app-email-chatting-box">
-                                            <div class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
+                                            <div
+                                                class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
                                                 <h5 class="text-dark mb-0 fs-5">Contact Details</h5>
                                                 <ul class="list-unstyled mb-0 d-flex align-items-center">
                                                     <li class="d-lg-none d-block">
-                                                        <a class="text-dark back-btn px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                        <a class="text-dark back-btn px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
+                                                           href="javascript:void(0)">
                                                             <i class="ti ti-arrow-left"></i>
                                                         </a>
                                                     </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="important">
-                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                    <li class="position-relative" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" data-bs-title="important">
+                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
+                                                           href="javascript:void(0)">
                                                             <i class="ti ti-star"></i>
                                                         </a>
                                                     </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                        <a class="d-block text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                    <li class="position-relative" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" data-bs-title="Edit">
+                                                        <a class="d-block text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
+                                                           href="javascript:void(0)">
                                                             <i class="ti ti-pencil"></i>
                                                         </a>
                                                     </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5" href="javascript:void(0)">
+                                                    <li class="position-relative" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" data-bs-title="Delete">
+                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
+                                                           href="javascript:void(0)">
                                                             <i class="ti ti-trash"></i>
                                                         </a>
                                                     </li>
@@ -418,11 +493,15 @@ new class extends Component {
                                                     <div class="chat-box email-box mh-n100 p-9" data-simplebar="init">
 
                                                         <div class="chat-list chat active-chat" data-user-id="1">
-                                                            <div class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
+                                                            <div
+                                                                class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
                                                                 <div class="d-flex align-items-center gap-3">
-                                                                    <img src="../assets/images/profile/user-3.jpg" alt="user4" width="72" height="72" class="rounded-circle">
+                                                                    <img src="../assets/images/profile/user-3.jpg"
+                                                                         alt="user4" width="72" height="72"
+                                                                         class="rounded-circle">
                                                                     <div>
-                                                                        <h6 class="fw-semibold fs-4 mb-0">Dr. Bonnie Barstow </h6>
+                                                                        <h6 class="fw-semibold fs-4 mb-0">Dr. Bonnie
+                                                                            Barstow </h6>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -433,15 +512,19 @@ new class extends Component {
                                                                 </div>
                                                                 <div class="col-8 mb-7">
                                                                     <p class="mb-1 fs-2">Email address</p>
-                                                                    <h6 class="fw-semibold mb-0">alexandra@modernize.com</h6>
+                                                                    <h6 class="fw-semibold mb-0">
+                                                                        alexandra@modernize.com</h6>
                                                                 </div>
                                                                 <div class="col-12 mb-9">
                                                                     <p class="mb-1 fs-2">Date of Birth</p>
-                                                                    <h6 class="fw-semibold mb-0">312, Imperical Arc, New western corner</h6>
+                                                                    <h6 class="fw-semibold mb-0">312, Imperical Arc, New
+                                                                        western corner</h6>
                                                                 </div>
                                                             </div>
                                                             <div class="d-flex align-items-center gap-6">
-                                                                <button class="btn btn-primary" fdprocessedid="pk6kl8">View</button>
+                                                                <button class="btn btn-primary" fdprocessedid="pk6kl8">
+                                                                    View
+                                                                </button>
                                                             </div>
                                                         </div>
 
@@ -454,49 +537,58 @@ new class extends Component {
                             </div>
                         </div>
 
-                        <div class="offcanvas offcanvas-start user-chat-box" tabindex="-1" id="chat-sidebar" aria-labelledby="offcanvasExampleLabel">
+                        <div class="offcanvas offcanvas-start user-chat-box" tabindex="-1" id="chat-sidebar"
+                             aria-labelledby="offcanvasExampleLabel">
                             <div class="offcanvas-header">
                                 <h5 class="offcanvas-title" id="offcanvasExampleLabel"> Contact </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                                        aria-label="Close"></button>
                             </div>
                             <div class="px-9 pt-4 pb-3">
                                 <button class="btn btn-primary fw-semibold py-8 w-100">Add New Contact</button>
                             </div>
                             <ul class="list-group h-n150" data-simplebar>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-inbox fs-5"></i>All Contacts
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-star"></i>Starred
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-file-text fs-5"></i>Pening Approval
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-alert-circle"></i>Blocked
                                     </a>
                                 </li>
                                 <li class="border-bottom my-3"></li>
                                 <li class="fw-semibold text-dark text-uppercase mx-9 my-2 px-3 fs-2">CATEGORIES</li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-bookmark fs-5 text-primary"></i>Engineers
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-bookmark fs-5 text-warning"></i>Support Staff
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1" href="javascript:void(0)">
+                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
+                                       href="javascript:void(0)">
                                         <i class="ti ti-bookmark fs-5 text-success"></i>Sales Team
                                     </a>
                                 </li>
@@ -514,29 +606,35 @@ new class extends Component {
                                 <div class="row">
                                     <div class="col-md-4 col-xl-3">
                                         <form class="position-relative">
-                                            <input type="text" class="form-control product-search ps-5" id="input-search" placeholder="Search Contacts..." />
+                                            <input type="text" class="form-control product-search ps-5"
+                                                   id="input-search" placeholder="Search Contacts..."/>
                                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                                         </form>
                                     </div>
-                                    <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+                                    <div
+                                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                                         <div class="action-btn show-btn">
-                                            <a href="javascript:void(0)" class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
+                                            <a href="javascript:void(0)"
+                                               class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
                                                 <i class="ti ti-trash me-1 fs-5"></i> Delete All Row
                                             </a>
                                         </div>
-                                        <a href="javascript:void(0)" id="btn-add-contact" class="btn btn-primary d-flex align-items-center">
+                                        <a href="javascript:void(0)" id="btn-add-contact"
+                                           class="btn btn-primary d-flex align-items-center">
                                             <i class="ti ti-users text-white me-1 fs-5"></i> Add Contact
                                         </a>
                                     </div>
                                 </div>
                             </div>
                             <!-- Modal -->
-                            <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-labelledby="addContactModalTitle" aria-hidden="true">
+                            <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog"
+                                 aria-labelledby="addContactModalTitle" aria-hidden="true">
                                 <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header d-flex align-items-center">
                                             <h5 class="modal-title">Contact</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
                                             <div class="add-contact-box">
@@ -545,13 +643,15 @@ new class extends Component {
                                                         <div class="row">
                                                             <div class="col-md-6">
                                                                 <div class="mb-3 contact-name">
-                                                                    <input type="text" id="c-name" class="form-control" placeholder="Name" />
+                                                                    <input type="text" id="c-name" class="form-control"
+                                                                           placeholder="Name"/>
                                                                     <span class="validation-text text-danger"></span>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
                                                                 <div class="mb-3 contact-email">
-                                                                    <input type="text" id="c-email" class="form-control" placeholder="Email" />
+                                                                    <input type="text" id="c-email" class="form-control"
+                                                                           placeholder="Email"/>
                                                                     <span class="validation-text text-danger"></span>
                                                                 </div>
                                                             </div>
@@ -559,12 +659,15 @@ new class extends Component {
                                                         <div class="row">
                                                             <div class="col-md-6">
                                                                 <div class="mb-3 contact-occupation">
-                                                                    <input type="text" id="c-occupation" class="form-control" placeholder="Occupation" />
+                                                                    <input type="text" id="c-occupation"
+                                                                           class="form-control"
+                                                                           placeholder="Occupation"/>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
                                                                 <div class="mb-3 contact-phone">
-                                                                    <input type="text" id="c-phone" class="form-control" placeholder="Phone" />
+                                                                    <input type="text" id="c-phone" class="form-control"
+                                                                           placeholder="Phone"/>
                                                                     <span class="validation-text text-danger"></span>
                                                                 </div>
                                                             </div>
@@ -572,7 +675,8 @@ new class extends Component {
                                                         <div class="row">
                                                             <div class="col-md-12">
                                                                 <div class="mb-3 contact-location">
-                                                                    <input type="text" id="c-location" class="form-control" placeholder="Location" />
+                                                                    <input type="text" id="c-location"
+                                                                           class="form-control" placeholder="Location"/>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -584,7 +688,8 @@ new class extends Component {
                                             <div class="d-flex gap-6 m-0">
                                                 <button id="btn-add" class="btn btn-success">Add</button>
                                                 <button id="btn-edit" class="btn btn-success">Save</button>
-                                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal"> Discard
+                                                <button class="btn bg-danger-subtle text-danger"
+                                                        data-bs-dismiss="modal"> Discard
                                                 </button>
                                             </div>
 
@@ -599,7 +704,7 @@ new class extends Component {
                                         <tr>
                                             <th>
                                                 <div class="form-check text-center">
-                                                    <input type="checkbox" class="form-check-input primary" />
+                                                    <input type="checkbox" class="form-check-input primary"/>
                                                 </div>
                                             </th>
                                             <th>Course</th>
@@ -615,7 +720,7 @@ new class extends Component {
                                         <!-- Row 1 -->
                                         <tr>
                                             <td class="text-center">
-                                                <input type="checkbox" class="form-check-input" />
+                                                <input type="checkbox" class="form-check-input"/>
                                             </td>
                                             <td><span class="badge bg-light text-dark">Web Development</span></td>
                                             <td>
@@ -628,8 +733,8 @@ new class extends Component {
                                             <td><span class="badge bg-warning text-dark">M-Pesa</span></td>
                                             <td><span class="badge bg-success-subtle text-success">Completed</span></td>
                                             <td>2024-05-01</td>
-                                            <td>  <a href="#"
-                                                     class="btn btn-info btn-sm">
+                                            <td><a href="#"
+                                                   class="btn btn-info btn-sm">
                                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                 </a>
                                             </td>
@@ -637,7 +742,7 @@ new class extends Component {
                                         <!-- Row 2 -->
                                         <tr>
                                             <td class="text-center">
-                                                <input type="checkbox" class="form-check-input" />
+                                                <input type="checkbox" class="form-check-input"/>
                                             </td>
                                             <td><span class="badge bg-light text-dark">Graphic Design</span></td>
                                             <td>
@@ -650,8 +755,8 @@ new class extends Component {
                                             <td><span class="badge bg-primary-subtle text-primary">Bank</span></td>
                                             <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
                                             <td>2024-05-03</td>
-                                            <td>  <a href="#"
-                                                     class="btn btn-info btn-sm">
+                                            <td><a href="#"
+                                                   class="btn btn-info btn-sm">
                                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                 </a>
                                             </td>
@@ -659,7 +764,7 @@ new class extends Component {
                                         <!-- Row 3 -->
                                         <tr>
                                             <td class="text-center">
-                                                <input type="checkbox" class="form-check-input" />
+                                                <input type="checkbox" class="form-check-input"/>
                                             </td>
                                             <td><span class="badge bg-light text-dark">Data Science</span></td>
                                             <td>
@@ -672,8 +777,8 @@ new class extends Component {
                                             <td><span class="badge bg-info-subtle text-info">Cash</span></td>
                                             <td><span class="badge bg-success-subtle text-success">Completed</span></td>
                                             <td>2024-05-05</td>
-                                            <td>  <a href="#"
-                                                     class="btn btn-info btn-sm">
+                                            <td><a href="#"
+                                                   class="btn btn-info btn-sm">
                                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                 </a>
                                             </td>
@@ -681,7 +786,7 @@ new class extends Component {
                                         <!-- Row 4 -->
                                         <tr>
                                             <td class="text-center">
-                                                <input type="checkbox" class="form-check-input" />
+                                                <input type="checkbox" class="form-check-input"/>
                                             </td>
                                             <td><span class="badge bg-light text-dark">Cybersecurity</span></td>
                                             <td>
@@ -694,8 +799,8 @@ new class extends Component {
                                             <td><span class="badge bg-danger-subtle text-danger">Card</span></td>
                                             <td><span class="badge bg-danger-subtle text-danger">Failed</span></td>
                                             <td>2024-05-07</td>
-                                            <td>  <a href="#"
-                                                     class="btn btn-info btn-sm">
+                                            <td><a href="#"
+                                                   class="btn btn-info btn-sm">
                                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                                 </a>
                                             </td>
@@ -710,9 +815,105 @@ new class extends Component {
             </div>
         </div>
     </div>
+    <!-- ========= Manage Modules   (NEW) ===================================== -->
+    <div class="modal fade" id="manageModulesModal" tabindex="-1" role="dialog"
+         aria-labelledby="manageModulesModalTitle" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header d-flex align-items-center">
+                    <h5 class="modal-title" id="manageModulesModalTitle">Manage Modules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
 
+                <!-- ⚙️ Livewire form -->
+                <form wire:submit.prevent="addModulesToIntake">
+                    <div class="modal-body">
+                        <div class="row gy-3">
+                            <!-- SINGLE‑SELECT ▸ Courses -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold mb-1">Course</label>
+                                <select wire:change="$dispatch('update-course', { courseId: $event.target.value })"
+                                        class="form-select" wire:model="selectedCourse">
+                                    <option value="">— choose course —</option>
+                                    @foreach($courses as $course)
+                                        <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- MODULE TABLE (fills once a course is picked) -->
+                            <div class="col-12" wire:key="modules-table">
+                                <table class="table search-table align-middle text-nowrap">
+                                    <thead class="header-item">
+                                    <tr>
+                                        <th>
+                                            <div class="form-check text-center">
+                                                <input wire:click="$dispatch('select-all-courses')" type="checkbox"
+                                                       class="form-check-input"
+                                                       wire:model="selectAll"/>
+                                            </div>
+                                        </th>
+                                        <th>Title</th>
+                                        <th>Code</th>
+                                        <th>Description</th>
+                                    </tr>
+                                    </thead>
+
+                                    <tbody>
+                                    @forelse ($modules as $module)
+                                        <tr wire:key="module-{{ $module->id }}">
+                                            <td>
+                                                <div class="form-check text-center">
+                                                    <input wire:click="$dispatch('update-selected-course')"
+                                                           type="checkbox" class="form-check-input"
+                                                           wire:model="selected" value="{{ $module->id }}"/>
+                                                </div>
+                                            </td>
+                                            <td>{{ $module->title }}</td>
+                                            <td>{{ strtoupper($module->code) }}</td>
+                                            <td>{{ \Illuminate\Support\Str::limit($module->description, 60) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Pick a course to see its
+                                                modules
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div class="d-flex gap-3 m-0">
+                            <button type="submit" class="btn btn-success">Add to Intake</button>
+                            <button type="button" class="btn bg-danger-subtle text-danger"
+                                    data-bs-dismiss="modal">Discard
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <!-- ===================================================================== -->
 </div>
+@push('scripts')
+    <script>
+        window.addEventListener('show-course-modal', () => {
+            console.log('test');
+            new bootstrap.Modal(document.getElementById('manageModulesModal')).show();
+        });
 
+        window.addEventListener('hide-course-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('manageModulesModal'))?.hide();
+        });
+    </script>
 
+@endpush
 
 

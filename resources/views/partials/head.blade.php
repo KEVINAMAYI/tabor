@@ -8,9 +8,10 @@
 
 <link rel="stylesheet" href="assets/css/styles.css"/>
 
-<link rel="stylesheet" href="../assets/libs/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+<link rel="stylesheet" href="assets/libs/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
 
 <title>Tabor Training Institute</title>
+
 
 {{--@vite(['resources/css/app.css', 'resources/js/app.js'])--}}
 

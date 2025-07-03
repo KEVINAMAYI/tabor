@@ -57,7 +57,7 @@ class Course extends Model
     {
         return $this->hasManyThrough(
             Student::class,
-            Enrolment::class,
+            Enrollment::class,
             'course_id',  // FK on enrolments
             'id',         // PK on students
             'id',         // PK on courses
