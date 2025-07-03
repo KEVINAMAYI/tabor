@@ -2,6 +2,7 @@
 
 use App\Models\Enrollment;
 use App\Models\Course;
+use App\Models\Intake;
 use App\Models\Student;
 use Livewire\Volt\Component;
 
@@ -10,7 +11,9 @@ new class extends Component {
     public $student;
     public $studentId;
     public $selectedCourseId;
+    public $selectedIntakeId;
     public $courses;
+    public $intakes;
 
 
     public function rules()
@@ -23,11 +26,17 @@ new class extends Component {
 
     public function mount($student_id)
     {
-        $this->student = Student::with('courses')->findOrFail($student_id);
+        $this->student = Student::with([
+            'enrollments.course.modules',
+            'enrollments.intake',
+        ])->findOrFail($student_id);
+
         $this->studentId = $student_id;
         $this->courses = Course::all();
+        $this->intakes = Intake::all();
 
     }
+
 
     public function enroll()
     {
@@ -36,6 +45,8 @@ new class extends Component {
         Enrollment::create([
             'student_id' => $this->studentId,
             'course_id' => $this->selectedCourseId,
+            'intake_id' => $this->selectedIntakeId,
+            'enrolled_at' => now()
         ]);
 
         session()->flash('success', 'Student enrolled successfully.');
@@ -158,53 +169,54 @@ new class extends Component {
 
                 </div>
                 <div class="row">
-                    @foreach($student->courses as $course)
+                    @foreach($student->enrollments as $enrollment)
+                        @php
+                            $course = $enrollment->course;
+                            $modules = $course->modules;
+                            $intake = $enrollment->intake;
+                        @endphp
+
                         <div class="col-lg-4 col-md-6">
                             <div class="card">
                                 <img src="{{ $course->image_url ?? '../assets/images/blog/blog-img5.jpg' }}"
                                      class="card-img-top" alt="course-img"/>
                                 <div class="card-body p-10">
-                                    <!-- Course Name -->
-                                    <h4 class="card-title">{{ $course->name }}</h4>
+                                    <h4 class="card-title">{{ strtoupper($course->name) }}</h4>
 
-                                    <!-- Course Description -->
                                     <p class="card-text">
-                                        {{ $course->description ?? 'No description available.' }}
+                                        {{ strtoupper($course->description) ?? 'No description available.' }}
                                     </p>
 
-                                    <!-- Progress Bar -->
+                                    <!-- Progress bar, attendance, etc. could be derived from $enrollment -->
                                     <div class="col d-flex align-items-left mb-4 justify-content-center">
                                         <div data-label="40%" class="css-bar mb-0 css-bar-warning css-bar-40">
                                         </div>
                                     </div>
 
-                                    <!-- Course Status -->
                                     <div class="d-flex justify-content-between">
                                         <span class="badge bg-warning text-light">In Progress</span>
-                                        <span
-                                            class="text-muted">Last Updated: {{ $course->updated_at->diffForHumans() }}</span>
                                     </div>
                                 </div>
 
-                                <!-- Course Topics List -->
+                                <!-- Modules -->
                                 <ul class="list-group list-group-flush">
-                                    <li class="list-group-item">Introduction to HTML</li>
-                                    <li class="list-group-item">CSS for Styling</li>
-                                    <li class="list-group-item">JavaScript Basics</li>
-                                    <li class="list-group-item">Building Interactive Websites</li>
+                                    @foreach($modules as $module)
+                                        <li class="list-group-item">{{ ucfirst(strtolower($module->title)) }}</li>
+                                    @endforeach
                                 </ul>
 
-                                <!-- Bottom Badges: Attendance & Payment -->
+                                <!-- Bottom Badges -->
                                 <div class="card-body p-10">
                                     <div class="d-flex justify-content-between">
-                                        <span class="badge bg-primary text-light">Attendance: 0%</span>
-                                        <span class="badge bg-success text-light">Payment: Pending</span>
+                                        <span
+                                            class="badge bg-primary text-light">Attendance: {{ $enrollment->attendance ?? '0%' }}</span>
+                                        <span
+                                            class="badge bg-success text-light">Payment: {{ $enrollment->payment_status ?? 'Pending' }}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     @endforeach
-
                 </div>
             </div>
             <div class="tab-pane fade" id="pills-attendance" role="tabpanel" aria-labelledby="pills-attendance-tab"
@@ -439,6 +451,9 @@ new class extends Component {
                                                             <h6 class="user-name mb-0"
                                                                 data-name="Advanced Web Development">Advanced Web
                                                                 Development</h6>
+                                                            <small class="text-muted d-block mb-1">
+                                                                January 2026
+                                                            </small>
                                                             <span class="usr-course-amount fs-3" data-amount="$1,500">$1,500</span>
                                                         </div>
                                                     </div>
@@ -450,7 +465,8 @@ new class extends Component {
                                             <td>
                                                 <span class="usr-location">Payment 1: $500 (Jan 10, 2025)</span><br>
                                                 <span class="usr-location">Payment 2: $500 (Feb 5, 2025)</span><br>
-                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View
+                                                    More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$500">$500</span>
@@ -492,8 +508,10 @@ new class extends Component {
                                                 <span class="usr-email-addr" data-email="$500">$500</span>
                                             </td>
                                             <td>
-                                                <span class="usr-location" data-location="Payment 1: $500 (Nov 5, 2024)">Payment 1: $500 (Nov 5, 2024)</span><br>
-                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
+                                                <span class="usr-location"
+                                                      data-location="Payment 1: $500 (Nov 5, 2024)">Payment 1: $500 (Nov 5, 2024)</span><br>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View
+                                                    More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$500">$500</span>
@@ -537,7 +555,8 @@ new class extends Component {
                                             <td>
                                                 <span class="usr-location"
                                                       data-location="Payment 1: $1,000 (Dec 15, 2024)">Payment 1: $1,000 (Dec 15, 2024)</span><br>
-                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View More</a>
+                                                <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">View
+                                                    More</a>
                                             </td>
                                             <td>
                                                 <span class="usr-ph-no" data-phone="$0">$0</span>
@@ -570,14 +589,14 @@ new class extends Component {
 
                 <!-- Modal Header -->
                 <div class="modal-header d-flex align-items-center">
-                    <h5 class="modal-title">Enroll Student in Course</h5>
+                    <h5 class="modal-title">Enroll Student to a Course</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <!-- Modal Body -->
                 <div class="modal-body">
                     <div>
-                        <label for="course">Select Course</label>
+                        <label for="course" class="mb-1">Select Course</label>
                         <select wire:model="selectedCourseId" class="form-select" id="course">
                             <option value="">-- Choose Course --</option>
                             @foreach($courses as $course)
@@ -589,10 +608,25 @@ new class extends Component {
                         <span class="text-danger">{{ $message }}</span>
                         @enderror
 
-                        <div class="mt-3">
-                            <button wire:click="enroll" class="btn btn-success">Enroll</button>
-                        </div>
                     </div>
+                    <div class="mt-3">
+                        <label for="intake" class="mb-1">Select Intake</label>
+                        <select wire:model="selectedIntakeId" class="form-select" id="intake">
+                            <option value="">-- Choose Intake --</option>
+                            @foreach($intakes as $intake)
+                                <option value="{{ $intake->id }}">{{ $intake->name }}</option>
+                            @endforeach
+                        </select>
+
+                        @error('selectedCourseId')
+                        <span class="text-danger">{{ $message }}</span>
+                        @enderror
+
+                    </div>
+                    <div class="mt-3">
+                        <button wire:click="enroll" class="btn btn-success">Enroll</button>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -621,8 +655,8 @@ new class extends Component {
                             <td>1</td>
                             <td>$500</td>
                             <td>Jan 10, 2025</td>
-                            <td>  <a href="#"
-                                     class="btn btn-warning btn-sm">
+                            <td><a href="#"
+                                   class="btn btn-warning btn-sm">
                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                 </a>
                             </td>
@@ -631,8 +665,8 @@ new class extends Component {
                             <td>2</td>
                             <td>$500</td>
                             <td>Feb 5, 2025</td>
-                            <td>  <a href="#"
-                                     class="btn btn-warning btn-sm">
+                            <td><a href="#"
+                                   class="btn btn-warning btn-sm">
                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                 </a>
                             </td>
@@ -641,8 +675,8 @@ new class extends Component {
                             <td>3</td>
                             <td>$500</td>
                             <td>Mar 1, 2025</td>
-                            <td>  <a href="#"
-                                     class="btn btn-warning btn-sm">
+                            <td><a href="#"
+                                   class="btn btn-warning btn-sm">
                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                 </a>
                             </td>
@@ -651,8 +685,8 @@ new class extends Component {
                             <td>4</td>
                             <td>$500</td>
                             <td>Apr 1, 2025</td>
-                            <td>  <a href="#"
-                                     class="btn btn-warning btn-sm">
+                            <td><a href="#"
+                                   class="btn btn-warning btn-sm">
                                     <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                 </a>
                             </td>

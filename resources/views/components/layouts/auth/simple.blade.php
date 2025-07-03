@@ -28,7 +28,8 @@
                         <div class="col-12 auth-card">
                             <div class="d-flex justify-content-center mb-4">
                                 <a href="../main/index.html" class="text-nowrap">
-                                    <img src="../assets/images/logos/logo-icon.svg" class="dark-logo" alt="Logo-Dark"/>
+                                    <img src="../assets/images/logos/tabor_logo.png" width="145" height="145"
+                                         class="dark-logo" alt="Logo-Dark"/>
                                 </a>
                             </div>
                             <div class="px-10 py-8">{{ $slot }}</div>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Course;
+use App\Models\Student;
 use App\Models\Intake;
 use App\Models\IntakeModule;
 use Livewire\Volt\Component;
@@ -14,8 +15,11 @@ new class extends Component {
     public $intakeId;           // collection of Course
     public $modules = [];      // collection of Module (for the chosen course)
     public $intakeCourses = [];
+    public $intakeStudents = [];
     public $activeCourseModules = [];
     public $activeCourseId;
+    public $activeStudentId;
+    public $activeStudent;
 
     public $selectedCourse = '';  // <select> binding
     public $selected = [];        // row checkboxes
@@ -25,10 +29,13 @@ new class extends Component {
     public function mount($intake_id)
     {
         $this->intakeCourses = IntakeModule::coursesForIntake($intake_id);
+        $this->intakeStudents = Intake::with('students')->findOrFail($intake_id)->students;
         $this->intakeId = $intake_id;
         $this->courses = Course::orderBy('title')->get(['id', 'title']);
         $this->activeCourseId = $this->courses[0]->id;
+        $this->activeStudentId = $this->intakeStudents[0]->id;
         $this->selectCourse($this->activeCourseId);
+        $this->selectStudent($this->activeCourseId);
     }
 
 
@@ -43,6 +50,17 @@ new class extends Component {
     {
         $this->activeCourseId = $courseId;
         $this->activeCourseModules = IntakeModule::getModulesForIntakeCourse($this->intakeId, $courseId);
+    }
+
+
+    public function selectStudent($studentId)
+    {
+        $this->activeStudentId = $studentId;
+        $this->activeStudent = Student::with([
+            'enrollments.course.modules',
+            'enrollments.intake',
+        ])->findOrFail($studentId);
+
     }
 
 
@@ -277,14 +295,15 @@ new class extends Component {
 
                                                                             <div
                                                                                 class="d-flex align-items-center justify-content-start">
-                                                                                <div class="rounded-1 text-bg-light">
+                                                                                <div class="rounded-1 text-bg-light" data-bs-toggle="offcanvas" data-bs-target="#moduleAssessments" aria-controls="moduleAssessments">
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-adobe.svg"
                                                                                         alt="adobe-icon" width="20"
                                                                                         height="20"/>
                                                                                 </div>
+
                                                                                 <div
-                                                                                    class="rounded-1 text-bg-light mx-2">
+                                                                                    class="rounded-1 text-bg-light mx-2" data-bs-toggle="offcanvas" data-bs-target="#moduleMaterial" aria-controls="moduleMaterial" >
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-zip-folder.svg"
                                                                                         alt="zip-icon" width="20"
@@ -336,7 +355,7 @@ new class extends Component {
                                 <li class="list-group-item border-0 p-0 mx-9">
                                     <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
                                        href="javascript:void(0)">
-                                        <i class="ti ti-file-text fs-5"></i>Pening Approval
+                                        <i class="ti ti-file-text fs-5"></i>Pending Approval
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
@@ -398,56 +417,38 @@ new class extends Component {
                                     </div>
                                     <div class="app-chat">
                                         <ul class="chat-users mh-n100" data-simplebar>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user bg-light-subtle"
-                                                   id="chat_user_1" data-user-id="1">
-                            <span class="position-relative">
-                              <img src="../assets/images/profile/user-3.jpg" alt="user-4" width="40" height="40"
-                                   class="rounded-circle">
-                            </span>
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Dr. Bonnie Barstow
-                                                        </h6>
-                                                        <span class="fs-2 text-body-color d-block">barstow@ modernize.com</span>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
-                                                   id="chat_user_2" data-user-id="2">
-                            <span class="position-relative">
-                              <img src="../assets/images/profile/user-5.jpg" alt="user4" width="40" height="40"
-                                   class="rounded-circle">
-                            </span>
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Jonathan Higgins
-                                                        </h6>
-                                                        <span class="fs-2 text-body-color d-block">jonathan_hig@modernize.com</span>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)"
-                                                   class="px-4 py-3 bg-hover-light-black d-flex align-items-center chat-user"
-                                                   id="chat_user_3" data-user-id="3">
-                            <span class="position-relative">
-                              <img src="../assets/images/profile/user-6.jpg" alt="user3" width="40" height="40"
-                                   class="rounded-circle">
-                            </span>
-                                                    <div class="ms-6 d-inline-block w-75">
-                                                        <h6 class="mb-1 fw-semibold chat-title"
-                                                            data-username="James Anderson">Michael Knight
-                                                        </h6>
-                                                        <span class="fs-2 text-body-color d-block">michale-knight@gmail.com</span>
-                                                    </div>
-                                                </a>
-                                            </li>
+                                            @foreach($intakeStudents as $student)
+                                                @php
+                                                    $initial = strtoupper(substr($student->first_name, 0, 1));
+                                                    $colors = ['#FF6B6B', '#6BCB77', '#4D96FF', '#FFB562', '#A66DD4', '#00C1D4'];
+                                                    $bgColor = $colors[$loop->index % count($colors)];
+                                                @endphp
 
+                                                <li>
+                                                    <a href="javascript:void(0)"
+                                                       wire:click="selectStudent({{ $student->id }})"
+                                                       class="px-4 py-3 d-flex align-items-center chat-user
+                                                       {{ $activeStudentId === $student->id ? 'bg-light-subtle' : 'bg-hover-light-black' }}"
+                                                       id="chat_user_{{ $student->id }}"
+                                                       data-user-id="{{ $student->id }}">
+                                                       <span class="position-relative">
+                                                      <div class="rounded-circle d-flex justify-content-center align-items-center"
+                                                      style="background-color: {{ $bgColor }}; width: 40px; height: 40px; color: white; font-weight: bold;">
+                                                      {{ $initial }}
+                                                      </div>
+                                                       </span>
+                                                        <div class="ms-6 d-inline-block w-75">
+                                                            <h6 class="mb-1 fw-semibold chat-title"
+                                                                data-username="{{ $student->first_name.' '.$student->last_name }}">
+                                                                {{ $student->first_name.' '.$student->last_name }}
+                                                            </h6>
+                                                            <span class="fs-2 text-body-color d-block">{{ $student->email }}</span>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            @endforeach
                                         </ul>
+
                                     </div>
                                 </div>
                             </div>
@@ -455,79 +456,65 @@ new class extends Component {
                                 <div class="chat-container h-100 w-100">
                                     <div class="chat-box-inner-part h-100">
                                         <div class="chatting-box app-email-chatting-box">
-                                            <div
-                                                class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
-                                                <h5 class="text-dark mb-0 fs-5">Contact Details</h5>
-                                                <ul class="list-unstyled mb-0 d-flex align-items-center">
-                                                    <li class="d-lg-none d-block">
-                                                        <a class="text-dark back-btn px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
-                                                           href="javascript:void(0)">
-                                                            <i class="ti ti-arrow-left"></i>
-                                                        </a>
-                                                    </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip"
-                                                        data-bs-placement="top" data-bs-title="important">
-                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
-                                                           href="javascript:void(0)">
-                                                            <i class="ti ti-star"></i>
-                                                        </a>
-                                                    </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip"
-                                                        data-bs-placement="top" data-bs-title="Edit">
-                                                        <a class="d-block text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
-                                                           href="javascript:void(0)">
-                                                            <i class="ti ti-pencil"></i>
-                                                        </a>
-                                                    </li>
-                                                    <li class="position-relative" data-bs-toggle="tooltip"
-                                                        data-bs-placement="top" data-bs-title="Delete">
-                                                        <a class="text-dark px-2 fs-5 bg-hover-primary nav-icon-hover position-relative z-index-5"
-                                                           href="javascript:void(0)">
-                                                            <i class="ti ti-trash"></i>
-                                                        </a>
-                                                    </li>
-                                                </ul>
+                                            <div class="p-9 py-3 border-bottom chat-meta-user d-flex align-items-center justify-content-between">
+                                                <h5 class="text-dark mb-0 fs-5">Student Details</h5>
                                             </div>
+
                                             <div class="position-relative overflow-hidden">
                                                 <div class="position-relative">
                                                     <div class="chat-box email-box mh-n100 p-9" data-simplebar="init">
-
-                                                        <div class="chat-list chat active-chat" data-user-id="1">
-                                                            <div
-                                                                class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
-                                                                <div class="d-flex align-items-center gap-3">
-                                                                    <img src="../assets/images/profile/user-3.jpg"
-                                                                         alt="user4" width="72" height="72"
-                                                                         class="rounded-circle">
-                                                                    <div>
-                                                                        <h6 class="fw-semibold fs-4 mb-0">Dr. Bonnie
-                                                                            Barstow </h6>
+                                                        @if($activeStudent)
+                                                            <div class="chat-list chat active-chat" data-user-id="{{ $activeStudent->id }}">
+                                                                <div class="hstack align-items-start mb-7 pb-1 align-items-center justify-content-between">
+                                                                    <div class="d-flex align-items-center gap-3">
+                                                                        {{-- Circle avatar with initial --}}
+                                                                        @php
+                                                                            $initial = strtoupper(substr($activeStudent->first_name, 0, 1));
+                                                                            $colors = ['#FF6B6B', '#6BCB77', '#4D96FF', '#FFB562', '#A66DD4', '#00C1D4'];
+                                                                            $bgColor = $colors[$activeStudent->id % count($colors)];
+                                                                        @endphp
+                                                                        <div class="rounded-circle d-flex justify-content-center align-items-center"
+                                                                             style="background-color: {{ $bgColor }}; width: 72px; height: 72px; color: white; font-weight: bold; font-size: 28px;">
+                                                                            {{ $initial }}
+                                                                        </div>
+                                                                        <div>
+                                                                            <h6 class="fw-semibold fs-4 mb-0">
+                                                                                {{ $activeStudent->first_name }} {{ $activeStudent->last_name }}
+                                                                            </h6>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <div class="row">
-                                                                <div class="col-4 mb-7">
-                                                                    <p class="mb-1 fs-2">Phone number</p>
-                                                                    <h6 class="fw-semibold mb-0">+1 (203) 3458</h6>
-                                                                </div>
-                                                                <div class="col-8 mb-7">
-                                                                    <p class="mb-1 fs-2">Email address</p>
-                                                                    <h6 class="fw-semibold mb-0">
-                                                                        alexandra@modernize.com</h6>
-                                                                </div>
-                                                                <div class="col-12 mb-9">
-                                                                    <p class="mb-1 fs-2">Date of Birth</p>
-                                                                    <h6 class="fw-semibold mb-0">312, Imperical Arc, New
-                                                                        western corner</h6>
-                                                                </div>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-6">
-                                                                <button class="btn btn-primary" fdprocessedid="pk6kl8">
-                                                                    View
-                                                                </button>
-                                                            </div>
-                                                        </div>
 
+                                                                <div class="row">
+                                                                    <div class="col-4 mb-7">
+                                                                        <p class="mb-1 fs-2">Phone number</p>
+                                                                        <h6 class="fw-semibold mb-0">
+                                                                            {{ $activeStudent->phone ?? 'N/A' }}
+                                                                        </h6>
+                                                                    </div>
+                                                                    <div class="col-8 mb-7">
+                                                                        <p class="mb-1 fs-2">Email address</p>
+                                                                        <h6 class="fw-semibold mb-0">
+                                                                            {{ $activeStudent->email ?? 'N/A' }}
+                                                                        </h6>
+                                                                    </div>
+                                                                    <div class="col-12 mb-9">
+                                                                        <p class="mb-1 fs-2">Date of Birth</p>
+                                                                        <h6 class="fw-semibold mb-0">
+                                                                            {{ $activeStudent->dob ? \Carbon\Carbon::parse($activeStudent->dob)->format('d M Y') : 'N/A' }}
+                                                                        </h6>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="d-flex align-items-center gap-6">
+                                                                    <button class="btn btn-primary">View</button>
+                                                                </div>
+                                                            </div>
+                                                        @else
+                                                            <div class="text-center text-muted p-5">
+                                                                <em>Select a student to view details.</em>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -815,6 +802,7 @@ new class extends Component {
             </div>
         </div>
     </div>
+
     <!-- ========= Manage Modules   (NEW) ===================================== -->
     <div class="modal fade" id="manageModulesModal" tabindex="-1" role="dialog"
          aria-labelledby="manageModulesModalTitle" aria-hidden="true" wire:ignore.self>
@@ -901,6 +889,197 @@ new class extends Component {
         </div>
     </div>
     <!-- ===================================================================== -->
+
+    <!-- 3 -->
+    <div style="width: 80vw; max-width: 1000px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleMaterial" aria-labelledby="moduleMaterialLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasExampleLabel">
+                Module Materials
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <table class="table search-table align-middle text-nowrap">
+                <thead class="header-item">
+                <tr>
+                    <th>
+                        <input type="checkbox" class="form-check-input text-center">
+                    </th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Uploaded By</th>
+                    <th>Uploaded On</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="search-items">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input">
+                    </td>
+                    <td>Introduction to OOP - Lecture Notes</td>
+                    <td>PDF</td>
+                    <td>Dr. John Doe</td>
+                    <td>01 Jul 2025</td>
+                    <td>
+                        <div class="action-btn">
+                            <a href="#" class="text-success" title="View/Preview">
+                                <i class="ti ti-eye fs-5"></i>
+                            </a>
+                            <a href="#" class="text-primary ms-2" title="Download">
+                                <i class="ti ti-download fs-5"></i>
+                            </a>
+                            <a href="#" class="text-warning ms-2" title="Edit Metadata">
+                                <i class="ti ti-pencil fs-5"></i>
+                            </a>
+                            <a href="#" class="text-danger ms-2" title="Delete">
+                                <i class="ti ti-trash fs-5"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="search-items">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input">
+                    </td>
+                    <td>Week 1 Tutorial - Video Walkthrough</td>
+                    <td>Video (MP4)</td>
+                    <td>Prof. Alice Smith</td>
+                    <td>30 Jun 2025</td>
+                    <td>
+                        <div class="action-btn">
+                            <a href="#" class="text-success" title="Play Video">
+                                <i class="ti ti-player-play fs-5"></i>
+                            </a>
+                            <a href="#" class="text-primary ms-2" title="Download">
+                                <i class="ti ti-download fs-5"></i>
+                            </a>
+                            <a href="#" class="text-warning ms-2" title="Edit Details">
+                                <i class="ti ti-pencil fs-5"></i>
+                            </a>
+                            <a href="#" class="text-danger ms-2" title="Delete">
+                                <i class="ti ti-trash fs-5"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="search-items">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input">
+                    </td>
+                    <td>Data Structures - Slides</td>
+                    <td>PPT</td>
+                    <td>Dr. Jane Kim</td>
+                    <td>25 Jun 2025</td>
+                    <td>
+                        <div class="action-btn">
+                            <a href="#" class="text-success" title="View Slides">
+                                <i class="ti ti-eye fs-5"></i>
+                            </a>
+                            <a href="#" class="text-primary ms-2" title="Download">
+                                <i class="ti ti-download fs-5"></i>
+                            </a>
+                            <a href="#" class="text-warning ms-2" title="Edit">
+                                <i class="ti ti-pencil fs-5"></i>
+                            </a>
+                            <a href="#" class="text-danger ms-2" title="Delete">
+                                <i class="ti ti-trash fs-5"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4 -->
+    <div style="width: 80vw; max-width: 900px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleAssessments" aria-labelledby="moduleAssessmentsLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="moduleAssessmentsLabel">Module Assessments</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle text-nowrap">
+                    <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Marks</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Assignment 1: Intro to Python</td>
+                        <td>10 Jul 2025</td>
+                        <td>20</td>
+                        <td>Assignment</td>
+                        <td><span class="badge bg-success">Published</span></td>
+                        <td>
+                            <div class="action-btn">
+                                <a href="#" class="text-success" title="View">
+                                    <i class="ti ti-eye fs-5"></i>
+                                </a>
+                                <a href="#" class="text-warning ms-2" title="Edit">
+                                    <i class="ti ti-pencil fs-5"></i>
+                                </a>
+                                <a href="#" class="text-danger ms-2" title="Delete">
+                                    <i class="ti ti-trash fs-5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quiz 1: Basics</td>
+                        <td>15 Jul 2025</td>
+                        <td>10</td>
+                        <td>Quiz</td>
+                        <td><span class="badge bg-secondary">Draft</span></td>
+                        <td>
+                            <div class="action-btn">
+                                <a href="#" class="text-success" title="View">
+                                    <i class="ti ti-eye fs-5"></i>
+                                </a>
+                                <a href="#" class="text-warning ms-2" title="Edit">
+                                    <i class="ti ti-pencil fs-5"></i>
+                                </a>
+                                <a href="#" class="text-danger ms-2" title="Delete">
+                                    <i class="ti ti-trash fs-5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Final Exam</td>
+                        <td>25 Jul 2025</td>
+                        <td>60</td>
+                        <td>Exam</td>
+                        <td><span class="badge bg-success">Published</span></td>
+                        <td>
+                            <div class="action-btn">
+                                <a href="#" class="text-success" title="View">
+                                    <i class="ti ti-eye fs-5"></i>
+                                </a>
+                                <a href="#" class="text-warning ms-2" title="Edit">
+                                    <i class="ti ti-pencil fs-5"></i>
+                                </a>
+                                <a href="#" class="text-danger ms-2" title="Delete">
+                                    <i class="ti ti-trash fs-5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
 </div>
 @push('scripts')
     <script>

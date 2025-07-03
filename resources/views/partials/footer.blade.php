@@ -15,3 +15,4 @@
 <script src="assets/js/dashboards/dashboard3.js"></script>
 
 {{--@fluxScripts--}}
+
