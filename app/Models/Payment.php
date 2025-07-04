@@ -32,7 +32,7 @@ class Payment extends Model
      |------------------------------------------------------------------
      */
 
-    public function enrolment()
+    public function enrollment()
     {
         return $this->belongsTo(Enrollment::class);
     }

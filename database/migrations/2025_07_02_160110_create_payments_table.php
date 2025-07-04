@@ -17,7 +17,6 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->enum('method', ['cash','mpesa','card','bank'])->default('cash');
             $table->string('reference')->nullable();
-            $table->boolean('is_paid')->default(false);
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
