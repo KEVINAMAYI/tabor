@@ -8,7 +8,7 @@
 
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root,
 [data-bs-theme=dark][data-color-theme=Blue_Theme]:root {
-  --bs-primary: #5d87ff;
+  --bs-primary: rgb(255,194,102);
   --bs-primary-rgb: 93, 135, 255;
   --bs-light-primary: rgba(93, 135, 255, 0.1);
   --bs-primary-bg-subtle: rgba(93, 135, 255, 0.1);

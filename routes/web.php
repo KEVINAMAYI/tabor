@@ -17,3 +17,4 @@ Route::middleware(['auth'])->group(function () {
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
+require __DIR__ . '/front-end/index.php';

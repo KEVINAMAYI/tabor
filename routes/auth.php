@@ -6,8 +6,6 @@ use Livewire\Volt\Volt;
 
 Route::middleware('guest')->group(function () {
 
-    Volt::route('/', 'auth.login')->name('home');
-
     Volt::route('login', 'auth.login')
         ->name('login');
 
