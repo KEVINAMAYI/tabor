@@ -40,6 +40,9 @@ new class extends Component {
 
     public function mount()
     {
+        if(!auth()->user()->hasPermissionTo('view-students')) {
+            abort(403, 'Unauthorized action.');
+        }
         $this->classGroups = ClassGroup::with('intake')->latest()->get();
         $this->loadStudents();
     }
@@ -89,6 +92,9 @@ new class extends Component {
                 'user_id' => $user->id,
                 'class_group_id' => $this->class_group_id,
             ]);
+
+            //assign role
+            $user->assignRole('student');
 
             DB::commit();
 
@@ -206,18 +212,21 @@ new class extends Component {
                         class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
 
                         @if (count($selected) > 0)
-                            <div class="action-btn">
-                                <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                    class="delete-multiple bg-danger-subtle btn me-2 text-danger">
-                                    <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
-                                </a>
-                            </div>
+                            @can('delete-students')
+                                <div class="action-btn">
+                                    <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
+                                        class="delete-multiple bg-danger-subtle btn me-2 text-danger">
+                                        <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
+                                    </a>
+                                </div>
+                            @endcan
                         @endif
-
-                        <a href="javascript:void(0)" wire:click="$dispatch('show-student-modal')"
-                            class="btn btn-primary d-flex align-items-center">
-                            <i class="ti ti-users text-white me-1 fs-5"></i> Add Student
-                        </a>
+                        @can('add-students')
+                            <a href="javascript:void(0)" wire:click="$dispatch('show-student-modal')"
+                                class="btn btn-primary d-flex align-items-center">
+                                <i class="ti ti-users text-white me-1 fs-5"></i> Add Student
+                            </a>
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -339,15 +348,19 @@ new class extends Component {
                                                 class="text-primary">
                                                 <i class="ti ti-eye fs-5"></i>
                                             </a>
-                                            <a href="javascript:void(0)"
-                                                wire:click="editStudent({{ $student->id }})" class="text-primary">
-                                                <i class="ti ti-pencil fs-5"></i>
-                                            </a>
-                                            <a href="javascript:void(0)"
-                                                wire:click="deleteStudent({{ $student->id }})"
-                                                class="text-dark ms-2">
-                                                <i class="ti ti-trash fs-5"></i>
-                                            </a>
+                                            @can('edit-students')
+                                                <a href="javascript:void(0)"
+                                                    wire:click="editStudent({{ $student->id }})" class="text-primary">
+                                                    <i class="ti ti-pencil fs-5"></i>
+                                                </a>
+                                            @endcan
+                                            @can('delete-students')
+                                                <a href="javascript:void(0)"
+                                                    wire:click="deleteStudent({{ $student->id }})"
+                                                    class="text-dark ms-2">
+                                                    <i class="ti ti-trash fs-5"></i>
+                                                </a>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
