@@ -39,7 +39,6 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Volt::route('intakes', 'admin.intakes.index')->name('intakes.index');
     Volt::route('intakes/view/{intake_id}', 'admin.intakes.view')->name('intakes.view');
 
-
     //Routes to manage roles
     Volt::route('roles', 'admin.roles.index')->name('roles.index');
 });
