@@ -10,6 +10,8 @@
 
 <link rel="stylesheet" href="assets/libs/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
 
+<link rel="stylesheet" href="../assets/libs/owl.carousel/dist/assets/owl.carousel.min.css" />
+
 <title>Tabor Training Institute</title>
 
 
