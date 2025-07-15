@@ -7,39 +7,39 @@ use Livewire\Volt\Volt;
 Route::middleware(['auth'])->prefix('admin')->group(function () {
 
     // Route to manage students
-    Volt::route('students', 'students.index')->name('students.index');
-    Volt::route('students/view/{student_id}', 'students.view')->name('students.view');
+    Volt::route('students', 'admin.students.index')->name('students.index');
+    Volt::route('students/view/{student_id}', 'admin.students.view')->name('students.view');
 
     // Route to manage courses
-    Volt::route('courses', 'courses.index')->name('courses.index');
-    Volt::route('courses/view/{course_id}', 'courses.view')->name('courses.view');
+    Volt::route('courses', 'admin.courses.index')->name('courses.index');
+    Volt::route('courses/view/{course_id}', 'admin.courses.view')->name('courses.view');
 
     // Route to manage lecturers
-    Volt::route('lecturers', 'lecturers.index')->name('lecturers.index');
+    Volt::route('lecturers', 'admin.lecturers.index')->name('lecturers.index');
 
     // Route to manage financial records
-    Volt::route('payments', 'payments.index')->name('payments.index');
+    Volt::route('payments', 'admin.payments.index')->name('payments.index');
 
     // Route to manage exams
-    Volt::route('exams', 'exams.index')->name('exams.index');
+    Volt::route('exams', 'admin.exams.index')->name('exams.index');
 
     // Route to manage attendance
-    Volt::route('attendance', 'attendance.index')->name('attendance.index');
+    Volt::route('attendance', 'admin.attendance.index')->name('attendance.index');
 
     // Route to manage class_groups
-    Volt::route('class_groups', 'class_groups.index')->name('class_groups.index');
+    Volt::route('class_groups', 'admin.class_groups.index')->name('class_groups.index');
 
     // Route to manage reports resources
-    Volt::route('reports', 'reports.index')->name('reports.index');
+    Volt::route('reports', 'admin.reports.index')->name('reports.index');
 
     // Route to manage payments
-    Volt::route('payments', 'payments.index')->name('payments.index');
+    Volt::route('payments', 'admin.payments.index')->name('payments.index');
 
     // Route to manage intakes
-    Volt::route('intakes', 'intakes.index')->name('intakes.index');
-    Volt::route('intakes/view/{intake_id}', 'intakes.view')->name('intakes.view');
+    Volt::route('intakes', 'admin.intakes.index')->name('intakes.index');
+    Volt::route('intakes/view/{intake_id}', 'admin.intakes.view')->name('intakes.view');
 
-    // Route to manage settings
-    // Volt::route('settings', 'settings.index')->name('settings.index');
-    Volt::route('roles', 'roles.index')->name('roles.index');
+
+    //Routes to manage roles
+    Volt::route('roles', 'admin.roles.index')->name('roles.index');
 });

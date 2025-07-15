@@ -2,55 +2,77 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void{
-        // Reset cached roles and permissions
+    public function run(): void
+    {
+        // Clear cache
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-
+        // Define all permissions
         $permissions = [
-            // Students module
+
+            // Student-related
             'view-students',
             'add-students',
             'edit-students',
             'delete-students',
 
-            // Roles module
+            // Roles management
             'view-roles',
             'add-roles',
             'edit-roles',
             'delete-roles',
 
-            //courses
+            // Courses
             'view-courses',
             'add-courses',
             'edit-courses',
             'delete-courses',
 
-            //accountant
+            // Accounting
             'manage-money',
+            'view-transactions',
+            'generate-financial-reports',
         ];
 
-        // Create each permission if it doesn’t exist
+        // Create all permissions
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // === Define Roles and Assign Permissions ===
+        // Define specific role-permission mappings
+        $rolePermissions = [
 
-        // Admin - Full Access
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->syncPermissions($permissions);
+            'super-admin' => 'all',
 
+            'admin' => 'all',
+
+            'finance-manager' => [
+                'manage-money',
+                'view-transactions',
+                'generate-financial-reports',
+            ],
+
+            'student' => [
+                'view-courses',
+            ],
+        ];
+
+        // Assign permissions
+        foreach ($rolePermissions as $role => $perms) {
+            $roleInstance = Role::firstOrCreate(['name' => $role]);
+
+            if ($perms === 'all') {
+                $roleInstance->syncPermissions(Permission::all());
+            } else {
+                $roleInstance->syncPermissions($perms);
+            }
+        }
     }
 }
