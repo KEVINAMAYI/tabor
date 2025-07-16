@@ -745,6 +745,7 @@
 <script src="../assets/js/extra-libs/moment/moment.min.js"></script>
 <script src="../assets/libs/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
 <script src="../assets/js/forms/datepicker-init.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @stack('scripts')
 

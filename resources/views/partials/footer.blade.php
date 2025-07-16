@@ -14,6 +14,7 @@
 <script src="assets/libs/apexcharts/dist/apexcharts.min.js"></script>
 <script src="assets/js/dashboards/dashboard3.js"></script>
 <script src="assets/libs/owl.carousel/dist/owl.carousel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {{--@fluxScripts--}}
 

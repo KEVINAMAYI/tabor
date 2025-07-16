@@ -6,6 +6,7 @@ use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
     public $roles = [];
@@ -66,10 +67,22 @@ new class extends Component {
             $this->resetForm();
             $this->loadRoles();
             $this->dispatch('hide-roles-modal');
+
+            LivewireAlert::text('Role added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::error('Error adding role: ' . $th->getMessage());
-            session()->flash('error', 'Failed to add role.');
+
+            LivewireAlert::text('Failed to add role.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -97,10 +110,23 @@ new class extends Component {
             $this->resetForm();
             $this->loadRoles();
             $this->dispatch('hide-roles-modal');
+
+            LivewireAlert::text('Role updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::error('Error updating role: ' . $th->getMessage());
-            session()->flash('error', 'Failed to update role.');
+
+            LivewireAlert::text('Failed to update role.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -114,10 +140,23 @@ new class extends Component {
 
             DB::commit();
             $this->loadRoles();
+
+            LivewireAlert::text('Role deleted successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::error('Error deleting role: ' . $th->getMessage());
-            session()->flash('error', 'Failed to delete role.');
+
+            LivewireAlert::text('Failed to delete role.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -169,7 +208,7 @@ new class extends Component {
                                     <input type="text" wire:model.live="name" class="form-control"
                                            placeholder="Role Name" />
                                     @error('name')
-                                    <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-error">{{ $message }}</small>
                                     @enderror
                                 </div>
                                 <div class="mb-3">
@@ -196,7 +235,7 @@ new class extends Component {
                                     </div>
 
                                     @error('selectedPermissions')
-                                    <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-error">{{ $message }}</small>
                                     @enderror
                                 </div>
                             </div>
@@ -205,7 +244,7 @@ new class extends Component {
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
-                                    <button type="button" class="btn bg-danger-subtle text-danger"
+                                    <button type="button" class="btn bg-error-subtle text-error"
                                             data-bs-dismiss="modal">Discard
                                     </button>
                                 </div>
@@ -238,7 +277,7 @@ new class extends Component {
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteRole({{ $role->id }})"
                                            class="text-dark ms-2">
-                                            <i class="ti ti-trash fs-5 text-danger"></i>
+                                            <i class="ti ti-trash fs-5 text-error"></i>
                                         </a>
                                     </div>
                                 </td>

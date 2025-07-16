@@ -6,6 +6,7 @@ use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -77,10 +78,21 @@ new class extends Component {
             $this->loadPayments();
             $this->dispatch('hide-payment-modal');
 
+            LivewireAlert::text('Payment added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error adding payment: ' . $e->getMessage());
-            session()->flash('error', 'Failed to add payment. Please try again.');
+
+            LivewireAlert::text('Failed to add payment.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -121,10 +133,22 @@ new class extends Component {
             $this->loadPayments();
             $this->dispatch('hide-payment-modal');
 
+            LivewireAlert::text('Payment updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update payment: ' . $e->getMessage());
-            session()->flash('error', 'Update failed. Please try again.');
+
+            LivewireAlert::text('Failed to update payment.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -132,6 +156,12 @@ new class extends Component {
     {
         Payment::findOrFail($id)->delete();
         $this->loadPayments();
+
+        LivewireAlert::text('Payment deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     public function deleteSelected()
@@ -140,6 +170,12 @@ new class extends Component {
         $this->selected = [];
         $this->selectAll = false;
         $this->loadPayments();
+
+        LivewireAlert::text('Payments deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     private function resetForm()

@@ -7,6 +7,7 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component
 {
@@ -92,10 +93,22 @@ new class extends Component
             $this->resetForm();
             $this->loadLecturers();
             $this->dispatch('hide-lecturer-modal');
+
+            LivewireAlert::text('Lecturer added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error adding lecturer: '.$e->getMessage());
-            session()->flash('error', 'Failed to add lecturer.');
+
+            LivewireAlert::text('Failed to add Lecturer.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -149,10 +162,23 @@ new class extends Component
             $this->resetForm();
             $this->loadLecturers();
             $this->dispatch('hide-lecturer-modal');
+
+            LivewireAlert::text('Lecturer updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update lecturer: '.$e->getMessage());
-            session()->flash('error', 'Update failed.');
+
+            LivewireAlert::text('Failed to updated Lecturer.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -170,6 +196,12 @@ new class extends Component
 
         $this->selected = []; $this->selectAll = false;
         $this->loadLecturers();
+
+        LivewireAlert::text('Lecturers deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     /* ------------- Utilities ------------- */

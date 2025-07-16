@@ -5,6 +5,7 @@ use App\Models\Intake;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -64,9 +65,20 @@ new class extends Component {
             $this->loadClassGroups();
             $this->dispatch('hide-class-group-modal');
 
+            LivewireAlert::text('Class group added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error adding class group: ' . $e->getMessage());
-            session()->flash('error', 'Failed to add class group.');
+
+            LivewireAlert::text('Failed to add Class group.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -97,9 +109,20 @@ new class extends Component {
             $this->loadClassGroups();
             $this->dispatch('hide-class-group-modal');
 
+            LivewireAlert::text('Class group added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error updating class group: ' . $e->getMessage());
-            session()->flash('error', 'Update failed.');
+
+            LivewireAlert::text('Failed to add Class group.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -107,6 +130,12 @@ new class extends Component {
     {
         ClassGroup::findOrFail($id)->delete();
         $this->loadClassGroups();
+
+        LivewireAlert::text('Class group deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     public function deleteSelected()
@@ -115,6 +144,12 @@ new class extends Component {
         $this->selected = [];
         $this->selectAll = false;
         $this->loadClassGroups();
+
+        LivewireAlert::text('Class groups added successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     private function resetForm()
