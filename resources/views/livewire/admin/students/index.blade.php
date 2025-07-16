@@ -8,6 +8,7 @@ use Livewire\Volt\Component;
 use App\Models\ClassGroup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
     public $students = [];
@@ -40,7 +41,7 @@ new class extends Component {
 
     public function mount()
     {
-        if(!auth()->user()->hasPermissionTo('view-students')) {
+        if (!auth()->user()->hasPermissionTo('view-students')) {
             abort(403, 'Unauthorized action.');
         }
         $this->classGroups = ClassGroup::with('intake')->latest()->get();
@@ -101,10 +102,22 @@ new class extends Component {
             $this->resetForm();
             $this->loadStudents();
             $this->dispatch('hide-student-modal');
+
+            LivewireAlert::text('Student added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error adding student: ' . $e->getMessage());
-            session()->flash('error', 'Failed to add student. Please try again.');
+
+            LivewireAlert::text('Failed to add student.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -151,10 +164,22 @@ new class extends Component {
             $this->resetForm();
             $this->loadStudents();
             $this->dispatch('hide-student-modal');
+
+            LivewireAlert::text('Student updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Failed to update student: ' . $e->getMessage());
-            session()->flash('error', 'Update failed. Please try again.');
+
+            LivewireAlert::text('Failed to update student.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -163,6 +188,12 @@ new class extends Component {
         $student = Student::findOrFail($id);
         $student->user()->delete();
         $this->loadStudents();
+
+        LivewireAlert::text('Student deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     public function deleteSelected()
@@ -175,6 +206,12 @@ new class extends Component {
         $this->selected = [];
         $this->selectAll = false;
         $this->loadStudents();
+
+        LivewireAlert::text('Students deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     private function resetForm()
@@ -187,7 +224,7 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->students->pluck('id')->map(fn($id) => (string) $id)->toArray();
+            $this->selected = $this->students->pluck('id')->map(fn($id) => (string)$id)->toArray();
         } else {
             $this->selected = [];
         }
@@ -202,8 +239,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                class="form-control product-search ps-5" placeholder="Search Students..."
-                                wire:model="search" />
+                                   class="form-control product-search ps-5" placeholder="Search Students..."
+                                   wire:model="search"/>
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -215,7 +252,7 @@ new class extends Component {
                             @can('delete-students')
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                        class="delete-multiple bg-danger-subtle btn me-2 text-danger">
+                                       class="delete-multiple bg-error-subtle btn me-2 text-error">
                                         <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                                     </a>
                                 </div>
@@ -223,7 +260,7 @@ new class extends Component {
                         @endif
                         @can('add-students')
                             <a href="javascript:void(0)" wire:click="$dispatch('show-student-modal')"
-                                class="btn btn-primary d-flex align-items-center">
+                               class="btn btn-primary d-flex align-items-center">
                                 <i class="ti ti-users text-white me-1 fs-5"></i> Add Student
                             </a>
                         @endcan
@@ -233,29 +270,29 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="addStudentModal" tabindex="-1" role="dialog"
-                aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
+                 aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
                 <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Add Student</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                    aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateStudent' : 'addStudent' }}">
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <input type="text" wire:model.live="first_name" class="form-control"
-                                            placeholder="First Name" />
+                                               placeholder="First Name"/>
                                         @error('first_name')
-                                            <small class="text-danger">{{ $message }}</small>
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <input type="text" wire:model.live="last_name" class="form-control"
-                                            placeholder="Last Name" />
+                                               placeholder="Last Name"/>
                                         @error('last_name')
-                                            <small class="text-danger">{{ $message }}</small>
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-12 mb-3">
@@ -268,27 +305,27 @@ new class extends Component {
                                             @endforeach
                                         </select>
                                         @error('class_group_id')
-                                            <small class="text-danger">{{ $message }}</small>
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <input type="email" wire:model.live="email" class="form-control"
-                                            placeholder="Email" /> @error('email')
-                                            <small class="text-danger">{{ $message }}</small>
+                                               placeholder="Email"/> @error('email')
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <input type="text" wire:model.live="phone_number" class="form-control"
-                                            placeholder="Phone Number" />
+                                               placeholder="Phone Number"/>
                                         @error('phone_number')
-                                            <small class="text-danger">{{ $message }}</small>
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-12 mb-3">
                                         <input type="date" wire:model.live="date_of_birth" class="form-control"
-                                            placeholder="Date of Birth" />
+                                               placeholder="Date of Birth"/>
                                         @error('date_of_birth')
-                                            <small class="text-danger">{{ $message }}</small>
+                                        <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
                                 </div>
@@ -298,8 +335,8 @@ new class extends Component {
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
-                                    <button type="button" class="btn bg-danger-subtle text-danger"
-                                        data-bs-dismiss="modal">Discard
+                                    <button type="button" class="btn bg-error-subtle text-error"
+                                            data-bs-dismiss="modal">Discard
                                     </button>
                                 </div>
                             </div>
@@ -312,63 +349,63 @@ new class extends Component {
                 <div class="table-responsive">
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                            <tr>
-                                <th>
-                                    <div class="form-check text-center">
-                                        <input wire:click="$dispatch('select-all')" type="checkbox"
-                                            class="form-check-input" wire:model="selectAll" />
-                                    </div>
-                                </th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Email</th>
-                                <th>Phone Number</th>
-                                <th>Class Group</th>
-                                <th>Action</th>
-                            </tr>
+                        <tr>
+                            <th>
+                                <div class="form-check text-center">
+                                    <input wire:click="$dispatch('select-all')" type="checkbox"
+                                           class="form-check-input" wire:model="selectAll"/>
+                                </div>
+                            </th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Class Group</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
 
-                            @forelse ($students as $student)
-                                <tr class="search-items">
-                                    <td>
-                                        <div class="form-check text-center">
-                                            <input type="checkbox" class="form-check-input" wire:model="selected"
-                                                value="{{ (string) $student->id }}" />
-                                        </div>
-                                    </td>
-                                    <td>{{ $student->first_name }}</td>
-                                    <td>{{ $student->last_name }}</td>
-                                    <td>{{ $student->email }}</td>
-                                    <td>{{ $student->phone }}</td>
-                                    <td>{{ $student->classGroup->name ?? 'N/A' }}</td>
-                                    <td>
-                                        <div class="action-btn">
-                                            <a href="{{ route('students.view', $student->id) }}"
-                                                class="text-primary">
-                                                <i class="ti ti-eye fs-5"></i>
+                        @forelse ($students as $student)
+                            <tr class="search-items">
+                                <td>
+                                    <div class="form-check text-center">
+                                        <input type="checkbox" class="form-check-input" wire:model="selected"
+                                               value="{{ (string) $student->id }}"/>
+                                    </div>
+                                </td>
+                                <td>{{ $student->first_name }}</td>
+                                <td>{{ $student->last_name }}</td>
+                                <td>{{ $student->email }}</td>
+                                <td>{{ $student->phone }}</td>
+                                <td>{{ $student->classGroup->name ?? 'N/A' }}</td>
+                                <td>
+                                    <div class="action-btn">
+                                        <a href="{{ route('students.view', $student->id) }}"
+                                           class="text-primary">
+                                            <i class="ti ti-eye fs-5"></i>
+                                        </a>
+                                        @can('edit-students')
+                                            <a href="javascript:void(0)"
+                                               wire:click="editStudent({{ $student->id }})" class="text-primary">
+                                                <i class="ti ti-pencil fs-5"></i>
                                             </a>
-                                            @can('edit-students')
-                                                <a href="javascript:void(0)"
-                                                    wire:click="editStudent({{ $student->id }})" class="text-primary">
-                                                    <i class="ti ti-pencil fs-5"></i>
-                                                </a>
-                                            @endcan
-                                            @can('delete-students')
-                                                <a href="javascript:void(0)"
-                                                    wire:click="deleteStudent({{ $student->id }})"
-                                                    class="text-dark ms-2">
-                                                    <i class="ti ti-trash fs-5"></i>
-                                                </a>
-                                            @endcan
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No students found.</td>
-                                </tr>
-                            @endforelse
+                                        @endcan
+                                        @can('delete-students')
+                                            <a href="javascript:void(0)"
+                                               wire:click="deleteStudent({{ $student->id }})"
+                                               class="text-dark ms-2">
+                                                <i class="ti ti-trash fs-5"></i>
+                                            </a>
+                                        @endcan
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center">No students found.</td>
+                            </tr>
+                        @endforelse
                         </tbody>
                     </table>
                 </div>

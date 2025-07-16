@@ -5,6 +5,7 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component
 {
@@ -54,9 +55,22 @@ new class extends Component
             $this->resetForm();
             $this->loadIntakes();
             $this->dispatch('hide-intake-modal');
+
+            LivewireAlert::text('Lecturer added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error adding intake: '.$e->getMessage());
-            session()->flash('error', 'Failed to add intake.');
+
+            LivewireAlert::text('Failed to add Intake.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -87,9 +101,21 @@ new class extends Component
             $this->resetForm();
             $this->loadIntakes();
             $this->dispatch('hide-intake-modal');
+
+            LivewireAlert::text('Intake updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Failed to update intake: '.$e->getMessage());
-            session()->flash('error', 'Update failed. Please try again.');
+
+            LivewireAlert::text('Failed to update Intake.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -98,6 +124,12 @@ new class extends Component
     {
         Intake::findOrFail($id)->delete();
         $this->loadIntakes();
+
+        LivewireAlert::text('Intake deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     public function deleteSelected()
@@ -105,6 +137,12 @@ new class extends Component
         Intake::whereIn('id', $this->selected)->delete();
         $this->selected = [];  $this->selectAll = false;
         $this->loadIntakes();
+
+        LivewireAlert::text('Intakes deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     /* ───────── Helpers ─────────────────────────────── */

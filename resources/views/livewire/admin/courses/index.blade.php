@@ -4,6 +4,7 @@ use App\Models\Course;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
     public $courses = [];
@@ -68,9 +69,21 @@ new class extends Component {
             $this->resetForm();
             $this->loadCourses();
             $this->dispatch('hide-course-modal');
+
+            LivewireAlert::text('Course added successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error adding course: ' . $e->getMessage());
-            session()->flash('error', 'Failed to add course.');
+
+            LivewireAlert::text('Failed to add Course.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -102,9 +115,22 @@ new class extends Component {
             $this->resetForm();
             $this->loadCourses();
             $this->dispatch('hide-course-modal');
+
+            LivewireAlert::text('Course updated successfully.!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error updating course: ' . $e->getMessage());
-            session()->flash('error', 'Update failed.');
+
+            LivewireAlert::text('Failed to update Course.!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -112,6 +138,12 @@ new class extends Component {
     {
         Course::findOrFail($id)->delete();
         $this->loadCourses();
+
+        LivewireAlert::text('Course deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     public function deleteSelected()
@@ -120,6 +152,12 @@ new class extends Component {
         $this->selected = [];
         $this->selectAll = false;
         $this->loadCourses();
+
+        LivewireAlert::text('Courses deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 
     private function resetForm()
