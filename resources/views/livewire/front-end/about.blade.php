@@ -5,8 +5,40 @@ namespace App\Livewire;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 
-new #[Layout('components.layouts.app.frontend')] class extends Component
-{} ?>
+new #[Layout('components.layouts.app.frontend')] class extends Component {
+} ?>
+
+@push('styles')
+    <style>
+        .accreditation-section {
+            background-color: #f9f9f9;
+        }
+
+        .partner-card {
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #eee;
+        }
+
+        .partner-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.07);
+            border-color: #f79020;
+        }
+
+        .icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-light-orange {
+            background-color: #f79020;
+        }
+    </style>
+@endpush
 
 <div class="main-wrapper overflow-hidden">
     <!-- ------------------------------------- -->
@@ -28,7 +60,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                 <div class="col-lg-6">
                     <p class="fs-4 mb-0 text-muted lh-lg">
                         Established as Kenya's premier TVET institution,
-                        we bridge the gap between education and employment through quality training and global opportunities.
+                        we bridge the gap between education and employment through quality training and global
+                        opportunities.
                     </p>
                 </div>
             </div>
@@ -48,9 +81,13 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                     <div class="card">
                         <div class="card-body wizard-content">
                             <p class="fs-4 mb-sm-4 mb-3 text-muted">
-                                "Tabor" represents transformation and elevation - much like the biblical Mount Tabor where transformation occurred. Our institution embodies this spirit by transforming lives through education and elevating careers through practical skills training.
+                                "Tabor" represents transformation and elevation - much like the biblical Mount Tabor
+                                where transformation occurred. Our institution embodies this spirit by transforming
+                                lives through education and elevating careers through practical skills training.
                                 <br><br>
-                                 We believe in the power of technical and vocational education to create sustainable livelihoods and contribute to national development. Every student who walks through our doors is on a journey of professional transformation.
+                                We believe in the power of technical and vocational education to create sustainable
+                                livelihoods and contribute to national development. Every student who walks through our
+                                doors is on a journey of professional transformation.
                             </p>
                             <div class="d-flex justify-content-lg-start justify-content-center gap-3">
                                 <a class="btn btn-primary" href="../main/authentication-register.html">
@@ -74,7 +111,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div class="mb-4">
                             <a href="#practical-learning" class="text-dark text-decoration-none">
                                 <h5 class="fs-4 fw-semibold mb-1 link-primary">Practical Learning</h5>
-                                <p class="mb-0 text-muted fs-6">Hands-on training that mirrors real workplace environments.</p>
+                                <p class="mb-0 text-muted fs-6">Hands-on training that mirrors real workplace
+                                    environments.</p>
                             </a>
                         </div>
 
@@ -82,7 +120,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div class="mb-4">
                             <a href="#industry-relevance" class="text-dark text-decoration-none">
                                 <h5 class="fs-4 fw-semibold mb-1 link-primary">Industry Relevance</h5>
-                                <p class="mb-0 text-muted fs-6">Curriculum designed with input from leading employers.</p>
+                                <p class="mb-0 text-muted fs-6">Curriculum designed with input from leading
+                                    employers.</p>
                             </a>
                         </div>
 
@@ -90,7 +129,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div>
                             <a href="#global-standards" class="text-dark text-decoration-none">
                                 <h5 class="fs-4 fw-semibold mb-1 link-primary">Global Standards</h5>
-                                <p class="mb-0 text-muted fs-6">Training that meets international certification requirements.</p>
+                                <p class="mb-0 text-muted fs-6">Training that meets international certification
+                                    requirements.</p>
                             </a>
                         </div>
 
@@ -107,79 +147,80 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
     <!-- ------------------------------------- -->
     <!-- Accreditation & Partners Start -->
     <!-- ------------------------------------- -->
-    <section class="pt-5 pt-md-14 pt-lg-11 pb-9 pb-lg-5 pb-lg-12 border-bottom">
+    <section class="pt-7 pt-md-14 pt-lg-11 pb-9 pb-lg-12 border-bottom accreditation-section">
         <div class="container-fluid">
-            <h2 class="fs-15 fw-bolder text-center mb-3">
+            <h2 class="fs-8 fw-bold text-center mb-3 text-dark">
                 Accreditation & Partners
             </h2>
-            <p class="text-center text-muted mb-7 mb-md-5">
+            <p class="text-center text-muted mb-5 fs-5">
                 Recognized by leading institutions and regulatory bodies
             </p>
 
             <div class="row g-4">
-                <!-- TVETA -->
+                <!-- Item Template -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-primary-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="mdi:school-outline" class="text-primary fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="mdi:school-outline" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">TVETA</h4>
-                        <p class="text-muted mb-0">Technical and Vocational Education and Training Authority</p>
+                        <h5 class="fw-semibold text-dark mb-1">TVETA</h5>
+                        <p class="text-muted fs-3 mb-0">Technical and Vocational Education and Training Authority</p>
                     </div>
                 </div>
 
-                <!-- NITA -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-danger-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="fluent:certificate-24-regular" class="text-danger fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="fluent:certificate-24-regular" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">NITA</h4>
-                        <p class="text-muted mb-0">National Industrial Training Authority</p>
+                        <h5 class="fw-semibold text-dark mb-1">NITA</h5>
+                        <p class="text-muted fs-3 mb-0">National Industrial Training Authority</p>
                     </div>
                 </div>
 
-                <!-- German Embassy -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-success-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="emojione:flag-for-germany" class="fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="emojione:flag-for-germany" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">German Embassy</h4>
-                        <p class="text-muted mb-0">International collaboration and recognition</p>
+                        <h5 class="fw-semibold text-dark mb-1">German Embassy</h5>
+                        <p class="text-muted fs-3 mb-0">International collaboration and recognition</p>
                     </div>
                 </div>
 
-                <!-- Maritime Training Center -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-info-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="mdi:anchor" class="text-info fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="mdi:anchor" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">Maritime Training Center</h4>
-                        <p class="text-muted mb-0">Certified training for seafarers and maritime professionals</p>
+                        <h5 class="fw-semibold text-dark mb-1">Maritime Training Center</h5>
+                        <p class="text-muted fs-3 mb-0">Certified training for seafarers and maritime professionals</p>
                     </div>
                 </div>
 
-                <!-- Healthcare Consortium -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-warning-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="healthicons:health-worker-outline" class="text-warning fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="healthicons:health-worker-outline" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">Healthcare Consortium</h4>
-                        <p class="text-muted mb-0">Advancing medical training & certifications</p>
+                        <h5 class="fw-semibold text-dark mb-1">Healthcare Consortium</h5>
+                        <p class="text-muted fs-3 mb-0">Advancing medical training & certifications</p>
                     </div>
                 </div>
 
-                <!-- Hospitality Guild -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="card bg-light-subtle p-5 d-flex flex-column gap-3 align-items-start rounded h-100">
-                        <div class="bg-white round-48 hstack justify-content-center rounded process-shadow">
-                            <iconify-icon icon="mdi:silverware-fork-knife" class="text-secondary fs-4"></iconify-icon>
+                    <div
+                        class="partner-card bg-white shadow-sm rounded-4 p-5 h-100 d-flex flex-column justify-content-start align-items-start">
+                        <div class="icon-wrapper bg-light-orange text-white mb-4">
+                            <iconify-icon icon="mdi:silverware-fork-knife" class="fs-7"></iconify-icon>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">Hospitality Guild</h4>
-                        <p class="text-muted mb-0">Hospitality standards and professional development</p>
+                        <h5 class="fw-semibold text-dark mb-1">Hospitality Guild</h5>
+                        <p class="text-muted fs-3 mb-0">Hospitality standards and professional development</p>
                     </div>
                 </div>
             </div>
@@ -188,9 +229,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
     <!-- ------------------------------------- -->
     <!-- Accreditation & Partners End -->
     <!-- ------------------------------------- -->
-
-
-
 
 
     <!-- ------------------------------------- -->
@@ -395,10 +433,12 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
             <div class="row justify-content-center">
                 <div class="col-lg-9 text-center">
                     <a href="../main/frontend-landingpage.html">
-                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png" alt="logo" >
+                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png"
+                             alt="logo">
                     </a>
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
-                        Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
+                        Join thousands of successful graduates who have transformed their careers with Tabor Training
+                        Institute..
                     </h4>
                     <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
                         Register

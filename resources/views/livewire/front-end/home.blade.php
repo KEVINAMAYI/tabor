@@ -8,6 +8,192 @@ use Livewire\Attributes\Layout;
 new #[Layout('components.layouts.app.frontend')] class extends Component {
 } ?>
 
+@push('styles')
+    <style>
+        .count-section {
+            background: #f9f9f9;
+            color: #0E2F44;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .count-title {
+            font-weight: 700;
+            font-size: 2.25rem;
+            line-height: 1.3;
+        }
+
+        .count-title .highlight {
+            color: #f79020;
+        }
+
+        .count-subtitle {
+            font-size: 1.125rem;
+            color: #555;
+            max-width: 400px;
+        }
+
+        .btn-request-callback {
+            display: inline-block;
+            font-size: 1.125rem;
+            font-weight: 700;
+            padding-bottom: 6px;
+            border-bottom: 3px solid #f79020;
+            color: #f79020;
+            text-decoration: none;
+            transition: color 0.3s, border-color 0.3s;
+        }
+
+        .btn-request-callback:hover {
+            color: #d86e07;
+            border-color: #d86e07;
+        }
+
+        .count-card {
+            background: #fff;
+            padding: 1rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            transition: box-shadow 0.3s;
+        }
+
+        .count-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon {
+            font-size: 1.5rem;
+        }
+
+        .icon-warning {
+            background-color: #fff3e0;
+            color: #f79020;
+        }
+
+        .icon-success {
+            background-color: #e6f4ea;
+            color: #4caf50;
+        }
+
+        .icon-info {
+            background-color: #e0f0ff;
+            color: #2196f3;
+        }
+
+        .icon-primary {
+            background-color: #dbeeff;
+            color: #0e2f44;
+        }
+
+        .count-card h4 {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #0E2F44;
+        }
+
+        .count-card p {
+            color: #666;
+            font-size: 1.125rem;
+            margin-bottom: 0;
+        }
+
+        /* Background and typography */
+        .bg-light-gray {
+            background-color: #f9f9f9 !important;
+        }
+
+        .tabs-section {
+            font-family: 'Poppins', sans-serif;
+            color: #0E2F44;
+        }
+
+        /* Tabs styling */
+        .tabs-pills .nav-link {
+            border-radius: 12px;
+            color: #0e2f44;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tabs-pills .nav-link .icon-accent {
+            color: #f79020;
+            font-size: 1.25rem;
+        }
+
+        .tabs-pills .nav-link.active,
+        .tabs-pills .nav-link:hover {
+            background-color: #0a2540 !important;
+            color: white !important;
+            box-shadow: 0 6px 15px rgba(247, 144, 32, 0.4);
+        }
+
+        /* Tab content styling */
+        .image-wrapper {
+            background-color: #f0f6ff;
+        }
+
+        .shadow-soft {
+            box-shadow: 0 8px 20px rgba(14, 47, 68, 0.08);
+        }
+
+        .rounded-24 {
+            border-radius: 24px !important;
+        }
+
+        .content-wrapper h2.accent-color {
+            color: #f79020;
+        }
+
+        .content-wrapper p {
+            color: #555555;
+            line-height: 1.6;
+        }
+
+        .btn-shadow {
+            box-shadow: 0 4px 15px rgba(247, 144, 32, 0.4);
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-shadow:hover {
+            background-color: #d86e07;
+            box-shadow: 0 6px 18px rgba(216, 110, 7, 0.6);
+            border-color: #d86e07;
+        }
+
+        /* List styles */
+        .list-group-numbered .list-group-item {
+            font-weight: 500;
+            color: #0e2f44;
+            background: transparent;
+            border-radius: 6px;
+        }
+
+        .list-group-numbered .list-group-item:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+
+    </style>
+@endpush
 <div class="main-wrapper overflow-hidden">
     <!-- ------------------------------------- -->
     <!-- banner Start -->
@@ -42,74 +228,59 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
     <!-- Count Start -->
     <!-- ------------------------------------- -->
-    <section class="pt-7 pt-md-14 pt-lg-11 pb-7 pb-lg-5">
+    <section class="count-section py-7 py-md-14 py-lg-11">
         <div class="container-fluid">
-            <div class="row justify-content-between">
+            <div class="row justify-content-between align-items-center">
+                <!-- Left Text -->
                 <div class="col-lg-5 mb-5 mb-lg-0">
-                    <h2 class="fs-15 fw-bolder mb-4">
-                        Over 5,000 students and counting.
+                    <h2 class="count-title mb-4">
+                        Over <span class="highlight">5,000</span> students and counting.
                     </h2>
-                    <p class="fs-5 text-muted mb-4">
-                        Join Kenya's leading Technical and Vocational Education Training institute with global placement
-                        opportunities
+                    <p class="count-subtitle mb-4">
+                        Join Kenya's leading Technical and Vocational Education Training institute with global placement opportunities.
                     </p>
-                    <a href="javascript:void(0)" class="fs-4 fw-bolder pb-2 border-dark border-2 border-bottom">
+                    <a href="javascript:void(0)" class="btn-request-callback">
                         Request a Callback
                     </a>
                 </div>
+
+                <!-- Right Stats -->
                 <div class="col-lg-6">
-                    <div class="row">
-                        <div class="col-md-6 mb-7 mb-lg-5">
-                            <div class="d-flex flex-column align-items-start gap-3">
-                                <div class="bg-danger-subtle rounded-2 round-48 hstack justify-content-center">
-                                    <iconify-icon icon="mdi:account-group" class="fs-4 text-warning"></iconify-icon>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="count-card">
+                                <div class="icon-wrapper icon-warning">
+                                    <iconify-icon icon="mdi:account-group" class="icon"></iconify-icon>
                                 </div>
-                                <h4 class="fw-bolder mb-0">
-                                    Students
-                                </h4>
-                                <p class="fs-4 text-muted mb-0">
-                                    2500+ Students enrolled.
-                                </p>
+                                <h4>Students</h4>
+                                <p>2500+ Students enrolled.</p>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-7 mb-lg-5">
-                            <div class="d-flex flex-column align-items-start gap-3">
-                                <div class="bg-danger-subtle rounded-2 round-48 hstack justify-content-center">
-                                    <iconify-icon icon="mdi:book-open-page-variant"
-                                                  class="fs-4 text-success"></iconify-icon>
+                        <div class="col-md-6">
+                            <div class="count-card">
+                                <div class="icon-wrapper icon-success">
+                                    <iconify-icon icon="mdi:book-open-page-variant" class="icon"></iconify-icon>
                                 </div>
-                                <h4 class="fw-bolder mb-0">
-                                    Courses
-                                </h4>
-                                <p class="fs-4 text-muted mb-0">
-                                    25+ Active Courses.
-                                </p>
+                                <h4>Courses</h4>
+                                <p>25+ Active Courses.</p>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-7 mb-lg-5">
-                            <div class="d-flex flex-column align-items-start gap-3">
-                                <div class="bg-primary-subtle rounded-2 round-48 hstack justify-content-center">
-                                    <iconify-icon icon="mdi:certificate-outline" class="fs-4 text-info"></iconify-icon>
+                        <div class="col-md-6">
+                            <div class="count-card">
+                                <div class="icon-wrapper icon-info">
+                                    <iconify-icon icon="mdi:certificate-outline" class="icon"></iconify-icon>
                                 </div>
-                                <h4 class="fw-bolder mb-0">
-                                    Certifications
-                                </h4>
-                                <p class="fs-4 text-muted mb-0">
-                                    1800+ Certifications Issued.
-                                </p>
+                                <h4>Certifications</h4>
+                                <p>1800+ Certifications Issued.</p>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-7 mb-lg-5">
-                            <div class="d-flex flex-column align-items-start gap-3">
-                                <div class="bg-info-subtle rounded-2 round-48 hstack justify-content-center">
-                                    <iconify-icon icon="mdi:earth" class="fs-4 text-primary"></iconify-icon>
+                        <div class="col-md-6">
+                            <div class="count-card">
+                                <div class="icon-wrapper icon-primary">
+                                    <iconify-icon icon="mdi:earth" class="icon"></iconify-icon>
                                 </div>
-                                <h4 class="fw-bolder mb-0">
-                                    Partners
-                                </h4>
-                                <p class="fs-4 text-muted mb-0">
-                                    15+ Global Partners.
-                                </p>
+                                <h4>Partners</h4>
+                                <p>15+ Global Partners.</p>
                             </div>
                         </div>
                     </div>
@@ -121,123 +292,109 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- Count End -->
     <!-- ------------------------------------- -->
 
+
     <!-- ------------------------------------- -->
     <!-- Tabs Start -->
     <!-- ------------------------------------- -->
-    <section class="py-7 py-md-14 py-lg-11 bg-light-gray">
+    <section class="tabs-section py-7 py-md-14 py-lg-11 bg-light-gray">
         <div class="container-fluid">
+
             <ul class="nav nav-pills tabs-pills justify-content-between gap-3" id="pills-tab" role="tablist">
                 <li class="nav-item flex-grow-1" role="presentation">
-                    <button class="nav-link active fs-4 fw-semibold px-4 py-6 tabs-shadow" id="pills-mission-tab"
+                    <button class="nav-link active fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-mission-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-mission" type="button" role="tab"
                             aria-controls="pills-mission" aria-selected="true">
-                        <iconify-icon icon="mdi:target" class="fs-7 me-2"></iconify-icon>
+                        <iconify-icon icon="mdi:target" class="fs-6 me-2 icon-accent"></iconify-icon>
                         Mission
                     </button>
                 </li>
                 <li class="nav-item flex-grow-1" role="presentation">
-                    <button class="nav-link fs-4 fw-semibold px-4 py-6 tabs-shadow" id="pills-vision-tab"
+                    <button class="nav-link fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-vision-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-vision" type="button" role="tab"
                             aria-controls="pills-vision" aria-selected="false">
-                        <iconify-icon icon="mdi:eye-outline" class="fs-7 me-2"></iconify-icon>
+                        <iconify-icon icon="mdi:eye-outline" class="fs-6 me-2 icon-accent"></iconify-icon>
                         Vision
                     </button>
                 </li>
                 <li class="nav-item flex-grow-1" role="presentation">
-                    <button class="nav-link fs-4 fw-semibold px-4 py-6 tabs-shadow" id="pills-values-tab"
+                    <button class="nav-link fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-values-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-values" type="button" role="tab"
                             aria-controls="pills-values" aria-selected="false">
-                        <iconify-icon icon="mdi:handshake-outline" class="fs-7 me-2"></iconify-icon>
+                        <iconify-icon icon="mdi:handshake-outline" class="fs-6 me-2 icon-accent"></iconify-icon>
                         Core Values
                     </button>
                 </li>
             </ul>
+
             <div class="tab-content mt-7 mt-lg-12 pb-lg-9" id="myTabContent">
-                <div class="tab-pane fade show active" id="pills-mission" role="tabpanel" aria-labelledby="team-tab"
-                     tabindex="0">
-                    <div class="row gap-lg-0 gap-7">
+
+                <!-- Mission Tab -->
+                <div class="tab-pane fade show active" id="pills-mission" role="tabpanel" aria-labelledby="pills-mission-tab" tabindex="0">
+                    <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
-                            <div class="bg-primary-subtle rounded-24 p-13">
-                                <img src="../assets/images/frontend-pages/mission.jpg" alt="icon" class="w-100">
+                            <div class="image-wrapper rounded-24 shadow-soft p-4">
+                                <img src="../assets/images/frontend-pages/mission.jpg" alt="Our Mission" class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <div
-                                class="d-flex flex-column h-100 justify-content-center align-items-start ps-lg-7 ms-lg-8">
-                                <h2 class="fs-10 fw-bolder mb-0">Our Mission</h2>
-                                <div class=" my-4 w-100" id="">
-                                    <div class="border-0 border-bottom">
-                                        <div class="px-0 fs-4">
-                                            To provide quality, relevant, and innovative technical and vocational
-                                            education and training that meets industry standards and global market
-                                            demands.
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="content-wrapper ps-lg-7 ms-lg-8">
+                                <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
+                                <p class="fs-5 text-muted mb-5">
+                                    To provide quality, relevant, and innovative technical and vocational education and training that meets industry standards and global market demands.
+                                </p>
                                 <a href="javascript:void(0)">
-                                    <button class="btn btn-primary px-9 py-6">Learn More</button>
+                                    <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
                                 </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="pills-vision" role="tabpanel" aria-labelledby="payments-tab"
-                     tabindex="0">
-                    <div class="row gap-lg-0 gap-7">
+
+                <!-- Vision Tab -->
+                <div class="tab-pane fade" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab" tabindex="0">
+                    <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
-                            <div class="bg-primary-subtle rounded-24 p-13">
-                                <img src="../assets/images/frontend-pages/vision-tabor.jpg" alt="icon" class="w-100">
+                            <div class="image-wrapper rounded-24 shadow-soft p-4">
+                                <img src="../assets/images/frontend-pages/vision-tabor.jpg" alt="Our Vision" class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <div
-                                class="d-flex flex-column h-100 justify-content-center align-items-start ps-lg-7 ms-lg-8">
-                                <h2 class="fs-10 fw-bolder mb-0">Our Vision</h2>
-                                <div class=" my-4 w-100" id="">
-                                    <div class="border-0 border-bottom">
-                                        <div class="px-0 fs-4">
-                                            To be the leading TVET institution in East Africa, producing globally
-                                            competitive graduates who contribute to sustainable development.
-                                        </div>
-                                    </div>
-                                    <a href="javascript:void(0)">
-                                        <button class="btn btn-primary px-9 py-6">Learn More</button>
-                                    </a>
-                                </div>
+                            <div class="content-wrapper ps-lg-7 ms-lg-8">
+                                <h2 class="fs-5 fw-bold mb-3 accent-color">Our Vision</h2>
+                                <p class="fs-5 text-muted mb-5">
+                                    To be the leading TVET institution in East Africa, producing globally competitive graduates who contribute to sustainable development.
+                                </p>
+                                <a href="javascript:void(0)">
+                                    <button class="btn btn-primary px-7 py-3 btn-shadow">Learn More</button>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="pills-values" role="tabpanel" aria-labelledby="embedding-tab"
-                     tabindex="0">
-                    <div class="row gap-lg-0 gap-7">
+
+                <!-- Core Values Tab -->
+                <div class="tab-pane fade" id="pills-values" role="tabpanel" aria-labelledby="pills-values-tab" tabindex="0">
+                    <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
-                            <div class="bg-primary-subtle rounded-24 p-13">
-                                <img src="../assets/images/frontend-pages/hero-students.jpg" alt="icon" class="w-100">
+                            <div class="image-wrapper rounded-24 shadow-soft p-4">
+                                <img src="../assets/images/frontend-pages/hero-students.jpg" alt="Our Core Values" class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <div
-                                class="d-flex flex-column h-100 justify-content-center align-items-start ps-lg-7 ms-lg-8">
-                                <h2 class="fs-10 fw-bolder mb-0">Our Core Values</h2>
-                                <div class=" my-4 w-100" id="">
-                                    <div class="border-0 border-bottom">
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <h4 class="card-title mb-3">Core Values</h4>
-                                                <ol class="list-group list-group-numbered">
-                                                    <li class="list-group-item m-0">Excellence in Education</li>
-                                                    <li class="list-group-item m-0">Innovation & Creativity</li>
-                                                    <li class="list-group-item m-0">Integrity & Accountability</li>
-                                                    <li class="list-group-item m-0">Global Competitiveness</li>
-                                                </ol>
-                                            </div>
-                                        </div>
-
+                            <div class="content-wrapper ps-lg-7 ms-lg-8">
+                                <h2 class="fs-5 fw-bold mb-3 accent-color">Our Core Values</h2>
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body p-4">
+                                        <ol class="list-group list-group-numbered fs-5">
+                                            <li class="list-group-item border-0 px-0 py-2">Excellence in Education</li>
+                                            <li class="list-group-item border-0 px-0 py-2">Innovation & Creativity</li>
+                                            <li class="list-group-item border-0 px-0 py-2">Integrity & Accountability</li>
+                                            <li class="list-group-item border-0 px-0 py-2">Global Competitiveness</li>
+                                        </ol>
                                     </div>
                                 </div>
-                                <a href="javascript:void(0)">
-                                    <button class="btn btn-primary px-9 py-6">Learn More</button>
+                                <a href="javascript:void(0)" class="mt-5 d-inline-block">
+                                    <button class="btn btn-primary px-7 py-3 btn-shadow">Learn More</button>
                                 </a>
                             </div>
                         </div>
@@ -485,33 +642,49 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 <li class="mt-3 d-flex justify-content-between align-items-start m-0">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-semibold text-dark fs-5">Online Learning</div>
-                                        <div class="text-muted fs-6">Interactive digital courses with virtual labs and simulations</div>
+                                        <div class="text-muted fs-6">Interactive digital courses with virtual labs and
+                                            simulations
+                                        </div>
                                     </div>
-                                    <span class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">✓</span>
+                                    <span
+                                        class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center"
+                                        style="width: 28px; height: 28px;">✓</span>
                                 </li>
 
                                 <li class="mt-3 d-flex justify-content-between align-items-start m-0">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-semibold text-dark fs-5">In-Person Training</div>
-                                        <div class="text-muted fs-6">Hands-on practical training in state-of-the-art facilities</div>
+                                        <div class="text-muted fs-6">Hands-on practical training in state-of-the-art
+                                            facilities
+                                        </div>
                                     </div>
-                                    <span class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">✓</span>
+                                    <span
+                                        class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center"
+                                        style="width: 28px; height: 28px;">✓</span>
                                 </li>
 
                                 <li class="mt-3 d-flex justify-content-between align-items-start m-0">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-semibold text-dark fs-5">Blended Learning</div>
-                                        <div class="text-muted fs-6">Combination of online theory and practical workshops</div>
+                                        <div class="text-muted fs-6">Combination of online theory and practical
+                                            workshops
+                                        </div>
                                     </div>
-                                    <span class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">✓</span>
+                                    <span
+                                        class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center"
+                                        style="width: 28px; height: 28px;">✓</span>
                                 </li>
 
                                 <li class="mt-3 d-flex justify-content-between align-items-start m-0">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-semibold text-dark fs-5">Global Placement</div>
-                                        <div class="text-muted fs-6">International job placement assistance and career support</div>
+                                        <div class="text-muted fs-6">International job placement assistance and career
+                                            support
+                                        </div>
                                     </div>
-                                    <span class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">✓</span>
+                                    <span
+                                        class="badge bg-success rounded-circle fs-6 d-flex align-items-center justify-content-center"
+                                        style="width: 28px; height: 28px;">✓</span>
                                 </li>
 
                             </ol>
@@ -565,10 +738,12 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             <div class="row justify-content-center">
                 <div class="col-lg-9 text-center">
                     <a href="../main/frontend-landingpage.html">
-                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png" alt="logo" >
+                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png"
+                             alt="logo">
                     </a>
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
-                        Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
+                        Join thousands of successful graduates who have transformed their careers with Tabor Training
+                        Institute..
                     </h4>
                     <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
                         Register
