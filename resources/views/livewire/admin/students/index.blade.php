@@ -103,9 +103,9 @@ new class extends Component {
                 'address' => $this->address,
                 'country' => $this->country,
                 'highest_level_of_education' => $this->highest_level_of_education,
-                'id_url' => $this->id_url ? $this->id_url->store('students/ids') : null,
-                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates') : null,
-                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size') : null,
+                'id_url' => $this->id_url ? $this->id_url->store('students/ids', 'public') : null,
+                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates', 'public') : null,
+                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size', 'public') : null,
                 'user_id' => $user->id,
             ]);
 
@@ -187,9 +187,9 @@ new class extends Component {
                 'address' => $this->address,
                 'country' => $this->country,
                 'highest_level_of_education' => $this->highest_level_of_education,
-                'id_url' => $this->id_url ? $this->id_url->store('students/ids') : $student->id_url,
-                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates') : $student->kcse_certificate,
-                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size') : $student->passport_size_url,
+                'id_url' => $this->id_url ? $this->id_url->store('students/ids', 'public') : $student->id_url,
+                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates', 'public') : $student->kcse_certificate,
+                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size', 'public') : $student->passport_size_url,
             ]);
 
             DB::commit();
