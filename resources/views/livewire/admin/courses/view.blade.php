@@ -334,15 +334,15 @@ new class extends Component {
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <input type="text" wire:model.live="title" class="form-control"
+                                <input type="text" wire:model="title" class="form-control"
                                        placeholder="Module Title"/>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <input type="text" wire:model.live="code" class="form-control"
+                                <input type="text" wire:model="code" class="form-control"
                                        placeholder="Module Code"/>
                             </div>
                             <div class="col-md-12 mb-3">
-                                        <textarea wire:model.live="description" class="form-control"
+                                        <textarea wire:model="description" class="form-control"
                                                   placeholder="Module Description" rows="4"></textarea>
                             </div>
                         </div>

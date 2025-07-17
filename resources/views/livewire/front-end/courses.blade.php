@@ -2,10 +2,22 @@
 
 namespace App\Livewire;
 
+use App\Models\Course;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 
 new #[Layout('components.layouts.app.frontend')] class extends Component {
+
+    public $courses = [];
+    public $courseCount;
+
+    public function mount()
+    {
+        $this->courses = Course::latest()->get();
+        $this->courseCount = $this->courses->count();
+
+    }
+
 } ?>
 
 @push('styles')
@@ -26,7 +38,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
         }
 
         .custom-course-tabs .nav-link.active {
-            background-color: #f79020 !important;  /* Match Apply Now */
+            background-color: #f79020 !important; /* Match Apply Now */
             color: #fff !important;
             font-weight: 600 !important;
             border-color: #f79020 !important;
@@ -94,10 +106,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                     <div class="d-flex gap-9">
                                         <div class="d-flex gap-2">
                                             <i class="ti ti-book fs-5 text-dark"></i>
-                                            <p class="mb-0 fs-2 fw-semibold text-dark">40 Courses</p>
+                                            <p class="mb-0 fs-2 fw-semibold text-dark">{{ $courseCount }} Courses</p>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -115,622 +128,104 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             </div>
             <div class="row">
 
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="../main/frontend-blogdetailpage.html" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-1.jpg" alt="blog image"
-                                 class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="../main/frontend-blogdetailpage.html" class="fs-5 fw-bolder">
-                                    Food Production Culinary Arts
-                                </a>
-                                <p>Comprehensive culinary training covering food preparation,
-                                    kitchen management, and international cuisine techniques.
-                                </p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2  d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock"
-                                                      class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 8 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Blended Learning</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline"
-                                                      class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 5</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline"
-                                                      class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: TVET Level 5 Diploma</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview"
-                                           role="tab">
-                                            <span>Overview</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details" role="tab">
-                                            <span>Details</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview" role="tabpanel">
-                                        <div class="row">
+                <!-- Course 1 -->
+                @foreach ($courses as $course)
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card rounded-3 overflow-hidden h-100">
+                            <a href="#" class="position-relative">
+                                <img
+                                    src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                                    alt="{{ $course->title }}"
+                                    class="w-100 img-fluid"
+                                />
+                            </a>
+                            <div class="mt-7 px-7 pb-7 h-100">
+                                <div class="d-flex gap-3 flex-column h-100 justify-content-between">
+                                    <a href="#" class="fs-5 fw-bolder">{{ $course->title }}</a>
+                                    <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
+
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2 d-flex align-items-start gap-2">
+                                            <iconify-icon icon="mdi:calendar-clock"
+                                                          class="text-primary fs-4 mt-1"></iconify-icon>
+                                            <span
+                                                class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
+                                        </li>
+                                        <li class="mb-2 d-flex align-items-start gap-2">
+                                            <iconify-icon icon="mdi:laptop"
+                                                          class="text-success fs-4 mt-1"></iconify-icon>
+                                            <span
+                                                class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
+                                        </li>
+                                        <li class="mb-2 d-flex align-items-start gap-2">
+                                            <iconify-icon icon="mdi:school-outline"
+                                                          class="text-warning fs-4 mt-1"></iconify-icon>
+                                            <span class="text-dark fs-3">Level: {{ $course->level ?? 'N/A' }}</span>
+                                        </li>
+                                        <li class="d-flex align-items-start gap-2">
+                                            <iconify-icon icon="mdi:certificate-outline"
+                                                          class="text-info fs-4 mt-1"></iconify-icon>
+                                            <span
+                                                class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
+                                        </li>
+                                    </ul>
+
+                                    <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" data-bs-toggle="tab"
+                                               href="#overview-{{ $course->id }}" role="tab"><span>Overview</span></a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-bs-toggle="tab" href="#details-{{ $course->id }}"
+                                               role="tab"><span>Details</span></a>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content mt-2">
+                                        <div class="tab-pane active p-3" id="overview-{{ $course->id }}"
+                                             role="tabpanel">
                                             <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                            <ul class="list-unstyled">
-                                                <li class="mb-2 d-flex gap-2">
-                                                    <span class="text-primary">•</span>
-                                                    <span>Professional kitchen training</span>
-                                                </li>
-                                                <li class="mb-2 d-flex gap-2">
-                                                    <span class="text-primary">•</span>
-                                                    <span>International cuisine</span>
-                                                </li>
-                                                <li class="mb-2 d-flex gap-2">
-                                                    <span class="text-primary">•</span>
-                                                    <span>Food safety certification</span>
-                                                </li>
-                                                <li class="d-flex gap-2">
-                                                    <span class="text-primary">•</span>
-                                                    <span>Industry attachment</span>
-                                                </li>
-                                            </ul>
+                                            @if (!empty($course->modules))
+                                                <ul class="list-unstyled">
+                                                    @foreach ($course->modules as $module)
+                                                        <li class="mb-2 d-flex gap-2"><span
+                                                                class="text-primary">•</span><span>{{ $module->title }}</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                <p>{{ $course->description }}</p>
+                                            @endif
                                         </div>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details" role="tabpanel">
-                                        <div class="row">
+                                        <div class="tab-pane p-3" id="details-{{ $course->id }}" role="tabpanel">
                                             <h5 class="fw-bold mb-3">Course Details:</h5>
                                             <ul class="list-unstyled">
                                                 <li class="mb-2 d-flex gap-2">
-                                                    <strong>Fee:</strong>
-                                                    <span>KES 85,000</span>
+                                                    <strong>Fee:</strong><span>KES {{ number_format($course->price, 2) }}</span>
                                                 </li>
-                                                <li class="mb-2 d-flex gap-2">
-                                                    <strong>Next Intake:</strong>
-                                                    <span>March 2025</span>
+                                                <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span>
                                                 </li>
                                                 <li class="d-flex gap-2">
-                                                    <strong>Prerequisites:</strong>
-                                                    <span>KCSE C- or equivalent</span>
+                                                    <strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span>
                                                 </li>
                                             </ul>
                                         </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="../main/authentication-register.html">
-                                        Apply Now
-                                    </a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="javascript:void(0)">
-                                        Download Brochure
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Course 1 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-2.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Hospitality & Hotel Management</a>
-                                <p>Training in guest services, hotel operations, event planning, and front office procedures.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 12 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: On-Campus</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 6</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Diploma in Hospitality</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview1" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details1" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview1" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Hotel internship</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Event planning basics</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Customer service training</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Front office skills</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details1" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 110,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C or above</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                    <div>
+                                        <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
+                                        @if($course->brochure_url)
+                                            <a href="{{ asset('storage/' . $course->brochure_url) }}" class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
+                                                <i class="ti ti-download me-1"></i> Download Brochure
+                                            </a>
+                                        @endif
 
-                <!-- Course 2 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-2.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Hospitality & Hotel Management</a>
-                                <p>Training in guest services, hotel operations, event planning, and front office procedures.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 12 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: On-Campus</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 6</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Diploma in Hospitality</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview2" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details2" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview2" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Hotel internship</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Event planning basics</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Customer service training</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Front office skills</span></li>
-                                        </ul>
                                     </div>
-                                    <div class="tab-pane p-3" id="pill-details2" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 110,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C or above</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Course 3 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-3.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Information Technology Essentials</a>
-                                <p>Foundational course in computer systems, software applications, networking, and basic coding.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 6 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Online</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 4</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Certificate in IT</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview3" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details3" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview3" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Basic computer skills</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Networking concepts</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Web design intro</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Hands-on labs</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details3" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 45,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>February 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE D+ or equivalent</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Course 4 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-4.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Early Childhood Development</a>
-                                <p>Focus on child psychology, learning environments, health and nutrition, and classroom management.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 9 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Evening Classes</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 5</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: ECDE Diploma</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview4" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details4" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview4" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Child psychology</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Classroom management</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Creative activities</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Internship in schools</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details4" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 70,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>May 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C- minimum</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Course 5 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-5.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Graphic Design & Multimedia</a>
-                                <p>Learn creative design principles, software tools, branding, and motion graphics for media industries.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 10 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Blended</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 6</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Diploma in Design</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview5" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details5" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview5" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Photoshop & Illustrator</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Brand design</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Motion graphics</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Portfolio project</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details5" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 95,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>April 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C plain or higher</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Course 6 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-6.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Business Management</a>
-                                <p>Gain knowledge in business operations, marketing, finance, and entrepreneurship to manage or start a business.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 12 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Day Classes</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 6</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Diploma in Business</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview6" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details6" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview6" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Financial literacy</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Marketing principles</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Business plan development</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Internship program</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details6" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 88,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>March 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C- minimum</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Course 7 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-7.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Automotive Engineering</a>
-                                <p>Hands-on training in vehicle maintenance, diagnostics, engine systems, and auto electronics.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 18 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Workshop Based</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 6</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: Diploma in Automotive</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview7" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details7" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview7" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Engine diagnostics</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Transmission systems</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Electrical repairs</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Garage internship</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details7" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 130,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>June 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE C plain or above</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Course 8 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="card rounded-3 overflow-hidden">
-                        <a href="#" class="position-relative">
-                            <img src="../assets/images/frontend-pages/blog-8.jpg" alt="blog image" class="w-100 img-fluid">
-                        </a>
-                        <div class="mt-7 px-7 pb-7 h-100">
-                            <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                <a href="#" class="fs-5 fw-bolder">Fashion Design & Tailoring</a>
-                                <p>Master the art of garment creation, textile handling, fashion illustration, and tailoring techniques.</p>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Duration: 9 months</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Mode: Studio Practical</span>
-                                    </li>
-                                    <li class="mb-2 d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Level: Level 5</span>
-                                    </li>
-                                    <li class="d-flex align-items-start gap-2">
-                                        <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                        <span class="text-dark fs-3">Certification: TVET Diploma</span>
-                                    </li>
-                                </ul>
-                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview8" role="tab"><span>Overview</span></a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#pill-details8" role="tab"><span>Details</span></a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content mt-2">
-                                    <div class="tab-pane active p-3" id="pill-overview8" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Sketching & illustration</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Pattern making</span></li>
-                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>Fabric cutting</span></li>
-                                            <li class="d-flex gap-2"><span class="text-primary">•</span><span>Runway project</span></li>
-                                        </ul>
-                                    </div>
-                                    <div class="tab-pane p-3" id="pill-details8" role="tabpanel">
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2 d-flex gap-2"><strong>Fee:</strong><span>KES 78,000</span></li>
-                                            <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>August 2025</span></li>
-                                            <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>KCSE D+ minimum</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                    <a class="btn btn-outline-primary d-block w-100" href="#">Download Brochure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforeach
 
             </div>
         </div>
@@ -747,10 +242,12 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             <div class="row justify-content-center">
                 <div class="col-lg-9 text-center">
                     <a href="../main/frontend-landingpage.html">
-                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png" alt="logo" >
+                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png"
+                             alt="logo">
                     </a>
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
-                        Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
+                        Join thousands of successful graduates who have transformed their careers with Tabor Training
+                        Institute..
                     </h4>
                     <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
                         Register

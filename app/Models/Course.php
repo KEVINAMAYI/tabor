@@ -12,8 +12,16 @@ class Course extends Model
     protected $fillable = [
         'title',
         'description',
-        'price',          // tuition / fee
+        'price',
+        'duration',
+        'mode',
+        'level',
+        'certification',
+        'prerequisites',
+        'image_url',
+        'brochure_url',
     ];
+
 
     /* -----------------------------------------------------------------
      |  Direct relationships
