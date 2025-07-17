@@ -2,12 +2,281 @@
 
 namespace App\Livewire;
 
+use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\Intake;
+use App\Models\Student;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
-new #[Layout('components.layouts.app.frontend')] class extends Component
-{} ?>
+new #[Layout('components.layouts.app.frontend')] class extends Component {
 
+    use WithFileUploads;
+
+    // Declare variables that will be used in the component
+    public $first_name, $last_name, $email, $phone_number, $address, $country, $highest_level_of_education;
+    public $selected_course_id, $selected_intake_id, $id_url, $kcse_certificate, $passport_size_url, $date_of_birth;
+    public $courses = [], $intakes = [];
+    public $terms = false;
+    public $step = 1;
+
+    public function mount()
+    {
+        // Load available courses and intakes
+        $this->courses = Course::all();
+        $this->intakes = Intake::all();
+
+        // Optionally, set default values if needed
+        $this->selected_course_id = $this->courses->first()->id ?? null;
+        $this->selected_intake_id = $this->intakes->first()->id ?? null;
+    }
+
+    public function addStudent()
+    {
+
+        $this->validateStep(1);
+        $this->validateStep(2);
+        $this->validateStep(3);
+        $this->validateStep(4);
+
+        try {
+            DB::beginTransaction();
+
+            // Create the user
+            $user = User::create([
+                'name' => $this->first_name . ' ' . $this->last_name,
+                'email' => $this->email,
+                'password' => Hash::make('password'),
+            ]);
+
+            // Create the student
+            $student = Student::create([
+                'first_name' => $this->first_name,
+                'last_name' => $this->last_name,
+                'email' => $this->email,
+                'phone' => $this->phone_number,
+                'dob' => $this->date_of_birth,
+                'address' => $this->address,
+                'country' => $this->country,
+                'highest_level_of_education' => $this->highest_level_of_education,
+                'id_url' => $this->id_url ? $this->id_url->store('students/ids', 'public') : null,
+                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates', 'public') : null,
+                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size', 'public') : null,
+                'user_id' => $user->id,
+            ]);
+
+            // Assign the 'student' role
+            $user->assignRole('student');
+
+            // Enroll the student in the selected course
+            Enrollment::create([
+                'student_id' => $student->id,
+                'course_id' => $this->selected_course_id,
+                'intake_id' => $this->selected_intake_id,
+                'enrolled_at' => now(),
+            ]);
+
+            DB::commit();
+
+            $this->resetForm();
+
+            LivewireAlert::text('Application submitted successfully!')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error adding student: ' . $e->getMessage());
+
+            LivewireAlert::text('Failed to submit application!')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
+
+    }
+
+
+    public function resetForm()
+    {
+        $this->first_name = '';
+        $this->last_name = '';
+        $this->email = '';
+        $this->phone_number = '';
+        $this->address = '';
+        $this->country = '';
+        $this->highest_level_of_education = '';
+        $this->selected_course_id = null;
+        $this->selected_intake_id = null;
+        $this->id_url = null;
+        $this->kcse_certificate = null;
+        $this->passport_size_url = null;
+        $this->terms = false;
+        $this->step = 1;
+    }
+
+
+    public function validateStep($step)
+    {
+        if ($step === 1) {
+            $this->validate([
+                'selected_course_id' => 'required|exists:courses,id',
+                'selected_intake_id' => 'required|exists:intakes,id',
+            ]);
+        }
+
+        if ($step === 2) {
+            $this->validate([
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'email' => 'required|email|unique:users,email',
+                'phone_number' => 'required|string',
+                'address' => 'required|string',
+                'country' => 'required|string',
+                'date_of_birth' => 'required|date',
+                'highest_level_of_education' => 'required|string',
+            ]);
+        }
+
+        if ($step === 3) {
+            $this->validate([
+                'id_url' => 'nullable|file|mimes:jpg,png,pdf',
+                'kcse_certificate' => 'nullable|file|mimes:jpg,png,pdf',
+                'passport_size_url' => 'nullable|file|mimes:jpg,png,pdf',
+            ]);
+        }
+
+        if ($step === 4) {
+            $this->validate([
+                'terms' => 'accepted',
+            ]);
+        }
+
+    }
+
+
+    public function nextStep()
+    {
+        $this->validateStep($this->step);
+        $this->step++;
+    }
+
+    public function previousStep()
+    {
+        if ($this->step > 1) {
+            $this->step--;
+        }
+    }
+
+
+}
+?>
+@push('styles')
+    <style>
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .step-indicator {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            position: relative;
+        }
+
+        .step-wizard-wrapper {
+            padding: 2rem 0;
+        }
+
+        .step-wizard {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-line {
+            height: 2px;
+            background-color: #ced4da;
+            top: 40%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+
+        .step-circle {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background-color: #dee2e6;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+
+        .btn-info {
+            background-color: #0a2540;
+            border: none;
+        }
+
+        .btn-info:hover {
+            background-color: #0a2540;
+            border: none;
+        }
+
+
+        .step-btn {
+            border: none;
+            background-color: #dee2e6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 300;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .step-btn:hover {
+            border: none;
+            background-color: #dee2e6;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 300;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .step-circle.active {
+            background-color: #004080;
+            color: white;
+            box-shadow: 0 0 0 6px rgba(0, 64, 128, 0.15);
+        }
+
+        .step-label {
+            color: #6c757d;
+        }
+
+    </style>
+@endpush
 <div class="main-wrapper overflow-hidden">
     <!-- ------------------------------------- -->
     <!-- Banner Start -->
@@ -37,145 +306,259 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div class="card-body wizard-content">
                             <h4 class="card-title mb-0">Online Course Application</h4>
 
-                            <form action="#" class="tab-wizard wizard-circle">
+                            <form x-data="{ step: @entangle('step') }" wire:submit.prevent="addStudent"
+                                  class="wizard-form mt-5">
+
+                                <!-- Step Wizard Header -->
+                                <div class="step-wizard-wrapper position-relative mb-5 px-2 px-md-5">
+                                    <div
+                                        class="step-wizard d-flex justify-content-between align-items-center position-relative">
+                                        <div
+                                            class="step-line position-absolute top-35 start-0 w-100 translate-middle-y"></div>
+
+                                        <template x-for="(label, index) in ['Course', 'Info', 'Documents', 'Submit']"
+                                                  :key="index">
+                                            <div class="text-center z-1 flex-fill">
+                                                <div class="step-circle mx-auto"
+                                                     :class="{ 'active': step === index + 1 || step > index + 1 }">
+                                                    <span x-text="index + 1"></span>
+                                                </div>
+                                                <div class="step-label mt-2 small fw-semibold" x-text="label"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
                                 <!-- Step 1: Choose Course -->
-                                <h6>Choose Course</h6>
-                                <section>
-                                    <div class="row">
+                                <div x-show="step === 1" x-cloak class="card shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4 text-primary">Step 1: Choose Course</h5>
+                                    <div class="row g-4">
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Select Course:</label>
-                                                <select class="form-select">
-                                                    <option value="">Select Course</option>
-                                                    <option>Diploma in ICT</option>
-                                                    <option>Certificate in Business Management</option>
-                                                    <option>Diploma in Culinary Arts</option>
-                                                    <option>Certificate in Accounting</option>
-                                                </select>
-                                            </div>
+                                            <label class="form-label">Preferred Intake</label>
+                                            <select wire:model="selected_intake_id" class="form-select">
+                                                <option value="">Select Intake</option>
+                                                @foreach($intakes as $intake)
+                                                    <option value="{{ $intake->id }}">{{ $intake->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('selected_intake_id') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Preferred Intake:</label>
-                                                <select class="form-select">
-                                                    <option>March 2025</option>
-                                                    <option>June 2025</option>
-                                                    <option>September 2025</option>
-                                                </select>
-                                            </div>
+                                            <label class="form-label">Select Course</label>
+                                            <select wire:model="selected_course_id" class="form-select">
+                                                <option value="">Select Course</option>
+                                                @foreach($courses as $course)
+                                                    <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('selected_course_id') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="mb-3">
-                                                <label class="form-label">Preferred Mode of Study:</label>
-                                                <select class="form-select">
-                                                    <option>In Person</option>
-                                                    <option>Hybrid</option>
-                                                    <option>Online</option>
-                                                </select>
-                                            </div>
-                                        </div>
+                                    <div class="mt-4 text-end">
+                                        <button type="button"
+                                                class="btn btn-primary px-4 d-flex align-items-center gap-2"
+                                                wire:click="nextStep">
+                                            <span>Next</span>
+                                            <iconify-icon icon="mdi:arrow-right" class="fs-5"></iconify-icon>
+                                        </button>
                                     </div>
-                                </section>
+                                </div>
 
                                 <!-- Step 2: Personal Info -->
-                                <h6>Personal Information</h6>
-                                <section>
-                                    <div class="row">
+                                <div x-show="step === 2" x-cloak class="card shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4 text-primary">Step 2: Personal Information</h5>
+                                    <div class="row g-4">
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">First Name:</label>
-                                                <input type="text" class="form-control">
-                                            </div>
+                                            <label>First Name</label>
+                                            <input type="text" wire:model="first_name" class="form-control"
+                                                   placeholder="John">
+                                            @error('first_name') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Last Name:</label>
-                                                <input type="text" class="form-control">
-                                            </div>
+                                            <label>Last Name</label>
+                                            <input type="text" wire:model="last_name" class="form-control"
+                                                   placeholder="Doe">
+                                            @error('last_name') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Email:</label>
-                                                <input type="email" class="form-control">
-                                            </div>
+                                            <label>Email</label>
+                                            <input type="email" wire:model="email" class="form-control"
+                                                   placeholder="john@example.com">
+                                            @error('email') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Phone:</label>
-                                                <input type="tel" class="form-control">
-                                            </div>
+                                            <label>Phone Number</label>
+                                            <input type="text" wire:model="phone_number" class="form-control"
+                                                   placeholder="+254 712 345678">
+                                            @error('phone_number') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Address:</label>
-                                                <input type="text" class="form-control">
-                                            </div>
+                                            <label>Address</label>
+                                            <input type="text" wire:model="address" class="form-control"
+                                                   placeholder="123 Street Name">
+                                            @error('address') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Country:</label>
-                                                <input type="text" class="form-control">
-                                            </div>
+                                            <label>Country</label>
+                                            <input type="text" wire:model="country" class="form-control"
+                                                   placeholder="Kenya">
+                                            @error('country') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
-                                        <div class="col-md-12">
-                                            <div class="mb-3">
-                                                <label class="form-label">Highest Level of Education:</label>
-                                                <select class="form-select">
-                                                    <option>KCSE</option>
-                                                    <option>Diploma</option>
-                                                    <option>Degree</option>
-                                                    <option>Other</option>
-                                                </select>
-                                            </div>
+
+                                        <div class="col-md-6">
+                                            <label>Highest Level of Education</label>
+                                            <select wire:model="highest_level_of_education" class="form-select">
+                                                <option value="">-- Select --</option>
+                                                <option>KCSE</option>
+                                                <option>Diploma</option>
+                                                <option>Degree</option>
+                                                <option>Other</option>
+                                            </select>
+                                            @error('highest_level_of_education') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label>Date of Birth</label>
+                                            <input type="date" wire:model="date_of_birth" class="form-control">
+                                            @error('date_of_birth') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
-                                </section>
+
+                                    <div class="mt-4 d-flex justify-content-between">
+                                        <button type="button" class="btn btn-info px-4 d-flex align-items-center gap-2"
+                                                wire:click="previousStep">
+                                            <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+                                            Back
+                                        </button>
+                                        <button type="button" class="btn btn-primary d-flex align-items-center gap-2"
+                                                wire:click="nextStep">
+                                            Next
+                                            <iconify-icon icon="mdi:arrow-right"></iconify-icon>
+                                        </button>
+                                    </div>
+                                </div>
+
 
                                 <!-- Step 3: Upload Documents -->
-                                <h6>Upload Documents</h6>
-                                <section>
-                                    <div class="row">
+                                <div x-show="step === 3" x-cloak class="card shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4 text-primary">Step 3: Upload Documents</h5>
+
+                                    <div class="row g-4">
+                                        <!-- National ID or Passport -->
                                         <div class="col-md-12">
-                                            <div class="mb-3">
-                                                <label class="form-label">National ID / Passport:</label>
-                                                <input type="file" class="form-control">
-                                            </div>
+                                            <label>National ID / Passport</label>
+                                            <input type="file" wire:model.lazy="id_url" class="form-control">
+                                            @error('id_url') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
+                                        <!-- KCSE Certificate -->
                                         <div class="col-md-12">
-                                            <div class="mb-3">
-                                                <label class="form-label">KCSE Certificate:</label>
-                                                <input type="file" class="form-control">
-                                            </div>
+                                            <label>KCSE Certificate</label>
+                                            <input type="file" wire:model.lazy="kcse_certificate" class="form-control">
+                                            @error('kcse_certificate') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
+
+                                        <!-- Passport Size Photo -->
                                         <div class="col-md-12">
-                                            <div class="mb-3">
-                                                <label class="form-label">Passport-size Photo:</label>
-                                                <input type="file" class="form-control">
-                                            </div>
+                                            <label>Passport-size Photo</label>
+                                            <input type="file" wire:model.lazy="passport_size_url" class="form-control">
+                                            @error('passport_size_url') <span
+                                                class="text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
-                                </section>
 
-                                <!-- Step 4: Payment and Submit -->
-                                <h6>Payment & Submit</h6>
-                                <section>
-                                    <div class="mb-4">
-                                        <h5 class="fw-bold">Confirm Your Details</h5>
-                                        <p>Please review all information entered above before selecting a payment option.</p>
+                                    <div class="mt-4 d-flex justify-content-between">
+                                        <button type="button" class="btn btn-info px-4 d-flex align-items-center gap-2"
+                                                wire:click="previousStep" style="background-color: #004080;">
+                                            <iconify-icon icon="mdi:arrow-left" class="fs-5"></iconify-icon>
+                                            Back
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-primary px-4 d-flex align-items-center gap-2"
+                                                wire:click="nextStep">
+                                            Next
+                                            <iconify-icon icon="mdi:arrow-right" class="fs-5"></iconify-icon>
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                                <!-- Step 4: Submit -->
+                                <div x-show="step === 4" x-cloak class="card shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4 text-primary">Step 4: Review & Submit</h5>
+
+                                    <div class="mb-3">
+                                        <h6>Course Information</h6>
+                                        <p>
+                                            <strong>Course:</strong> {{ optional($courses->find($selected_course_id))->title ?? '-' }}
+                                        </p>
+                                        <p>
+                                            <strong>Intake:</strong> {{ optional($intakes->find($selected_intake_id))->name ?? '-' }}
+                                        </p>
                                     </div>
 
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="terms">
+                                    <div class="mb-3">
+                                        <h6>Personal Information</h6>
+                                        <p><strong>Name:</strong> {{ $first_name }} {{ $last_name }}</p>
+                                        <p><strong>Email:</strong> {{ $email }}</p>
+                                        <p><strong>Phone:</strong> {{ $phone_number }}</p>
+                                        <p><strong>Address:</strong> {{ $address }}</p>
+                                        <p><strong>Country:</strong> {{ $country }}</p>
+                                        <p><strong>DOB:</strong> {{ $date_of_birth }}</p>
+                                        <p><strong>Education:</strong> {{ $highest_level_of_education }}</p>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <h6>Uploaded Documents</h6>
+                                        <p>
+                                            <strong>ID/Passport:</strong> {{ $id_url ? $id_url->getClientOriginalName() : 'Not Uploaded' }}
+                                        </p>
+                                        <p><strong>KCSE
+                                                Certificate:</strong> {{ $kcse_certificate ? $kcse_certificate->getClientOriginalName() : 'Not Uploaded' }}
+                                        </p>
+                                        <p><strong>Passport
+                                                Photo:</strong> {{ $passport_size_url ? $passport_size_url->getClientOriginalName() : 'Not Uploaded' }}
+                                        </p>
+                                    </div>
+
+                                    <div class="form-check my-3">
+                                        <input class="form-check-input" type="checkbox" wire:model="terms" id="terms">
                                         <label class="form-check-label" for="terms">
-                                            I agree to the <a href="#" class="text-decoration-underline">Terms and Conditions</a> and confirm that all information provided is accurate.
+                                            I agree to the <a href="#">Terms and Conditions</a>.
                                         </label>
+                                        @error('terms') <span
+                                            class="text-danger d-block mt-1">{{ $message }}</span> @enderror
                                     </div>
 
-                                    <button type="submit" class="btn btn-success">Submit Application</button>
-                                </section>
+                                    <div class="d-flex justify-content-between">
+                                        <button type="button" class="btn btn-info px-4 d-flex align-items-center gap-2"
+                                                wire:click="previousStep">
+                                            <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+                                            Back
+                                        </button>
+                                        <button type="submit"
+                                                class="btn btn-success px-5 d-flex align-items-center gap-2">Submit
+                                            Application
+                                        </button>
+                                    </div>
+                                </div>
+
                             </form>
+
                         </div>
                     </div>
                 </div>
@@ -184,7 +567,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div class="py-9 d-flex flex-column gap-3 border-bottom">
                             <h4 class="fs-3 fw-bold  text-muted mb-0 ">Quick Links</h4>
                             <div>
-                                <a class="btn btn-primary d-block w-100 mb-3" href="../main/authentication-register.html">
+                                <a class="btn btn-primary d-block w-100 mb-3"
+                                   href="../main/authentication-register.html">
                                     Apply Now
                                 </a>
                                 <a class="btn btn-outline-primary d-block w-100" href="javascript:void(0)">
@@ -213,10 +597,12 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                                     Apply Now
                                 </a>
                                 <a class="btn btn-outline-success d-block w-100" href="javascript:void(0)">
-                                    <iconify-icon icon="mdi:chat-outline" class="me-2"></iconify-icon> Live Chat
+                                    <iconify-icon icon="mdi:chat-outline" class="me-2"></iconify-icon>
+                                    Live Chat
                                 </a>
                                 <a class="btn btn-outline-warning d-block w-100" href="javascript:void(0)">
-                                    <iconify-icon icon="mdi:phone-in-talk-outline" class="me-2"></iconify-icon> Request Call Back
+                                    <iconify-icon icon="mdi:phone-in-talk-outline" class="me-2"></iconify-icon>
+                                    Request Call Back
                                 </a>
                             </div>
                         </div>
@@ -224,16 +610,20 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                         <div class="py-9">
                             <h4 class="text-uppercase fs-3 fw-bold">Share</h4>
                             <div class="d-flex gap-6">
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center" data-bs-toggle="tooltip" data-bs-title="Facebook">
+                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                   data-bs-toggle="tooltip" data-bs-title="Facebook">
                                     <img src="../assets/images/frontend-pages/icon-facebook-dark.svg" alt="facebook">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center" data-bs-toggle="tooltip" data-bs-title="Instagram">
+                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                   data-bs-toggle="tooltip" data-bs-title="Instagram">
                                     <img src="../assets/images/frontend-pages/icon-instagram-dark.svg" alt="instagram">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center" data-bs-toggle="tooltip" data-bs-title="YouTube">
+                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                   data-bs-toggle="tooltip" data-bs-title="YouTube">
                                     <img src="../assets/images/frontend-pages/icon-youtube-dark.svg" alt="youtube">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center" data-bs-toggle="tooltip" data-bs-title="Linckedin">
+                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                   data-bs-toggle="tooltip" data-bs-title="Linckedin">
                                     <img src="../assets/images/frontend-pages/icon-linckedin-dark.svg" alt="linckedin">
                                 </a>
                             </div>
@@ -262,14 +652,18 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <button class="accordion-button fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                                     What are the entry requirements?
                                 </button>
                             </h2>
-                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample1">
+                            <div id="collapseOne" class="accordion-collapse collapse show"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        Entry requirements vary by course. Most certificate programs require a minimum of KCSE D+, while diploma programs generally require KCSE C-. Some technical or professional courses may have specific subject requirements or prerequisites.
+                                        Entry requirements vary by course. Most certificate programs require a minimum
+                                        of KCSE D+, while diploma programs generally require KCSE C-. Some technical or
+                                        professional courses may have specific subject requirements or prerequisites.
                                     </p>
                                 </div>
                             </div>
@@ -277,14 +671,18 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                                     When can I start my course?
                                 </button>
                             </h2>
-                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample1">
+                            <div id="collapseTwo" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        We have multiple intakes throughout the year — typically in January, May, and September. Please refer to the specific course page for upcoming intake dates and deadlines.
+                                        We have multiple intakes throughout the year — typically in January, May, and
+                                        September. Please refer to the specific course page for upcoming intake dates
+                                        and deadlines.
                                     </p>
                                 </div>
                             </div>
@@ -292,14 +690,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseThree" aria-expanded="false"
+                                        aria-controls="collapseThree">
                                     Can I pay in installments?
                                 </button>
                             </h2>
-                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample1">
+                            <div id="collapseThree" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        Yes! We offer flexible payment plans. You can pay your fees in 2 to 4 installments depending on the course duration and fee structure. For more information, contact our admissions office or finance department.
+                                        Yes! We offer flexible payment plans. You can pay your fees in 2 to 4
+                                        installments depending on the course duration and fee structure. For more
+                                        information, contact our admissions office or finance department.
                                     </p>
                                 </div>
                             </div>
@@ -307,14 +710,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseFour" aria-expanded="false"
+                                        aria-controls="collapseFour">
                                     Do you offer online or evening classes?
                                 </button>
                             </h2>
-                            <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionExample1">
+                            <div id="collapseFour" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        Yes, selected courses are available through blended learning (online + in-person) or evening/weekend schedules for working professionals. Availability depends on the specific program.
+                                        Yes, selected courses are available through blended learning (online +
+                                        in-person) or evening/weekend schedules for working professionals. Availability
+                                        depends on the specific program.
                                     </p>
                                 </div>
                             </div>
@@ -322,14 +730,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseFive" aria-expanded="false"
+                                        aria-controls="collapseFive">
                                     Is the institution accredited?
                                 </button>
                             </h2>
-                            <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#accordionExample1">
+                            <div id="collapseFive" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        Absolutely. We are registered and accredited by relevant education and training authorities, including TVET and NITA, ensuring recognized and credible certification upon graduation.
+                                        Absolutely. We are registered and accredited by relevant education and training
+                                        authorities, including TVET and NITA, ensuring recognized and credible
+                                        certification upon graduation.
                                     </p>
                                 </div>
                             </div>
@@ -337,14 +750,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                                <button class="accordion-button collapsed fs-5" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
                                     How do I apply for a course?
                                 </button>
                             </h2>
-                            <div id="collapseSix" class="accordion-collapse collapse" data-bs-parent="#accordionExample1">
+                            <div id="collapseSix" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordionExample1">
                                 <div class="accordion-body">
                                     <p>
-                                        You can apply online through our application portal, or visit our admissions office. Simply select your preferred course, submit the required documents, and complete the registration process. Support is available throughout your application journey.
+                                        You can apply online through our application portal, or visit our admissions
+                                        office. Simply select your preferred course, submit the required documents, and
+                                        complete the registration process. Support is available throughout your
+                                        application journey.
                                     </p>
                                 </div>
                             </div>
@@ -355,8 +773,10 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                     <div class="d-flex justify-content-center align-items-center mt-12">
                         <p class="text-center fs-3 fw-bold dashed-border py-1 px-2 rounded mb-0 text-muted">
                             Still have a question?
-                            <a target="_blank" href="mailto:admissions@collegeexample.ac.ke" class="text-underline text-muted link-primary">Email Us</a> or
-                            <a target="_blank" href="https://wa.me/254712345678" class="text-underline text-muted link-primary">Chat on WhatsApp</a>.
+                            <a target="_blank" href="mailto:admissions@collegeexample.ac.ke"
+                               class="text-underline text-muted link-primary">Email Us</a> or
+                            <a target="_blank" href="https://wa.me/254712345678"
+                               class="text-underline text-muted link-primary">Chat on WhatsApp</a>.
                         </p>
                     </div>
 
@@ -377,10 +797,12 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
             <div class="row justify-content-center">
                 <div class="col-lg-9 text-center">
                     <a href="../main/frontend-landingpage.html">
-                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png" alt="logo" >
+                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png"
+                             alt="logo">
                     </a>
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
-                        Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
+                        Join thousands of successful graduates who have transformed their careers with Tabor Training
+                        Institute..
                     </h4>
                     <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
                         Register
@@ -389,16 +811,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
             </div>
         </div>
     </section>
-    <!-- ------------------------------------- -->
-    <!-- Focus End -->
-    <!-- ------------------------------------- -->
-
-
 </div>
 
-@push('scripts')
-    <script src="../assets/libs/jquery-steps/build/jquery.steps.min.js"></script>
-    <script src="../assets/libs/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="../assets/js/forms/form-wizard.js"></script>
-@endpush
+
 
