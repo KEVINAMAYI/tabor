@@ -2,14 +2,18 @@
 
 use App\Models\Student;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
+
+    use WithFileUploads;
+
     public $students = [];
 
     public $selectAll = false;
@@ -22,6 +26,9 @@ new class extends Component {
 
     public $search = '';
 
+    public $address, $country, $highest_level_of_education;
+    public $id_url, $kcse_certificate, $passport_size_url;
+
 
     public function rules()
     {
@@ -31,8 +38,15 @@ new class extends Component {
             'email' => 'required|email',
             'phone_number' => 'required|numeric',
             'date_of_birth' => 'required|date',
+            'address' => 'nullable|string|max:500',
+            'country' => 'nullable|string|max:100',
+            'highest_level_of_education' => 'nullable|string|max:255',
+            'id_url' => 'nullable|file|mimes:pdf,jpeg,png,jpg,gif|max:2048',
+            'kcse_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:2048',
+            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
+
 
     public function mount()
     {
@@ -72,22 +86,30 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
+            // Create the user
             $user = User::create([
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
                 'password' => Hash::make('password'),
             ]);
 
-            Student::create([
+            // Create the student
+            $student = Student::create([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'email' => $this->email,
                 'phone' => $this->phone_number,
                 'dob' => $this->date_of_birth,
+                'address' => $this->address,
+                'country' => $this->country,
+                'highest_level_of_education' => $this->highest_level_of_education,
+                'id_url' => $this->id_url ? $this->id_url->store('students/ids') : null,
+                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates') : null,
+                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size') : null,
                 'user_id' => $user->id,
             ]);
 
-            //assign role
+            // Assign the 'student' role
             $user->assignRole('student');
 
             DB::commit();
@@ -114,8 +136,10 @@ new class extends Component {
         }
     }
 
+
     public function editStudent($id)
     {
+        // Load the student with user and additional fields
         $student = Student::with('user')->findOrFail($id);
 
         $this->editId = $student->id;
@@ -124,9 +148,19 @@ new class extends Component {
         $this->email = $student->email;
         $this->phone_number = $student->phone;
         $this->date_of_birth = $student->dob;
+        $this->address = $student->address;
+        $this->country = $student->country;
+        $this->highest_level_of_education = $student->highest_level_of_education;
 
+        // Assign the file URLs if they exist
+        $this->id_url = $student->id_url;
+        $this->kcse_certificate = $student->kcse_certificate;
+        $this->passport_size_url = $student->passport_size_url;
+
+        // Dispatch the modal open event
         $this->dispatch('show-student-modal');
     }
+
 
     public function updateStudent()
     {
@@ -137,17 +171,25 @@ new class extends Component {
 
             $student = Student::with('user')->findOrFail($this->editId);
 
+            // Update user details
             $student->user->update([
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
             ]);
 
+            // Update student details
             $student->update([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'email' => $this->email,
                 'phone' => $this->phone_number,
                 'dob' => $this->date_of_birth,
+                'address' => $this->address,
+                'country' => $this->country,
+                'highest_level_of_education' => $this->highest_level_of_education,
+                'id_url' => $this->id_url ? $this->id_url->store('students/ids') : $student->id_url,
+                'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates') : $student->kcse_certificate,
+                'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size') : $student->passport_size_url,
             ]);
 
             DB::commit();
@@ -164,7 +206,7 @@ new class extends Component {
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Failed to update student: ' . $e->getMessage());
+            Log::error('Failed to update student: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to update student.!')
                 ->error()
@@ -273,41 +315,87 @@ new class extends Component {
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" wire:model.live="first_name" class="form-control"
-                                               placeholder="First Name"/>
-                                        @error('first_name')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" wire:model.live="first_name" id="first_name"
+                                               class="form-control" placeholder="Enter your first name"/>
+                                        @error('first_name')<small class="text-error">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" wire:model.live="last_name" class="form-control"
-                                               placeholder="Last Name"/>
-                                        @error('last_name')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" wire:model.live="last_name" id="last_name"
+                                               class="form-control" placeholder="Enter your last name"/>
+                                        @error('last_name')<small class="text-error">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="email" wire:model.live="email" class="form-control"
-                                               placeholder="Email"/> @error('email')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" wire:model.live="email" id="email" class="form-control"
+                                               placeholder="Enter your email address"/>
+                                        @error('email')<small class="text-error">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" wire:model.live="phone_number" class="form-control"
-                                               placeholder="Phone Number"/>
-                                        @error('phone_number')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
+                                        <label for="phone_number" class="form-label">Phone Number</label>
+                                        <input type="text" wire:model.live="phone_number" id="phone_number"
+                                               class="form-control" placeholder="Enter your phone number"/>
+                                        @error('phone_number')<small class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <div class="col-md-12 mb-3">
+                                        <label for="country" class="form-label">Country</label>
+                                        <input type="text" wire:model.live="country" id="country" class="form-control"
+                                               placeholder="Enter your country"/>
+                                        @error('country')<small class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                        <input type="date" wire:model.live="date_of_birth" id="date_of_birth"
+                                               class="form-control" placeholder="Select your date of birth"/>
+                                        @error('date_of_birth')<small class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <!-- New Fields -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="address" class="form-label">Address</label>
+                                        <input type="text" wire:model.live="address" id="address" class="form-control"
+                                               placeholder="Enter your address"/>
+                                        @error('address')<small class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <div class="col-md-12 mb-3">
+                                        <label for="highest_level_of_education" class="form-label">Highest Level of
+                                            Education</label>
+                                        <input type="text" wire:model.live="highest_level_of_education"
+                                               id="highest_level_of_education" class="form-control"
+                                               placeholder="Enter your highest level of education"/>
+                                        @error('highest_level_of_education')<small
+                                            class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <!-- File Inputs -->
+                                    <div class="col-md-12 mb-3">
+                                        <label for="id_url" class="form-label">Upload ID</label>
+                                        <input type="file" wire:model.live="id_url" id="id_url" class="form-control"
+                                               placeholder="Upload your ID"/>
+                                        @error('id_url')<small class="text-error">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-12 mb-3">
-                                        <input type="date" wire:model.live="date_of_birth" class="form-control"
-                                               placeholder="Date of Birth"/>
-                                        @error('date_of_birth')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
+                                        <label for="kcse_certificate" class="form-label">Upload KCSE Certificate</label>
+                                        <input type="file" wire:model.live="kcse_certificate" id="kcse_certificate"
+                                               class="form-control" placeholder="Upload your KCSE certificate"/>
+                                        @error('kcse_certificate')<small
+                                            class="text-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label for="passport_size_url" class="form-label">Upload Passport Size
+                                            Photo</label>
+                                        <input type="file" wire:model.live="passport_size_url" id="passport_size_url"
+                                               class="form-control" placeholder="Upload your passport size photo"/>
+                                        @error('passport_size_url')<small
+                                            class="text-error">{{ $message }}</small>@enderror
                                     </div>
                                 </div>
                             </div>
+
                             <div class="modal-footer">
                                 <div class="d-flex gap-6 m-0">
                                     <button type="submit" class="btn btn-success">

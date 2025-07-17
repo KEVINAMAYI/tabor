@@ -16,7 +16,14 @@ class Student extends Model
         'phone',
         'dob',
         'user_id',
+        'address',
+        'country',
+        'highest_level_of_education',
+        'id_url',
+        'kcse_certificate',
+        'passport_size_url',
     ];
+
 
     /* -----------------------------------------------------------------
      |  Direct relationships
