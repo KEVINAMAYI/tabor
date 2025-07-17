@@ -4,19 +4,27 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('courses', function (Blueprint $table) {
+
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2)->nullable(); // Optional, if course is paid
+            $table->decimal('price', 10, 2)->nullable();
+            $table->string('duration')->nullable();
+            $table->enum('mode', ['online', 'on-campus', 'hybrid'])->nullable();
+            $table->string('level')->nullable();
+            $table->string('certification')->nullable();
+            $table->text('prerequisites')->nullable();
+            $table->string('image_url')->nullable();
+            $table->string('brochure_url')->nullable();
             $table->timestamps();
+
         });
 
     }
