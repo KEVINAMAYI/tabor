@@ -7,6 +7,7 @@ use App\Models\IntakeModule;
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -28,14 +29,22 @@ new class extends Component {
     /* ---------- mount ---------- */
     public function mount($intake_id)
     {
+
         $this->intakeCourses = IntakeModule::coursesForIntake($intake_id);
         $this->intakeStudents = Intake::with('students')->findOrFail($intake_id)->students;
         $this->intakeId = $intake_id;
         $this->courses = Course::orderBy('title')->get(['id', 'title']);
         $this->activeCourseId = $this->courses[0]->id ?? '';
         $this->activeStudentId = $this->intakeStudents[0]->id ?? '';
-        $this->selectCourse($this->activeCourseId);
-        $this->selectStudent($this->activeStudentId);
+
+
+        if (!empty($this->activeCourseId)) {
+            $this->selectCourse($this->activeCourseId);
+        }
+
+        if (!empty($this->activeStudentId)) {
+            $this->selectStudent($this->activeStudentId);
+        }
     }
 
 
@@ -102,6 +111,18 @@ new class extends Component {
 
         $this->reset('selected', 'selectAll');
         $this->dispatch('hide-course-modal');
+
+        // Optionally, you can trigger a full component refresh
+        $this->intakeCourses = IntakeModule::coursesForIntake($this->intakeId);
+        $this->courses = Course::orderBy('title')->get(['id', 'title']);
+        $this->activeCourseId = $this->courses[0]->id ?? '';
+        $this->selectCourse($this->activeCourseId);
+
+        LivewireAlert::text('Student enrolled successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
 
     }
 
