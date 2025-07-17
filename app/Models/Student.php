@@ -16,7 +16,6 @@ class Student extends Model
         'phone',
         'dob',
         'user_id',
-        'class_group_id',
     ];
 
     /* -----------------------------------------------------------------

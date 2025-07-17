@@ -5,7 +5,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
-use App\Models\ClassGroup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -23,9 +22,6 @@ new class extends Component {
 
     public $search = '';
 
-    public $class_group_id;
-
-    public $classGroups = [];
 
     public function rules()
     {
@@ -35,7 +31,6 @@ new class extends Component {
             'email' => 'required|email',
             'phone_number' => 'required|numeric',
             'date_of_birth' => 'required|date',
-            'class_group_id' => 'required|exists:class_groups,id',
         ];
     }
 
@@ -44,7 +39,6 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-students')) {
             abort(403, 'Unauthorized action.');
         }
-        $this->classGroups = ClassGroup::with('intake')->latest()->get();
         $this->loadStudents();
     }
 
@@ -56,7 +50,7 @@ new class extends Component {
 
     public function loadStudents()
     {
-        $this->students = Student::with(['user', 'classGroup'])
+        $this->students = Student::with(['user'])
             ->when(
                 $this->search,
                 fn($q) => $q->where(function ($query) {
@@ -91,7 +85,6 @@ new class extends Component {
                 'phone' => $this->phone_number,
                 'dob' => $this->date_of_birth,
                 'user_id' => $user->id,
-                'class_group_id' => $this->class_group_id,
             ]);
 
             //assign role
@@ -131,7 +124,6 @@ new class extends Component {
         $this->email = $student->email;
         $this->phone_number = $student->phone;
         $this->date_of_birth = $student->dob;
-        $this->class_group_id = $student->class_group_id;
 
         $this->dispatch('show-student-modal');
     }
@@ -156,7 +148,6 @@ new class extends Component {
                 'email' => $this->email,
                 'phone' => $this->phone_number,
                 'dob' => $this->date_of_birth,
-                'class_group_id' => $this->class_group_id,
             ]);
 
             DB::commit();
@@ -216,7 +207,7 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->first_name = $this->last_name = $this->email = $this->phone_number = $this->date_of_birth = $this->class_group_id = null;
+        $this->first_name = $this->last_name = $this->email = $this->phone_number = $this->date_of_birth = null;
         $this->editId = null;
     }
 
@@ -295,19 +286,6 @@ new class extends Component {
                                         <small class="text-error">{{ $message }}</small>
                                         @enderror
                                     </div>
-                                    <div class="col-md-12 mb-3">
-                                        <select wire:model.live="class_group_id" class="form-control">
-                                            <option value="">Select Class Group</option>
-                                            @foreach ($classGroups as $group)
-                                                <option value="{{ $group->id }}">{{ $group->name }}
-                                                    ({{ $group->intake->name ?? 'No Intake' }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('class_group_id')
-                                        <small class="text-error">{{ $message }}</small>
-                                        @enderror
-                                    </div>
                                     <div class="col-md-6 mb-3">
                                         <input type="email" wire:model.live="email" class="form-control"
                                                placeholder="Email"/> @error('email')
@@ -360,7 +338,6 @@ new class extends Component {
                             <th>Last Name</th>
                             <th>Email</th>
                             <th>Phone Number</th>
-                            <th>Class Group</th>
                             <th>Action</th>
                         </tr>
                         </thead>
@@ -378,7 +355,6 @@ new class extends Component {
                                 <td>{{ $student->last_name }}</td>
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone }}</td>
-                                <td>{{ $student->classGroup->name ?? 'N/A' }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <a href="{{ route('students.view', $student->id) }}"

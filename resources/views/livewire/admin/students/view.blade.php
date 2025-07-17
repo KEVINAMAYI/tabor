@@ -4,7 +4,10 @@ use App\Models\Enrollment;
 use App\Models\Course;
 use App\Models\Intake;
 use App\Models\Student;
+use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
+use App\Models\ClassGroup;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -14,7 +17,8 @@ new class extends Component {
     public $selectedIntakeId;
     public $courses;
     public $intakes;
-
+    public $class_group_id;
+    public $classGroups = [];
 
     public function rules()
     {
@@ -34,6 +38,7 @@ new class extends Component {
         $this->studentId = $student_id;
         $this->courses = Course::all();
         $this->intakes = Intake::all();
+        $this->classGroups = ClassGroup::with('intake')->latest()->get();
 
     }
 
@@ -49,7 +54,17 @@ new class extends Component {
             'enrolled_at' => now()
         ]);
 
-        session()->flash('success', 'Student enrolled successfully.');
+
+        DB::table('student_class_group')->insert([
+            'student_id' => $this->studentId,
+            'class_group_id' => $this->class_group_id
+        ]);
+
+        LivewireAlert::text('Student enrolled successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
 
         $this->dispatch('hide-enrollment-modal');
 
@@ -622,6 +637,20 @@ new class extends Component {
                         <span class="text-danger">{{ $message }}</span>
                         @enderror
 
+                    </div>
+                    <div class="mt-3">
+                        <label for="class_group_id" class="mb-1">Select Class Group</label>
+                        <select id="class_group_id" wire:model.live="class_group_id" class="form-control">
+                            <option value="">-- Choose Class Group --</option>
+                            @foreach ($classGroups as $group)
+                                <option value="{{ $group->id }}">{{ $group->name }}
+                                    ({{ $group->intake->name ?? 'No Intake' }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('class_group_id')
+                        <small class="text-error">{{ $message }}</small>
+                        @enderror
                     </div>
                     <div class="mt-3">
                         <button wire:click="enroll" class="btn btn-success">Enroll</button>
