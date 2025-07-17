@@ -176,7 +176,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                   class="form-control product-search ps-5" placeholder="Search..." wire:model="search" />
+                                   class="form-control product-search ps-5" placeholder="Search..."
+                                   wire:model="search"/>
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -206,7 +207,7 @@ new class extends Component {
                             <div class="modal-body">
                                 <div class="mb-3">
                                     <input type="text" wire:model.live="name" class="form-control"
-                                           placeholder="Role Name" />
+                                           placeholder="Role Name"/>
                                     @error('name')
                                     <small class="text-error">{{ $message }}</small>
                                     @enderror
@@ -224,7 +225,7 @@ new class extends Component {
                                                             <label class="form-check">
                                                                 <input type="checkbox" value="{{ $perm->name }}"
                                                                        wire:model.live="selectedPermissions"
-                                                                       class="form-check-input" />
+                                                                       class="form-check-input"/>
                                                                 {{ ucwords(str_replace('-', ' ', $perm->name)) }}
                                                             </label>
                                                         </div>
@@ -259,7 +260,6 @@ new class extends Component {
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
-                            </th>
                             <th>Name</th>
                             <th>Action</th>
                         </tr>

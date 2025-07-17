@@ -166,22 +166,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                                         <p>Please review all information entered above before selecting a payment option.</p>
                                     </div>
 
-                                    <div class="mb-4">
-                                        <h5 class="fw-bold">Payment Options</h5>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="radio" name="paymentOption" id="mpesa" checked>
-                                            <label class="form-check-label" for="mpesa">M-Pesa Payment</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="radio" name="paymentOption" id="bank">
-                                            <label class="form-check-label" for="bank">Bank Transfer</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="paymentOption" id="installment">
-                                            <label class="form-check-label" for="installment">Installment Plan</label>
-                                        </div>
-                                    </div>
-
                                     <div class="form-check mb-3">
                                         <input class="form-check-input" type="checkbox" id="terms">
                                         <label class="form-check-label" for="terms">

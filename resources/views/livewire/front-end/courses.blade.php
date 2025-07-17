@@ -8,6 +8,44 @@ use Livewire\Attributes\Layout;
 new #[Layout('components.layouts.app.frontend')] class extends Component {
 } ?>
 
+@push('styles')
+    <style>
+        /* Make tab buttons look like Apply Now when active */
+        .custom-course-tabs .nav-link {
+            color: black !important;
+            background-color: transparent !important;
+            border: 1px solid transparent !important;
+            transition: all 0.2s ease !important;
+            border-radius: 8px !important;
+            padding: 8px 8px !important;
+        }
+
+        .custom-course-tabs .nav-link:hover {
+            background-color: #f5f5f5 !important;
+            color: #000 !important;
+        }
+
+        .custom-course-tabs .nav-link.active {
+            background-color: #f79020 !important;  /* Match Apply Now */
+            color: #fff !important;
+            font-weight: 600 !important;
+            border-color: #f79020 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Optional spacing between tab items */
+        .custom-course-tabs .nav-item {
+            margin-right: 10px !important;
+        }
+
+        /* Add spacing and alignment to icon */
+        .btn-outline-primary iconify-icon {
+            vertical-align: middle !important;
+            margin-right: 8px !important;
+            font-size: 1.1rem !important;
+        }
+    </style>
+@endpush
 <div class="main-wrapper overflow-hidden">
     <!-- ------------------------------------- -->
     <!-- Banner Start -->
@@ -112,7 +150,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: TVET Level 5 Diploma</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview"
                                            role="tab">
@@ -210,7 +248,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Diploma in Hospitality</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview1" role="tab"><span>Overview</span></a>
                                     </li>
@@ -274,7 +312,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Diploma in Hospitality</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview2" role="tab"><span>Overview</span></a>
                                     </li>
@@ -338,7 +376,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Certificate in IT</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview3" role="tab"><span>Overview</span></a>
                                     </li>
@@ -402,7 +440,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: ECDE Diploma</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview4" role="tab"><span>Overview</span></a>
                                     </li>
@@ -466,7 +504,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Diploma in Design</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview5" role="tab"><span>Overview</span></a>
                                     </li>
@@ -530,7 +568,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Diploma in Business</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview6" role="tab"><span>Overview</span></a>
                                     </li>
@@ -594,7 +632,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: Diploma in Automotive</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview7" role="tab"><span>Overview</span></a>
                                     </li>
@@ -658,7 +696,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <span class="text-dark fs-3">Certification: TVET Diploma</span>
                                     </li>
                                 </ul>
-                                <ul class="nav nav-pills nav-fill mt-4" role="tablist">
+                                <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" data-bs-toggle="tab" href="#pill-overview8" role="tab"><span>Overview</span></a>
                                     </li>
