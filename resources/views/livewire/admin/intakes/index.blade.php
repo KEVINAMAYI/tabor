@@ -152,11 +152,34 @@ new class extends Component
         $this->editId = null;
     }
 
-    #[On('select-all')] public function selectAll()
+    #[On('select-all')]
+    public function selectAll()
     {
         $this->selected = $this->selectAll
             ? $this->intakes->pluck('id')->map(fn ($id) => (string) $id)->toArray()
             : [];
+    }
+
+
+    #[On('generate-intake-name')]
+    public function generateIntakeName()
+    {
+
+        if (!$this->starts_at) {
+            $this->name = '';
+            return;
+        }
+
+        $startDate = \Carbon\Carbon::parse($this->starts_at);
+        $endDate = $this->ends_at ? \Carbon\Carbon::parse($this->ends_at) : $startDate;
+
+        if ($startDate->isSameMonth($endDate)) {
+            // Same month and year
+            $this->name = $startDate->format('M Y');
+        } else {
+            // Different months
+            $this->name = $startDate->format('M Y') . ' - ' . $endDate->format('M Y');
+        }
     }
 
 }; ?>
@@ -201,22 +224,22 @@ new class extends Component
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateIntake' : 'addIntake' }}">
                             <div class="modal-body">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" placeholder="Name (e.g. Jan 2026)"
-                                           wire:model.live="name">
-                                    @error('name') <small class="text-danger">{{ $message }}</small>@enderror
-                                </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label small">Starts At</label>
-                                        <input type="date" class="form-control" wire:model.live="starts_at">
+                                        <input type="date" id="starts_at" class="form-control" wire:model.live="starts_at">
                                         @error('starts_at') <small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label small">Ends At</label>
-                                        <input type="date" class="form-control" wire:model.live="ends_at">
+                                        <input type="date" wire:change="$dispatch('generate-intake-name')" id="ends_at" class="form-control" wire:model.live="ends_at">
                                         @error('ends_at') <small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Name (e.g. Jan 2026)"
+                                           wire:model.live="name">
+                                    @error('name') <small class="text-danger">{{ $message }}</small>@enderror
                                 </div>
                             </div>
                             <div class="modal-footer d-flex gap-6">
@@ -293,5 +316,6 @@ new class extends Component
         window.addEventListener('hide-intake-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('addIntakeModal'))?.hide();
         });
+
     </script>
 @endpush
