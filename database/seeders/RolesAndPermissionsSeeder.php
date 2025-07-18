@@ -23,6 +23,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit-students',
             'delete-students',
 
+            // lecturer-related
+            'view-lecturers',
+            'add-lecturers',
+            'edit-lecturers',
+            'delete-lecturers',
+
             // Roles management
             'view-roles',
             'add-roles',
@@ -60,6 +66,10 @@ class RolesAndPermissionsSeeder extends Seeder
             ],
 
             'student' => [
+                'view-courses',
+            ],
+
+            'lecturer' => [
                 'view-courses',
             ],
         ];

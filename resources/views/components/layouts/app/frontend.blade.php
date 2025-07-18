@@ -8,8 +8,8 @@
     <style>
 
         :root {
-            --primary-color: #ff5722;   /* deep orange */
-            --accent-color: #ff5722;    /* same orange for accent */
+            --primary-color: #ff8000;   /* deep orange */
+            --accent-color: #ff8000;    /* same orange for accent */
             --light-gray: #F4F6F9;
             --dark-text: #212121;
             --muted-text: #666666;
@@ -23,7 +23,7 @@
         }
 
         .bg-primary {
-            background-color: var(--primary-color) !important;
+            background-color: #ff8000 !important;
         }
 
         .btn-primary {

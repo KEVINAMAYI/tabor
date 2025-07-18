@@ -184,6 +184,45 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 @push('styles')
     <style>
 
+        .modal-header {
+            background-color: #f8f9fa;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            padding-top: 1.5rem;
+        }
+
+        .modal-footer {
+            font-size: 1rem;
+        }
+
+        ul li {
+            margin-bottom: 1.2rem;
+        }
+
+        .fw-bold {
+            font-weight: 700;
+        }
+
+        .fs-5 {
+            font-size: 1.125rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
         [x-cloak] {
             display: none !important;
         }
@@ -536,13 +575,16 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         </p>
                                     </div>
 
+                                    <!-- Terms and Conditions Checkbox -->
                                     <div class="form-check my-3">
                                         <input class="form-check-input" type="checkbox" wire:model="terms" id="terms">
                                         <label class="form-check-label" for="terms">
-                                            I agree to the <a href="#">Terms and Conditions</a>.
+                                            By checking the box below and submitting my application, I confirm that I have read and understood this consent statement and voluntarily agree to the processing of my data and media as described.
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>.
                                         </label>
-                                        @error('terms') <span
-                                            class="text-danger d-block mt-1">{{ $message }}</span> @enderror
+                                        @error('terms')
+                                        <span class="text-danger d-block mt-1">{{ $message }}</span>
+                                        @enderror
                                     </div>
 
                                     <div class="d-flex justify-content-between">
@@ -812,6 +854,38 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             </div>
         </div>
     </section>
+
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="termsModalLabel">Terms and Conditions</h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h3 class="fs-4 fw-bold mb-3">Data Privacy Consent Statement</h3>
+                    <p class="fs-4 mb-4">
+                        By submitting this application, I hereby acknowledge and consent to the collection, use, and processing of my personal data by Tabor Training Institute (TTI) for the purposes of student registration, academic administration, institutional communication, and related educational services.
+                    </p>
+                    <p class="fs-4 mb-4">
+                        I understand and agree that:
+                    </p>
+                    <ul class="fs-3 mb-4">
+                        <li>My personal information, including but not limited to my name, contact details, academic history, and identification documents, will be securely stored and processed in accordance with the Data Protection Act, 2019 (Kenya) and applicable privacy regulations.</li>
+                        <li>This data may be shared with relevant government bodies, accrediting agencies, examination councils, or third-party service providers only where necessary and with appropriate safeguards.</li>
+                        <li>During the course of my studies, photographs and videos may be taken of me during class activities, events, or institutional functions. These may be used in TTI’s official social media pages, website, newsletters, promotional materials, and other awareness or communication initiatives.</li>
+                        <li>Such media will be used respectfully and in a manner that promotes the positive image of the Institute and its programs.</li>
+                        <li>I have the right to access, correct, or request the deletion of my personal data, subject to applicable laws and institutional policies.</li>
+                        <li>Tabor Training Institute will not use my personal data for unrelated purposes without my explicit consent.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
