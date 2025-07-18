@@ -16,7 +16,8 @@ class Enrollment extends Model
         'student_id',
         'course_id',
         'intake_id',
-        'enrolled_at',   // datetime the student was registered
+        'enrolled_at',
+        'status'
     ];
 
     /* -----------------------------------------------------------------

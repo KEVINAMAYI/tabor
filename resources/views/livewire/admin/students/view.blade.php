@@ -12,6 +12,7 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 new class extends Component {
 
     public $student;
+    public $status = 'pending';
     public $studentId;
     public $selectedCourseId;
     public $selectedIntakeId;
@@ -51,6 +52,7 @@ new class extends Component {
             'student_id' => $this->studentId,
             'course_id' => $this->selectedCourseId,
             'intake_id' => $this->selectedIntakeId,
+            'status' => $this->status,
             'enrolled_at' => now()
         ]);
 
@@ -71,6 +73,44 @@ new class extends Component {
     }
 
 }; ?>
+@push('styles')
+    <style>
+        /* Make tab buttons look like Apply Now when active */
+        .custom-course-tabs .nav-link {
+            color: black !important;
+            background-color: transparent !important;
+            border: 1px solid transparent !important;
+            transition: all 0.2s ease !important;
+            border-radius: 8px !important;
+            padding: 8px 8px !important;
+        }
+
+        .custom-course-tabs .nav-link:hover {
+            background-color: #f5f5f5 !important;
+            color: #000 !important;
+        }
+
+        .custom-course-tabs .nav-link.active {
+            background-color: #f79020 !important; /* Match Apply Now */
+            color: #fff !important;
+            font-weight: 600 !important;
+            border-color: #f79020 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Optional spacing between tab items */
+        .custom-course-tabs .nav-item {
+            margin-right: 10px !important;
+        }
+
+        /* Add spacing and alignment to icon */
+        .btn-outline-primary iconify-icon {
+            vertical-align: middle !important;
+            margin-right: 8px !important;
+            font-size: 1.1rem !important;
+        }
+    </style>
+@endpush
 
 <div class="col-12">
     <div class="container-fluid">
@@ -189,44 +229,101 @@ new class extends Component {
                             $course = $enrollment->course;
                             $modules = $course->modules;
                             $intake = $enrollment->intake;
+                            $enrollmentStatus = $enrollment->status ?? 'In Progress'; // Default status
                         @endphp
 
-                        <div class="col-lg-4 col-md-6">
-                            <div class="card">
-                                <img src="{{ $course->image_url ?? '../assets/images/blog/blog-img5.jpg' }}"
-                                     class="card-img-top" alt="course-img"/>
-                                <div class="card-body p-10">
-                                    <h4 class="card-title">{{ strtoupper($course->name) }}</h4>
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card rounded-3 overflow-hidden h-100">
+                                <a href="#" class="position-relative">
+                                    <img
+                                        src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                                        alt="{{ $course->title }}"
+                                        class="w-100 img-fluid"
+                                    />
+                                </a>
+                                <div class="mt-7 px-7 pb-7 h-100">
+                                    <div class="d-flex gap-3 flex-column h-100 justify-content-between">
+                                        <!-- Course Title -->
+                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title }}</a>
 
-                                    <p class="card-text">
-                                        {{ strtoupper($course->description) ?? 'No description available.' }}
-                                    </p>
-
-                                    <!-- Progress bar, attendance, etc. could be derived from $enrollment -->
-                                    <div class="col d-flex align-items-left mb-4 justify-content-center">
-                                        <div data-label="40%" class="css-bar mb-0 css-bar-warning css-bar-40">
+                                        <!-- Enrollment Status Badge -->
+                                        <div class="d-flex justify-content-between mb-3">
+                        <span class="badge
+                            @if($enrollmentStatus == 'Completed') bg-success
+                            @elseif($enrollmentStatus == 'In Progress') bg-warning
+                            @else bg-secondary @endif text-light">
+                            {{ strtoupper($enrollmentStatus) }}
+                        </span>
                                         </div>
-                                    </div>
 
-                                    <div class="d-flex justify-content-between">
-                                        <span class="badge bg-warning text-light">In Progress</span>
-                                    </div>
-                                </div>
+                                        <!-- Course Description -->
+                                        <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
 
-                                <!-- Modules -->
-                                <ul class="list-group list-group-flush">
-                                    @foreach($modules as $module)
-                                        <li class="list-group-item">{{ ucfirst(strtolower($module->title)) }}</li>
-                                    @endforeach
-                                </ul>
+                                        <!-- Course Details -->
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2 d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
+                                            </li>
+                                            <li class="mb-2 d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
+                                            </li>
+                                            <li class="mb-2 d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Level: {{ $course->level ?? 'N/A' }}</span>
+                                            </li>
+                                            <li class="d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
+                                            </li>
+                                        </ul>
 
-                                <!-- Bottom Badges -->
-                                <div class="card-body p-10">
-                                    <div class="d-flex justify-content-between">
-                                        <span
-                                            class="badge bg-primary text-light">Attendance: {{ $enrollment->attendance ?? '0%' }}</span>
-                                        <span
-                                            class="badge bg-success text-light">Payment: {{ $enrollment->payment_status ?? 'Pending' }}</span>
+                                        <!-- Course Tabs (Overview and Details) -->
+                                        <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" data-bs-toggle="tab" href="#overview-{{ $course->id }}" role="tab"><span>Overview</span></a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-bs-toggle="tab" href="#details-{{ $course->id }}" role="tab"><span>Details</span></a>
+                                            </li>
+                                        </ul>
+
+                                        <!-- Tab Content -->
+                                        <div class="tab-content mt-2">
+                                            <div class="tab-pane active p-3" id="overview-{{ $course->id }}" role="tabpanel">
+                                                <h5 class="fw-bold mb-3">Course Highlights:</h5>
+                                                @if (!empty($course->modules))
+                                                    <ul class="list-unstyled">
+                                                        @foreach ($course->modules as $module)
+                                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>{{ $module->title }}</span></li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    <p>{{ $course->description }}</p>
+                                                @endif
+                                            </div>
+                                            <div class="tab-pane p-3" id="details-{{ $course->id }}" role="tabpanel">
+                                                <h5 class="fw-bold mb-3">Course Details:</h5>
+                                                <ul class="list-unstyled">
+                                                    <li class="mb-2 d-flex gap-2">
+                                                        <strong>Fee:</strong><span>KES {{ number_format($course->price, 2) }}</span>
+                                                    </li>
+                                                    <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span></li>
+                                                    <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <div>
+                                            <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
+                                            @if($course->brochure_url)
+                                                <a href="{{ asset('storage/' . $course->brochure_url) }}" class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
+                                                    <i class="ti ti-download me-1"></i> Download Brochure
+                                                </a>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -601,7 +698,6 @@ new class extends Component {
          aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
-
                 <!-- Modal Header -->
                 <div class="modal-header d-flex align-items-center">
                     <h5 class="modal-title">Enroll Student to a Course</h5>
@@ -610,6 +706,7 @@ new class extends Component {
 
                 <!-- Modal Body -->
                 <div class="modal-body">
+                    <!-- Select Course -->
                     <div>
                         <label for="course" class="mb-1">Select Course</label>
                         <select wire:model="selectedCourseId" class="form-select" id="course">
@@ -618,12 +715,10 @@ new class extends Component {
                                 <option value="{{ $course->id }}">{{ $course->title }}</option>
                             @endforeach
                         </select>
-
-                        @error('selectedCourseId')
-                        <span class="text-danger">{{ $message }}</span>
-                        @enderror
-
+                        @error('selectedCourseId') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
+
+                    <!-- Select Intake -->
                     <div class="mt-3">
                         <label for="intake" class="mb-1">Select Intake</label>
                         <select wire:model="selectedIntakeId" class="form-select" id="intake">
@@ -632,12 +727,10 @@ new class extends Component {
                                 <option value="{{ $intake->id }}">{{ $intake->name }}</option>
                             @endforeach
                         </select>
-
-                        @error('selectedCourseId')
-                        <span class="text-danger">{{ $message }}</span>
-                        @enderror
-
+                        @error('selectedIntakeId') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
+
+                    <!-- Select Class Group -->
                     <div class="mt-3">
                         <label for="class_group_id" class="mb-1">Select Class Group</label>
                         <select id="class_group_id" wire:model.live="class_group_id" class="form-control">
@@ -648,14 +741,13 @@ new class extends Component {
                                 </option>
                             @endforeach
                         </select>
-                        @error('class_group_id')
-                        <small class="text-error">{{ $message }}</small>
-                        @enderror
+                        @error('class_group_id') <small class="text-error">{{ $message }}</small> @enderror
                     </div>
+
+                    <!-- Enroll Button -->
                     <div class="mt-3">
                         <button wire:click="enroll" class="btn btn-success">Enroll</button>
                     </div>
-
                 </div>
             </div>
         </div>
