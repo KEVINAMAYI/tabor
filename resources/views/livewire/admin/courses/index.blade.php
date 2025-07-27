@@ -74,11 +74,8 @@ new class extends Component {
 
         try {
 
-
-
             $imagePath = $this->image ? $this->image->store('courses', 'public') : null;
             $brochurePath = $this->brochure ? $this->brochure->store('brochures', 'public') : null;
-
 
             Course::create([
                 'title' => $this->title,
@@ -97,12 +94,12 @@ new class extends Component {
             $this->resetForm();
             $this->loadCourses();
             $this->dispatch('hide-course-modal');
-
             LivewireAlert::text('Course added successfully.!')->success()->toast()->position('top-end')->show();
+            Log::info('Course added and loadCourses called. Courses count: ' . count($this->courses)); // Add this line here
+
 
         } catch (\Exception $e) {
             Log::error('Error adding course: ' . $e->getMessage());
-
             LivewireAlert::text('Failed to add Course.!')->error()->toast()->position('top-end')->show();
         }
     }
@@ -147,7 +144,6 @@ new class extends Component {
                 'prerequisites' => $this->prerequisites,
                 'image_url' => $imagePath,
                 'brochure_url' => $brochurePath,
-
             ]);
 
             $this->resetForm();
@@ -380,7 +376,7 @@ new class extends Component {
                         </thead>
                         <tbody>
                         @forelse ($courses as $course)
-                            <tr class="search-items">
+                            <tr wire:key="{{ $course->id }}" class="search-items">
                                 <td>
                                     <div class="form-check text-center">
                                         <input type="checkbox" class="form-check-input" wire:model="selected"
