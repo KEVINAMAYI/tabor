@@ -1,4 +1,4 @@
-name: 🚀 Deploy website on push
+name: 🚀 Deploy website to cpanel on push
 
 on:
   push:
