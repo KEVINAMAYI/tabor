@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('enrollment_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 10, 2);
-            $table->enum('method', ['cash','mpesa','card','bank'])->default('cash');
+            $table->foreignId('enrollment_id')->constrained()->nullable();
+            $table->decimal('amount', 10, 2)->default(0.00);
+            $table->enum('payment_method', ['cash','mpesa','card','bank'])->default('cash');
+            $table->string('transaction_id')->nullable();
             $table->string('reference')->nullable();
+            $table->string('payer')->nullable();
+            $table->text('phone')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
