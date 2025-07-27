@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\MpesaApi;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+    Route::post('finance/confirmation',[MpesaApi::class, 'c2bConfirmation']);
+    Route::post('finance/validation',[MpesaApi::class, 'c2bValidation']);
+    Route::post('finance/stk_response',[MpesaApi::class, 'stkCallbackAction']);
+
 
 Route::middleware(['auth'])->group(function () {
 
