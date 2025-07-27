@@ -174,7 +174,7 @@ class MpesaApi extends Controller
                     'phone' => $phone,
                     'paid_at' => $date_time,
                 ]);
-                
+
             }
             DB::commit();
         } catch (Exception $exception) {
@@ -212,6 +212,7 @@ class MpesaApi extends Controller
         } else {
         }
     }
+
     public function confirmPayment(Request $request)
     {
         $trans_id = $request->trans_id;
@@ -236,79 +237,5 @@ class MpesaApi extends Controller
             );
         }
     }
-    
-    
-// compute balance function
-    static function compute_balance($id)
-    {
-        
-    }
 
-    //SMS FUNCTIONS
-    /* public function smsToken()
-    {
-        $curl = curl_init();
-
-        curl_setopt_array(
-            $curl,
-            array(
-                CURLOPT_URL => 'https://api.emalify.com/v1/oauth/token',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => '{
-                "client_id" : "bebWKRRVZaPvCb4o3JSfqWmidlqxjOdo",
-                "client_secret" : "WgLRBAKoBJ0fsXbYe1TMxqCGSN7mWg1mZ6mC5si3",
-                "grant_type" : "client_credentials"
-                    }',
-                CURLOPT_HTTPHEADER => array(
-                    'Accept: application/json',
-                    'Content-Type: application/json'
-                ),
-            )
-        );
-        $curl_response = curl_exec($curl);
-        $access_token = json_decode($curl_response);
-
-        curl_close($curl);
-        return $access_token->access_token;
-    }
-
-    public function sendSms($message, $phone_number)
-    {
-        $token = $this->smsToken();
-
-        $url = "https://api.emalify.com/v1/projects/nvk85q40v8mjpdxz/sms/simple/send";
-        $post_fields = array(
-            'to' => ["$phone_number"],
-            "message" => $message,
-            "from" => "KCT_LTD"
-        );
-        $body = json_encode($post_fields);
-
-        $curl = curl_init();
-        curl_setopt_array(
-            $curl,
-            array(
-                CURLOPT_URL => $url,
-                CURLOPT_HEADER => false,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $body,
-                CURLOPT_HTTPHEADER => array(
-                    'Content-Type:application/json',
-                    'Authorization:Bearer ' . $token,
-                ),
-            )
-        );
-        $response = curl_exec($curl);
-        Log::info($response);
-        return $response;
-    } */
-
-    
 }
