@@ -14,6 +14,7 @@ Route::view('dashboard', 'dashboard')
     Route::post('finance/stk_response',[MpesaApi::class, 'stkCallbackAction']);
     Route::post('finance/simulate-c2b',[MpesaApi::class, 'c2b']);
     Route::post('finance/register-url',[MpesaApi::class, 'registerUrl']);
+    Route::get('finance/access-token',[MpesaApi::class, 'generateToken']);
 
 
 Route::middleware(['auth'])->group(function () {
