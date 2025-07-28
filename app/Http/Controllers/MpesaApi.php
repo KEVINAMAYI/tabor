@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Log;
+use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +45,8 @@ class MpesaApi extends Controller
     private function makeHttp($url, $body)
     {
         $token = $this->generateToken();
+        Log::info("Token: {$token}");
+    
         $curl = curl_init();
         curl_setopt_array(
             $curl,
@@ -70,35 +72,35 @@ class MpesaApi extends Controller
         return $response;
     }
 
-    /* public function registerUrl()
+    public function registerUrl()
     {
 
-        $body = array(
-            'ShortCode' => 507000,
+        $body = [
+            'ShortCode' => env('MPESA_SHORTCODE'),
             'ResponseType' => 'Completed',
-            'ConfirmationURL' => 'https://uat.tabor.ac.ke/mpesa/confirmation_url',
+            'ConfirmationURL' => 'https://uat.tabor.ac.ke/finance/confirmation',
             'ValidationURL' => ''
-        );
+        ];
 
         $url = "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl";
 
         $result = $this->makeHttp($url, $body);
 
         return $result;
-    } */
+    }
     public function c2b(Request $request)
     {
         $url = 'https://api.safaricom.co.ke/mpesa/c2b/v1/simulate';
 
         $data = $request->all();
 
-        $body = array(
+        $body = [
             'ShortCode' => $data['ShortCode'],
             'CommandID' => 'CustomerPayBillOnline',
             'Amount' => $data['Amount'],
             'Msisdn' => $data['Msisdn'],
             'BillRefNumber' => 'Test Payment',
-        );
+        ];
         $response = $this->makeHttp($url, $body);
 
         return $response;
@@ -118,7 +120,7 @@ class MpesaApi extends Controller
         $TIMESTAMP = date("YmdHis", time());
         $password = base64_encode("{$MERCHANT_ID}{$PASSKEY}{$TIMESTAMP}");
 
-        $body = array(
+        $body = [
             'BusinessShortCode' => $MERCHANT_ID,
             'Password' => $password,
             'Timestamp' => $TIMESTAMP,
@@ -130,7 +132,7 @@ class MpesaApi extends Controller
             'CallBackURL' => 'https://uat.tabor.ac.ke/finance/stk_response',
             'AccountReference' => $TransactionDesc,
             'TransactionDesc' => $TransactionDesc
-        );
+        ];
 
         $url = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
