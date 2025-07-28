@@ -25,7 +25,7 @@ class MpesaApi extends Controller
 
         curl_setopt_array(
             $curl,
-            array(
+            [
                 CURLOPT_URL => $url,
                 CURLOPT_HTTPHEADER => array(
                     "Authorization: Basic {$credentials}",
@@ -33,7 +33,7 @@ class MpesaApi extends Controller
                 ),
                 CURLOPT_HEADER => false,
                 CURLOPT_RETURNTRANSFER => true,
-            )
+            ]
         );
         $curl_response = curl_exec($curl);
         $access_token = json_decode($curl_response);
@@ -46,27 +46,27 @@ class MpesaApi extends Controller
     {
         $token = $this->generateToken();
         Log::info("Token: {$token}");
-    
+
         $curl = curl_init();
         curl_setopt_array(
             $curl,
-            array(
+            [
                 CURLOPT_URL => $url,
                 CURLOPT_HEADER => false,
-                CURLOPT_HTTPHEADER => array(
+                CURLOPT_HTTPHEADER => [
                     'Content-Type:application/json',
                     "Authorization:Bearer {$token}",
-                ),
-            )
+                ],
+            ]
         );
         $data_string = json_encode($body);
         curl_setopt_array(
             $curl,
-            options: array(
+             [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $data_string,
-            )
+            ]
         );
         $response = curl_exec($curl);
         return $response;
