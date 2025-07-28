@@ -78,7 +78,7 @@ class MpesaApi extends Controller
         $body = [
             'ShortCode' => env('MPESA_SHORTCODE'),
             'ResponseType' => 'Completed',
-            'ConfirmationURL' => 'https://uat.tabor.ac.ke/finance/confirmation',
+            'ConfirmationURL' => 'https://uat.tabor.ac.ke/api/finance/confirmation',
             'ValidationURL' => ''
         ];
 
@@ -129,7 +129,7 @@ class MpesaApi extends Controller
             'PartyA' => $phone,
             'PartyB' => $MERCHANT_ID,
             'PhoneNumber' => $phone,
-            'CallBackURL' => 'https://uat.tabor.ac.ke/finance/stk_response',
+            'CallBackURL' => 'https://uat.tabor.ac.ke/api/finance/stk_response',
             'AccountReference' => $TransactionDesc,
             'TransactionDesc' => $TransactionDesc
         ];
