@@ -27,10 +27,10 @@ class MpesaApi extends Controller
             $curl,
             [
                 CURLOPT_URL => $url,
-                CURLOPT_HTTPHEADER => array(
+                CURLOPT_HTTPHEADER => [
                     "Authorization: Basic {$credentials}",
-                    'Content-Type:application/json',
-                ),
+                    'Content-Type: application/json',
+                ],
                 CURLOPT_HEADER => false,
                 CURLOPT_RETURNTRANSFER => true,
             ]
@@ -53,15 +53,15 @@ class MpesaApi extends Controller
                 CURLOPT_URL => $url,
                 CURLOPT_HEADER => false,
                 CURLOPT_HTTPHEADER => [
-                    'Content-Type:application/json',
-                    "Authorization:Bearer {$token}",
+                    'Content-Type: application/json',
+                    "Authorization: Bearer {$token}",
                 ],
             ]
         );
         $data_string = json_encode($body);
         curl_setopt_array(
             $curl,
-             [
+            [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $data_string,
@@ -78,7 +78,7 @@ class MpesaApi extends Controller
             'ShortCode' => env('MPESA_SHORTCODE'),
             'ResponseType' => 'Completed',
             'ConfirmationURL' => 'https://uat.tabor.ac.ke/finance/confirmation',
-            'ValidationURL' => ''
+            'ValidationURL' => 'https://uat.tabor.ac.ke/finance/validation'
         ];
 
         $url = "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl";
@@ -156,28 +156,28 @@ class MpesaApi extends Controller
             Log::info('C2B Confirmation: ' . request()->ip());
             Log::info($response);
 
-           /*  $mpesa_transaction_id = $response['TransID'];
-            $date_time = $response['TransTime'];
-            $amount = $response['TransAmount'];
-            $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
-            $phone = $response['MSISDN'];
-            $name = ($response['FirstName'] ?? '') . ' ' . ($response['MiddleName'] ?? '') . ' ' . ($response['LastName'] ?? '');
-            $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
+            /*  $mpesa_transaction_id = $response['TransID'];
+             $date_time = $response['TransTime'];
+             $amount = $response['TransAmount'];
+             $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
+             $phone = $response['MSISDN'];
+             $name = ($response['FirstName'] ?? '') . ' ' . ($response['MiddleName'] ?? '') . ' ' . ($response['LastName'] ?? '');
+             $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
 
-            //save the transaction in database
-            if (!empty($mpesa_transaction_id)) {
+             //save the transaction in database
+             if (!empty($mpesa_transaction_id)) {
 
-                $transaction = Payment::create([
-                    'payer' => $payer,
-                    'transaction_id' => $mpesa_transaction_id,
-                    'account_refference' => $account,
-                    'amount' => $amount,
-                    'phone' => $phone,
-                    'paid_at' => $date_time,
-                ]);
+                 $transaction = Payment::create([
+                     'payer' => $payer,
+                     'transaction_id' => $mpesa_transaction_id,
+                     'account_refference' => $account,
+                     'amount' => $amount,
+                     'phone' => $phone,
+                     'paid_at' => $date_time,
+                 ]);
 
-            }
-            DB::commit(); */
+             }
+             DB::commit(); */
         } catch (Exception $exception) {
             DB::rollBack();
             Log::info($exception);
