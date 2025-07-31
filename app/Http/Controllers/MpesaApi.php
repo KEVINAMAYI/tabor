@@ -54,7 +54,7 @@ class MpesaApi extends Controller
                 CURLOPT_HEADER => false,
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
-                    "Authorization: Bearer {$token}",
+                    'Authorization: Bearer ' . $token,
                 ],
             ]
         );
