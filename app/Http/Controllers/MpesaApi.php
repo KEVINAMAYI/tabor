@@ -45,7 +45,6 @@ class MpesaApi extends Controller
     private function makeHttp($url, $body)
     {
         $token = $this->generateToken();
-        Log::info("Token: {$token}");
 
         $curl = curl_init();
         curl_setopt_array(
@@ -157,7 +156,7 @@ class MpesaApi extends Controller
             Log::info('C2B Confirmation: ' . request()->ip());
             Log::info($response);
 
-            $mpesa_transaction_id = $response['TransID'];
+           /*  $mpesa_transaction_id = $response['TransID'];
             $date_time = $response['TransTime'];
             $amount = $response['TransAmount'];
             $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
@@ -178,7 +177,7 @@ class MpesaApi extends Controller
                 ]);
 
             }
-            DB::commit();
+            DB::commit(); */
         } catch (Exception $exception) {
             DB::rollBack();
             Log::info($exception);
