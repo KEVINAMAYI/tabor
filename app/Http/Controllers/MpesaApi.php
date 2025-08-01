@@ -45,17 +45,17 @@ class MpesaApi extends Controller
     private function makeHttp($url, $body)
     {
         $token = $this->generateToken();
-
+        Log::info("Token: " . $token);
         $curl = curl_init();
         curl_setopt_array(
             $curl,
             [
                 CURLOPT_URL => $url,
                 CURLOPT_HEADER => false,
-                CURLOPT_HTTPHEADER => [
+                CURLOPT_HTTPHEADER => array(
                     'Content-Type: application/json',
                     'Authorization: Bearer ' . $token,
-                ],
+                )
             ]
         );
         $data_string = json_encode($body);
@@ -68,6 +68,14 @@ class MpesaApi extends Controller
             ]
         );
         $response = curl_exec($curl);
+
+        if (curl_errno($curl)) {
+            Log::error('Curl error: ' . curl_error($curl));
+            return response()->json(['error' => 'Curl error: ' . curl_error($curl)], 500);
+        }
+
+        curl_close($curl);
+        Log::info('Response: ' . $response);
         return $response;
     }
 
