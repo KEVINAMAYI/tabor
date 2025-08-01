@@ -9,9 +9,7 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $guarded = [
-        'id',
-    ];
+    protected $guarded = ['id'];
 
     /* -----------------------------------------------------------------
      |  Casts & dates
