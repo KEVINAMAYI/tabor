@@ -10,9 +10,9 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::post('finance/confirmation', [MpesaApi::class, 'c2bConfirmation'])->withoutMiddleware([VerifyCsrfToken::class]);
+/* Route::post('finance/confirmation', [MpesaApi::class, 'c2bConfirmation'])->withoutMiddleware([VerifyCsrfToken::class]);
 Route::post('finance/validation', [MpesaApi::class, 'c2bValidation'])->withoutMiddleware([VerifyCsrfToken::class]);
-Route::post('finance/stk_response', [MpesaApi::class, 'stkCallbackAction'])->withoutMiddleware([VerifyCsrfToken::class]);
+Route::post('finance/stk_response', [MpesaApi::class, 'stkCallbackAction'])->withoutMiddleware([VerifyCsrfToken::class]);*/
 Route::post('finance/simulate-c2b', [MpesaApi::class, 'c2b'])->withoutMiddleware([VerifyCsrfToken::class]);
 Route::post('finance/register-url', [MpesaApi::class, 'registerUrl'])->withoutMiddleware([VerifyCsrfToken::class]);
 Route::get('finance/access-token', [MpesaApi::class, 'generateToken'])->withoutMiddleware([VerifyCsrfToken::class]);
