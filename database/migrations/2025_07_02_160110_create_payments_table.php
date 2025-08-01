@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('payment_method', ['cash','mpesa','card','bank'])->default('cash');
             $table->string('transaction_id')->nullable();
             $table->string('reference')->nullable();
-            $table->string('payer')->nullable();
+            $table->string('payer',255)->nullable();
             $table->text('phone')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
