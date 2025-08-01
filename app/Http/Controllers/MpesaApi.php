@@ -183,7 +183,7 @@ class MpesaApi extends Controller
                      'account_refference' => $account,
                      'amount' => $amount,
                      'phone' => $phone,
-                     'paid_at' => $date_time,
+                     'paid_at' => $date_time->toDateTimeString(),
                  ]);
 
              }
