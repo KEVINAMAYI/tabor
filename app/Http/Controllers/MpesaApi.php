@@ -180,7 +180,7 @@ class MpesaApi extends Controller
                  $transaction = Payment::create([
                      'payer' => $payer,
                      'transaction_id' => $mpesa_transaction_id,
-                     'account_refference' => $account,
+                     'refference' => $account,
                      'amount' => $amount,
                      'phone' => $phone,
                      'paid_at' => $date_time,
