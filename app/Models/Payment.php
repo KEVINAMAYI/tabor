@@ -9,13 +9,8 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'enrollment_id',     // FK to enrolments table
-        'amount',
-        'method',
-        'reference',
-        'is_paid',
-        'paid_at',
+    protected $guarded = [
+        'id',
     ];
 
     /* -----------------------------------------------------------------
@@ -23,7 +18,6 @@ class Payment extends Model
      |------------------------------------------------------------------
      */
     protected $casts = [
-        'is_paid' => 'boolean',
         'paid_at' => 'datetime',
     ];
 
