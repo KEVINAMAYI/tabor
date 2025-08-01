@@ -15,10 +15,14 @@ class Material extends Model
      */
     protected $fillable = [
         'intake_module_id',
-        'file_path',        // storage / S3 key
+        'file_path',
         'original_name',
         'mime',
+        'type',
+        'title',
+        'uploaded_by',
     ];
+
 
     /* -----------------------------------------------------------------
      |  Relationships
@@ -91,4 +95,11 @@ class Material extends Model
     {
         return pathinfo($this->original_name, PATHINFO_EXTENSION);
     }
+
+
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
 }

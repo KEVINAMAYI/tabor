@@ -49,7 +49,7 @@ new class extends Component
     public function loadLecturers()
     {
         $this->lecturers = Lecturer::with('user')
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
+            ->when(!empty($this->search), fn ($q) => $q->where(function ($query) {
                 $query->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")
@@ -208,7 +208,7 @@ new class extends Component
     private function resetForm()
     {
         foreach (['first_name','last_name','email','phone_number','kra_pin',
-                     'id_number','next_of_kin','alternative_contact','date_of_birth'] as $prop) {
+                     'id_number','next_of_kin','alternative_contact','date_of_birth','search'] as $prop) {
             $this->$prop = null;
         }
         $this->editId = null;
@@ -315,7 +315,7 @@ new class extends Component
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer d-flex gap-6">
+                            <div class="modal-footer d-flex gap-1">
                                 <button class="btn btn-success" type="submit">
                                     {{ $editId ? 'Save' : 'Add' }}
                                 </button>

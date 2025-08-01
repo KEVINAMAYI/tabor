@@ -17,8 +17,11 @@ return new class extends Migration {
             $table->foreignId('intake_module_id')->constrained()->onDelete('cascade');
             $table->date('due_on')->nullable();
             $table->unsignedSmallInteger('max_marks')->default(100);
+            $table->string('file_path')->nullable();
+            $table->string('original_name')->nullable();
             $table->timestamps();
         });
+
 
     }
 

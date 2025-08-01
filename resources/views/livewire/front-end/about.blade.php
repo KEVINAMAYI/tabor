@@ -145,6 +145,59 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
 
     <!-- ------------------------------------- -->
+    <section class="bg-dark py-7 py-md-14 py-lg-11">
+        <div class="container-fluid">
+            <div class="row mb-7 mb-lg-0">
+                <div class="col-lg-7">
+                    <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm">
+                        Meet our team
+                    </h2>
+                </div>
+            </div>
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jacklyne.jpg" alt="leader" style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Jacklyne Nekesa Wangwe</h4>
+                            <p class="fs-3 mb-0">Lead Trainer – Caregiving and Health Services Support</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Slyvia.jpg" alt="leader" style="width: 280px; height: 360px;" class="">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Slyvia Njeri Kimani</h4>
+                            <p class="fs-3 mb-0">Head of Training</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Ann.jpg" alt="leader" class="">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
+                            <p class="fs-3 mb-0">Academic Director</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jotham.jpeg" alt="leader" class="">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-8">Dr. Jotham Mukundi</h4>
+                            <p class="fs-3 mb-0">Director & Chief Executive</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ------------------------------------- -->
+
+
+    <!-- ------------------------------------- -->
     <!-- Accreditation & Partners Start -->
     <!-- ------------------------------------- -->
     <section class="pt-7 pt-md-14 pt-lg-11 pb-9 pb-lg-12 border-bottom accreditation-section">
@@ -228,74 +281,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     </section>
     <!-- ------------------------------------- -->
     <!-- Accreditation & Partners End -->
-    <!-- ------------------------------------- -->
-
-
-    <!-- ------------------------------------- -->
-    <!-- Team Start -->
-    <!-- ------------------------------------- -->
-    <section class="bg-dark py-7 py-md-14 py-lg-11">
-        <div class="container-fluid">
-            <div class="row mb-7 mb-lg-0">
-                <div class="col-lg-7">
-                    <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm">
-                        Meet our team
-                    </h2>
-                </div>
-                <div class="col-lg-5">
-                    <p class="mb-0 fs-4">
-                        Meet the experienced professionals guiding our institution
-                    </p>
-                </div>
-            </div>
-            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/morgan.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Sarah Wanjiku</h4>
-                            <p class="fs-3 mb-0">Student Affairs Director</p>
-                            <p class="fs-3 mb-0">Dedicated to student success and comprehensive support services.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/taylor.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">James Kipchoge</h4>
-                            <p class="fs-3 mb-0">International Relations Manager</p>
-                            <p class="fs-3 mb-0">Specialist in global partnerships and student placement programs.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/jordan.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
-                            <p class="fs-3 mb-0">Academic Director</p>
-                            <p class="fs-3 mb-0">Expert in curriculum development and quality assurance with extensive
-                                industry experience.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/alex.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-8">Dr. Jotham Mukundi</h4>
-                            <p class="fs-3 mb-0">Director & Chief Executive</p>
-                            <p class="fs-3 mb-0">Educational leader with over 15 years in TVET development and
-                                international partnerships.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- ------------------------------------- -->
-    <!-- Team End -->
     <!-- ------------------------------------- -->
 
 

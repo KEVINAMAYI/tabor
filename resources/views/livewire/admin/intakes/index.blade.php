@@ -35,7 +35,7 @@ new class extends Component
     /* ───────── Load records ─────────────────────────── */
     public function loadIntakes()
     {
-        $this->intakes = Intake::when($this->search, fn ($q) =>
+        $this->intakes = Intake::when(!empty($this->search), fn ($q) =>
         $q->where('name', 'like', "%{$this->search}%"))
             ->latest()->get();
     }
@@ -56,7 +56,7 @@ new class extends Component
             $this->loadIntakes();
             $this->dispatch('hide-intake-modal');
 
-            LivewireAlert::text('Lecturer added successfully.!')
+            LivewireAlert::text('Intake added successfully.!')
                 ->success()
                 ->toast()
                 ->position('top-end')
@@ -150,6 +150,8 @@ new class extends Component
     {
         $this->name = $this->starts_at = $this->ends_at = null;
         $this->editId = null;
+        $this->search = null;
+
     }
 
     #[On('select-all')]
@@ -242,7 +244,7 @@ new class extends Component
                                     @error('name') <small class="text-danger">{{ $message }}</small>@enderror
                                 </div>
                             </div>
-                            <div class="modal-footer d-flex gap-6">
+                            <div class="modal-footer d-flex gap-1">
                                 <button class="btn btn-success" type="submit">
                                     {{ $editId ? 'Save' : 'Add' }}
                                 </button>

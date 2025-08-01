@@ -44,18 +44,21 @@ new class extends Component {
     public function loadPayments()
     {
         $this->payments = Payment::with('enrollment')
-            ->when($this->search, fn($q) => $q->where(function ($query) {
-                $query->whereHas('enrollment.student', function ($query) {
-                    $query->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%");
-                })
-                    ->orWhere('method', 'like', "%{$this->search}%")
-                    ->orWhere('reference', 'like', "%{$this->search}%");
-            }))
+            ->when(!empty($this->search), function ($q) {
+                $q->where(function ($query) {
+                    $query->whereHas('enrollment.student', function ($query) {
+                        $query->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                            ->orWhere('email', 'like', "%{$this->search}%");
+                    })
+                        ->orWhere('method', 'like', "%{$this->search}%")
+                        ->orWhere('reference', 'like', "%{$this->search}%");
+                });
+            })
             ->latest()
             ->get();
     }
+
 
     public function addPayment()
     {
@@ -180,7 +183,7 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->enrollment_id = $this->amount = $this->method = $this->reference = $this->paid_at = null;
+        $this->enrollment_id = $this->search =  $this->amount = $this->method = $this->reference = $this->paid_at = null;
         $this->editId = null;
     }
 
@@ -283,7 +286,7 @@ new class extends Component {
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <div class="d-flex gap-6 m-0">
+                                <div class="d-flex gap-1 m-0">
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
