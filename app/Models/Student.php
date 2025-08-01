@@ -12,6 +12,7 @@ class Student extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'admission_number',
         'email',
         'phone',
         'dob',
@@ -101,6 +102,22 @@ class Student extends Model
     public function classGroup()
     {
         return $this->belongsTo(ClassGroup::class);
+    }
+
+    // Generate a unique admission number for the student
+    public static function generateAdmissionNumber()
+    {
+        $lastStudent = Student::orderBy('admission_number', 'desc')->first();
+
+        if ($lastStudent && is_numeric($lastStudent->admission_number)) {
+            $lastNumber = (int) $lastStudent->admission_number;
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $nextAdmissionNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return $nextAdmissionNumber;
     }
 
 }

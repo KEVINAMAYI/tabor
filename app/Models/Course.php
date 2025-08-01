@@ -11,6 +11,7 @@ class Course extends Model
 
     protected $fillable = [
         'title',
+        'code',
         'description',
         'price',
         'duration',
@@ -37,7 +38,7 @@ class Course extends Model
     // Enrolments (one row per student per intake)
     public function enrolments()
     {
-        return $this->hasMany(Enrolment::class);
+        return $this->hasMany(Enrollment::class);
     }
 
     /* -----------------------------------------------------------------

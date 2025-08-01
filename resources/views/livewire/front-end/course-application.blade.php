@@ -20,7 +20,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     use WithFileUploads;
 
     // Declare variables that will be used in the component
-    public $first_name, $last_name, $email, $phone_number, $address, $country, $highest_level_of_education;
+    public $first_name, $last_name, $admission_number, $email, $phone_number, $address, $country, $highest_level_of_education;
     public $selected_course_id, $selected_intake_id, $id_url, $kcse_certificate, $passport_size_url, $date_of_birth;
     public $courses = [], $intakes = [];
     public $terms = false;
@@ -55,10 +55,15 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 'password' => Hash::make('password'),
             ]);
 
+            $admission_number = Student::generateAdmissionNumber();
+            // Set the admission number
+            $this->admission_number = $admission_number;
+
             // Create the student
             $student = Student::create([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
+                'admission_number' => $this->admission_number,
                 'email' => $this->email,
                 'phone' => $this->phone_number,
                 'dob' => $this->date_of_birth,
