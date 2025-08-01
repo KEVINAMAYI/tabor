@@ -171,7 +171,7 @@ class MpesaApi extends Controller
              $amount = $response['TransAmount'];
              $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
              $phone = $response['MSISDN'];
-             $name = ($response['FirstName'] ?? '') . ' ' . ($response['MiddleName'] ?? '') . ' ' . ($response['LastName'] ?? '');
+             $name = $response['FirstName'];
              $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
 
              //save the transaction in database
@@ -183,8 +183,12 @@ class MpesaApi extends Controller
                      'refference' => $account,
                      'amount' => $amount,
                      'phone' => $phone,
-                     'paid_at' => $date_time,
+                     'paid_at' => $date_time
                  ]);
+
+                 /* $enrollment = Enrollment::where('account_number', $account)->first();
+                 $enrollment->paid = 1;
+                 $enrollment->save(); */
 
              }
              DB::commit();
