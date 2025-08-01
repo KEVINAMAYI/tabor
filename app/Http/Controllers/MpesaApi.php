@@ -79,7 +79,7 @@ class MpesaApi extends Controller
         return $response;
     }
 
-    public function registerUrl()
+    /* public function registerUrl()
     {
 
         $body = [
@@ -94,8 +94,8 @@ class MpesaApi extends Controller
         $result = $this->makeHttp($url, $body);
 
         return $result;
-    }
-    public function c2b(Request $request)
+    } */
+    /* public function c2b(Request $request)
     {
         $url = 'https://api.safaricom.co.ke/mpesa/c2b/v1/simulate';
 
@@ -111,7 +111,7 @@ class MpesaApi extends Controller
         $response = $this->makeHttp($url, $body);
 
         return $response;
-    }
+    } */
 
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
     public function triggerStk(Request $request)
@@ -136,7 +136,7 @@ class MpesaApi extends Controller
             'PartyA' => $phone,
             'PartyB' => $MERCHANT_ID,
             'PhoneNumber' => $phone,
-            'CallBackURL' => 'https://uat.tabor.ac.ke/finance/stk_response',
+            'CallBackURL' => 'https://uat.tabor.ac.ke/api/finance/callback',
             'AccountReference' => $TransactionDesc,
             'TransactionDesc' => $TransactionDesc
         ];
@@ -209,17 +209,17 @@ class MpesaApi extends Controller
 
 
         //access the array data response
-        $array = $data['Body']['stkCallback']['CallbackMetadata']['Item'];
-        $array1 = $data['Body']['stkCallback'];
+        // $array = $data['Body']['stkCallback']['CallbackMetadata']['Item'];
+        // $array1 = $data['Body']['stkCallback'];
 
-        $MerchantRequestID = $array1['MerchantRequestID'];
-        $CheckoutRequestID = $array1['CheckoutRequestID'];
-        $ResultCode = $array1['ResultCode'];
+        // $MerchantRequestID = $array1['MerchantRequestID'];
+        // $CheckoutRequestID = $array1['CheckoutRequestID'];
+        // $ResultCode = $array1['ResultCode'];
 
-        // success stk
-        if ($ResultCode == 0) {
-        } else {
-        }
+        // // success stk
+        // if ($ResultCode == 0) {
+        // } else {
+        // }
     }
 
     public function confirmPayment(Request $request)
