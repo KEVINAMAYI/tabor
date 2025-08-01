@@ -4,6 +4,7 @@ use App\Models\Module;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -40,7 +41,7 @@ new class extends Component {
             ->when($this->course_id, function ($query) {
                 $query->where('course_id', $this->course_id);
             })
-            ->when($this->search, function ($query) {
+            ->when(!empty($this->search), function ($query) {
                 $query->where('title', 'like', "%{$this->search}%")
                     ->orWhere('description', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
@@ -66,10 +67,20 @@ new class extends Component {
             $this->loadModules();
             $this->dispatch('hide-module-modal');
 
-            session()->flash('message', 'Module added successfully');
+            LivewireAlert::text('Module added successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
 
         } catch (\Exception $e) {
             \Log::info('Error adding module: ' . $e->getMessage());
+
+            LivewireAlert::text('There was an error while adding module.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -103,11 +114,21 @@ new class extends Component {
             $this->loadModules();
             $this->dispatch('hide-module-modal');
 
-            session()->flash('message', 'Module updated successfully');
+            LivewireAlert::text('module updated successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
 
         } catch (\Exception $e) {
             Log::error('Error updating module: ' . $e->getMessage());
-            session()->flash('error', 'Failed to update module');
+
+            LivewireAlert::text('There was an error while updating module.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -135,7 +156,7 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->title = $this->description = null;
+        $this->title = $this->description = $this->search = null;
         $this->editId = null;
     }
 

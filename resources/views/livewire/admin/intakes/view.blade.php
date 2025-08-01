@@ -1,15 +1,21 @@
 <?php
 
+use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\Material;
 use App\Models\Student;
 use App\Models\Intake;
 use App\Models\IntakeModule;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithFileUploads;
 
 new class extends Component {
+
+    use WithFileUploads;
 
     /* ---------- public state ---------- */
     public $courses;           // collection of Course
@@ -21,10 +27,22 @@ new class extends Component {
     public $activeCourseId;
     public $activeStudentId;
     public $activeStudent;
+    public $type;
+    public $title;
+    public $material;
+    public $video_url;
+    public $selectedCourse = '';
+    public $selected = [];
+    public $selectAll = false;
+    public $intake_module_id;
+    public $selectedModuleId;
+    public $intakeModuleId;
+    public $due_on;
+    public $max_marks;
+    public $assessment_file;
+    public $materials = [];
+    public $assessments = [];
 
-    public $selectedCourse = '';  // <select> binding
-    public $selected = [];        // row checkboxes
-    public $selectAll = false;    // header checkbox
 
     /* ---------- mount ---------- */
     public function mount($intake_id)
@@ -71,8 +89,6 @@ new class extends Component {
                 'enrollments.intake',
             ])->findOrFail($studentId);
         }
-
-        return;
     }
 
 
@@ -98,6 +114,137 @@ new class extends Component {
     }
 
 
+    public function getIntakeModuleId()
+    {
+        $intakeModule = IntakeModule::where('intake_id', $this->intakeId)
+            ->where('module_id', $this->selectedModuleId)
+            ->first();
+
+        return $intakeModule->id;
+    }
+
+
+    public function loadMaterials()
+    {
+        if ($this->getIntakeModuleId()) {
+            $this->materials = Material::where('intake_module_id', $this->getIntakeModuleId())
+                ->with('uploader')
+                ->orderByDesc('created_at')
+                ->get();
+        }
+    }
+
+
+    public function loadAssessments()
+    {
+
+
+        if ($this->getIntakeModuleId()) {
+            $this->assessments = Assessment::where('intake_module_id', $this->getIntakeModuleId())
+                ->orderByDesc('created_at')
+                ->get();
+        }
+    }
+
+    public function uploadMaterial()
+    {
+
+        $filePath = null;
+        $mime = null;
+        $originalName = null;
+
+        if ($this->type === 'video') {
+            $filePath = $this->video_url;
+            $mime = 'video/url';
+            $originalName = $this->video_url;
+        } else {
+            $filePath = $this->material ? $this->material->store('materials', 'public') : null;
+            $mime = $this->material?->getMimeType();
+            $originalName = $this->material?->getClientOriginalName();
+        }
+
+        Material::create([
+            'intake_module_id' => $this->getIntakeModuleId(),
+            'title' => $this->title,
+            'type' => $this->type,
+            'file_path' => $filePath,
+            'original_name' => $originalName,
+            'mime' => $mime,
+            'uploaded_by' => Auth::id(),
+        ]);
+
+        $this->reset(['type', 'material', 'video_url', 'title']);
+        $this->dispatch('hide-material-modal');
+
+        LivewireAlert::title('Success!')
+            ->text('Material added successfully.')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
+        $this->loadMaterials();
+
+    }
+
+
+    public function uploadAssessment()
+    {
+
+        $this->validate([
+            'type' => 'required|in:CAT,Exam',
+            'title' => 'required|string|max:255',
+            'due_on' => 'nullable|date',
+            'max_marks' => 'required|integer|min:1|max:100',
+            'assessment_file' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+        ]);
+
+        $path = $this->assessment_file
+            ? $this->assessment_file->store('assessments', 'public')
+            : null;
+
+        Assessment::create([
+            'type' => $this->type,
+            'title' => $this->title,
+            'intake_module_id' => $this->getIntakeModuleId(),
+            'due_on' => $this->due_on,
+            'max_marks' => $this->max_marks,
+            'file_path' => $path,
+            'original_name' => $this->assessment_file?->getClientOriginalName(),
+        ]);
+
+        $this->reset(['type', 'title', 'due_on', 'max_marks', 'assessment_file']);
+        $this->dispatch('hide-assessment-modal');
+
+        LivewireAlert::title('Success!')
+            ->text('Assessment added successfully.')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
+        $this->loadAssessments();
+
+
+    }
+
+    public function selectMaterialModule($moduleId)
+    {
+        $this->selectedModuleId = $moduleId;
+        $this->loadMaterials();
+        $this->dispatch('show-material-offcanvas');
+
+    }
+
+
+    public function selectAssessmentModule($moduleId)
+    {
+        $this->selectedModuleId = $moduleId;
+        $this->loadAssessments();
+        $this->dispatch('show-assessment-offcanvas');
+    }
+
+
     public function addModulesToIntake(): void
     {
 
@@ -112,20 +259,63 @@ new class extends Component {
         $this->reset('selected', 'selectAll');
         $this->dispatch('hide-course-modal');
 
-        // Optionally, you can trigger a full component refresh
         $this->intakeCourses = IntakeModule::coursesForIntake($this->intakeId);
         $this->courses = Course::orderBy('title')->get(['id', 'title']);
         $this->activeCourseId = $this->courses[0]->id ?? '';
         $this->selectCourse($this->activeCourseId);
 
-        LivewireAlert::text('Student enrolled successfully.!')
+        LivewireAlert::title('Success!')
+            ->text('Course Module added to intake successfully.')
             ->success()
             ->toast()
             ->position('top-end')
             ->show();
 
+        $this->dispatch('$refresh');
+
     }
 
+
+    public function deleteMaterial($id)
+    {
+        $material = Material::findOrFail($id);
+
+        if ($material->type !== 'video' && $material->file_path && \Storage::disk('public')->exists($material->file_path)) {
+            \Storage::disk('public')->delete($material->file_path);
+        }
+
+        $material->delete();
+
+        LivewireAlert::title('Success!')
+            ->text('Modules material deleted successfully.')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
+        $this->loadAssessments();
+
+    }
+
+
+    public function deleteAssessment($id)
+    {
+        $assessment = Assessment::findOrFail($id);
+
+        \Storage::disk('public')->delete($assessment->file_path);
+
+        $assessment->delete();
+
+        LivewireAlert::title('Success!')
+            ->text('Modules assessment deleted successfully.')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
+        $this->loadMaterials();
+
+    }
 
 }; ?>
 
@@ -320,9 +510,8 @@ new class extends Component {
                                                                             <div
                                                                                 class="d-flex align-items-center justify-content-start">
                                                                                 <div class="rounded-1 text-bg-light"
-                                                                                     data-bs-toggle="offcanvas"
-                                                                                     data-bs-target="#moduleAssessments"
-                                                                                     aria-controls="moduleAssessments">
+                                                                                     wire:click="selectAssessmentModule({{ $module->id }})">
+
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-adobe.svg"
                                                                                         alt="adobe-icon" width="20"
@@ -331,14 +520,14 @@ new class extends Component {
 
                                                                                 <div
                                                                                     class="rounded-1 text-bg-light mx-2"
-                                                                                    data-bs-toggle="offcanvas"
-                                                                                    data-bs-target="#moduleMaterial"
-                                                                                    aria-controls="moduleMaterial">
+                                                                                    wire:click="selectMaterialModule({{ $module->id }})">
                                                                                     <img
                                                                                         src="../assets/images/chat/icon-zip-folder.svg"
-                                                                                        alt="zip-icon" width="20"
+                                                                                        alt="zip-icon"
+                                                                                        width="20"
                                                                                         height="20"/>
                                                                                 </div>
+
                                                                             </div>
                                                                         </div>
                                                                     </a>
@@ -359,63 +548,6 @@ new class extends Component {
                             </div>
                         </div>
 
-                        <div class="offcanvas offcanvas-start user-chat-box" tabindex="-1" id="chat-sidebar"
-                             aria-labelledby="offcanvasExampleLabel">
-                            <div class="offcanvas-header">
-                                <h5 class="offcanvas-title" id="offcanvasExampleLabel"> Contact </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="px-9 pt-4 pb-3">
-                                <button class="btn btn-primary fw-semibold py-8 w-100">Add New Contact</button>
-                            </div>
-                            <ul class="list-group h-n150" data-simplebar>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-inbox fs-5"></i>All Contacts
-                                    </a>
-                                </li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-star"></i>Starred
-                                    </a>
-                                </li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-file-text fs-5"></i>Pending Approval
-                                    </a>
-                                </li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-alert-circle"></i>Blocked
-                                    </a>
-                                </li>
-                                <li class="border-bottom my-3"></li>
-                                <li class="fw-semibold text-dark text-uppercase mx-9 my-2 px-3 fs-2">CATEGORIES</li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-bookmark fs-5 text-primary"></i>Engineers
-                                    </a>
-                                </li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-bookmark fs-5 text-warning"></i>Support Staff
-                                    </a>
-                                </li>
-                                <li class="list-group-item border-0 p-0 mx-9">
-                                    <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
-                                       href="javascript:void(0)">
-                                        <i class="ti ti-bookmark fs-5 text-success"></i>Sales Team
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
 
@@ -927,8 +1059,14 @@ new class extends Component {
     <!-- ===================================================================== -->
 
     <!-- 3 -->
-    <div style="width: 80vw; max-width: 1000px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleMaterial"
-         aria-labelledby="moduleMaterialLabel">
+    <div style="width: 80vw; max-width: 1000px;"
+         class="offcanvas offcanvas-end"
+         tabindex="-1"
+         id="moduleMaterial"
+         wire:ignore.self
+         aria-labelledby="moduleMaterialLabel"
+         data-bs-backdrop="static">
+
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="offcanvasExampleLabel">
                 Module Materials
@@ -936,12 +1074,17 @@ new class extends Component {
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <table class="table search-table align-middle text-nowrap">
+
+            <!-- Add Material Icon (Top-left corner) -->
+            <div class="d-flex justify-content-end my-3">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#materialUploaderModal">
+                    <i class="ti ti-plus"></i> Add Material
+                </button>
+            </div>
+
+            <table class="table my-4 search-table align-middle text-nowrap">
                 <thead class="header-item">
                 <tr>
-                    <th>
-                        <input type="checkbox" class="form-check-input text-center">
-                    </th>
                     <th>Title</th>
                     <th>Type</th>
                     <th>Uploaded By</th>
@@ -950,185 +1093,303 @@ new class extends Component {
                 </tr>
                 </thead>
                 <tbody>
-                <tr class="search-items">
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input">
-                    </td>
-                    <td>Introduction to OOP - Lecture Notes</td>
-                    <td>PDF</td>
-                    <td>Dr. John Doe</td>
-                    <td>01 Jul 2025</td>
-                    <td>
-                        <div class="action-btn">
-                            <a href="#" class="text-success" title="View/Preview">
-                                <i class="ti ti-eye fs-5"></i>
-                            </a>
-                            <a href="#" class="text-primary ms-2" title="Download">
-                                <i class="ti ti-download fs-5"></i>
-                            </a>
-                            <a href="#" class="text-warning ms-2" title="Edit Metadata">
-                                <i class="ti ti-pencil fs-5"></i>
-                            </a>
-                            <a href="#" class="text-danger ms-2" title="Delete">
-                                <i class="ti ti-trash fs-5"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="search-items">
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input">
-                    </td>
-                    <td>Week 1 Tutorial - Video Walkthrough</td>
-                    <td>Video (MP4)</td>
-                    <td>Prof. Alice Smith</td>
-                    <td>30 Jun 2025</td>
-                    <td>
-                        <div class="action-btn">
-                            <a href="#" class="text-success" title="Play Video">
-                                <i class="ti ti-player-play fs-5"></i>
-                            </a>
-                            <a href="#" class="text-primary ms-2" title="Download">
-                                <i class="ti ti-download fs-5"></i>
-                            </a>
-                            <a href="#" class="text-warning ms-2" title="Edit Details">
-                                <i class="ti ti-pencil fs-5"></i>
-                            </a>
-                            <a href="#" class="text-danger ms-2" title="Delete">
-                                <i class="ti ti-trash fs-5"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="search-items">
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input">
-                    </td>
-                    <td>Data Structures - Slides</td>
-                    <td>PPT</td>
-                    <td>Dr. Jane Kim</td>
-                    <td>25 Jun 2025</td>
-                    <td>
-                        <div class="action-btn">
-                            <a href="#" class="text-success" title="View Slides">
-                                <i class="ti ti-eye fs-5"></i>
-                            </a>
-                            <a href="#" class="text-primary ms-2" title="Download">
-                                <i class="ti ti-download fs-5"></i>
-                            </a>
-                            <a href="#" class="text-warning ms-2" title="Edit">
-                                <i class="ti ti-pencil fs-5"></i>
-                            </a>
-                            <a href="#" class="text-danger ms-2" title="Delete">
-                                <i class="ti ti-trash fs-5"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
+
+                @forelse ($materials as $material)
+                    <tr class="search-items">
+                        <td>{{ $material->title }}</td>
+                        <td>{{ strtoupper($material->type) }}</td>
+                        <td>{{ $material->uploader->name ?? 'Unknown' }}</td>
+                        <td>{{ $material->created_at->format('d M Y') }}</td>
+                        <td>
+                            <div class="action-btn">
+                                <a href="{{ $material->type === 'video' ? $material->file_path : asset('storage/' . $material->file_path) }}"
+                                   class="text-success" title="View/Preview" target="_blank">
+                                    <i class="ti ti-eye fs-5"></i>
+                                </a>
+                                @if($material->type !== 'video')
+                                    <a href="{{ asset('storage/' . $material->file_path) }}"
+                                       class="text-primary ms-2" title="Download" download>
+                                        <i class="ti ti-download fs-5"></i>
+                                    </a>
+                                @endif
+                                <a href="#" wire:click.prevent="editMaterial({{ $material->id }})"
+                                   class="text-warning ms-2" title="Edit Metadata">
+                                    <i class="ti ti-pencil fs-5"></i>
+                                </a>
+                                <a href="#" wire:click.prevent="deleteMaterial({{ $material->id }})"
+                                   class="text-danger ms-2" title="Delete">
+                                    <i class="ti ti-trash fs-5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No materials uploaded for this module.</td>
+                    </tr>
+                @endforelse
                 </tbody>
+
             </table>
+
         </div>
     </div>
 
     <!-- 4 -->
-    <div style="width: 80vw; max-width: 900px;" class="offcanvas offcanvas-end" tabindex="-1" id="moduleAssessments"
-         aria-labelledby="moduleAssessmentsLabel">
+    <div style="width: 80vw; max-width: 900px;"
+         class="offcanvas offcanvas-end"
+         tabindex="-1"
+         id="moduleAssessments"
+         aria-labelledby="moduleAssessmentsLabel"
+         wire.ignore.self
+         data-bs-backdrop="static">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="moduleAssessmentsLabel">Module Assessments</h5>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
+
+            <!-- Add Material Icon (Top-left corner) -->
+            <div class="d-flex justify-content-end my-3">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#assessmentUploaderModal">
+                    <i class="ti ti-plus"></i> Add Assessment
+                </button>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-striped align-middle text-nowrap">
                     <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Due Date</th>
-                        <th>Marks</th>
                         <th>Type</th>
-                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Max Marks</th>
+                        <th>File</th>
+                        <th>Uploaded On</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr>
-                        <td>Assignment 1: Intro to Python</td>
-                        <td>10 Jul 2025</td>
-                        <td>20</td>
-                        <td>Assignment</td>
-                        <td><span class="badge bg-success">Published</span></td>
-                        <td>
-                            <div class="action-btn">
-                                <a href="#" class="text-success" title="View">
-                                    <i class="ti ti-eye fs-5"></i>
-                                </a>
-                                <a href="#" class="text-warning ms-2" title="Edit">
-                                    <i class="ti ti-pencil fs-5"></i>
-                                </a>
-                                <a href="#" class="text-danger ms-2" title="Delete">
-                                    <i class="ti ti-trash fs-5"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quiz 1: Basics</td>
-                        <td>15 Jul 2025</td>
-                        <td>10</td>
-                        <td>Quiz</td>
-                        <td><span class="badge bg-secondary">Draft</span></td>
-                        <td>
-                            <div class="action-btn">
-                                <a href="#" class="text-success" title="View">
-                                    <i class="ti ti-eye fs-5"></i>
-                                </a>
-                                <a href="#" class="text-warning ms-2" title="Edit">
-                                    <i class="ti ti-pencil fs-5"></i>
-                                </a>
-                                <a href="#" class="text-danger ms-2" title="Delete">
-                                    <i class="ti ti-trash fs-5"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Final Exam</td>
-                        <td>25 Jul 2025</td>
-                        <td>60</td>
-                        <td>Exam</td>
-                        <td><span class="badge bg-success">Published</span></td>
-                        <td>
-                            <div class="action-btn">
-                                <a href="#" class="text-success" title="View">
-                                    <i class="ti ti-eye fs-5"></i>
-                                </a>
-                                <a href="#" class="text-warning ms-2" title="Edit">
-                                    <i class="ti ti-pencil fs-5"></i>
-                                </a>
-                                <a href="#" class="text-danger ms-2" title="Delete">
-                                    <i class="ti ti-trash fs-5"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
+                    @forelse ($assessments as $assessment)
+                        <tr>
+                            <td>{{ $assessment->title }}</td>
+                            <td>{{ $assessment->type }}</td>
+                            <td>{{ $assessment->due_on ? \Carbon\Carbon::parse($assessment->due_on)->format('d M Y') : '-' }}</td>
+                            <td>{{ $assessment->max_marks }}</td>
+                            <td>
+                                @if ($assessment->file_path)
+                                    <a href="{{ Storage::url($assessment->file_path) }}" target="_blank">
+                                        {{ $assessment->original_name ?? 'Download' }}
+                                    </a>
+                                @else
+                                    <span class="text-muted">No file</span>
+                                @endif
+                            </td>
+                            <td>{{ $assessment->created_at->format('d M Y') }}</td>
+                            <td>
+                                <div class="action-btn">
+                                    <a wire:click.prevent="deleteAssessment({{ $assessment->id }})"
+                                       class="text-danger ms-2" title="Delete">
+                                        <i class="ti ti-trash fs-5"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center">No assessments found.</td>
+                        </tr>
+                    @endforelse
                     </tbody>
                 </table>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade"
+         id="materialUploaderModal"
+         tabindex="-1"
+         aria-labelledby="materialUploaderModalLabel"
+         aria-hidden="true"
+         wire:ignore.self>
+
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="materialUploaderModalLabel">Upload Course Material</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form wire:submit.prevent="uploadMaterial" enctype="multipart/form-data">
+                    <div class="modal-body" x-data="{ selectedType: $wire.entangle('type').defer }">
+
+                        {{-- Type --}}
+                        <div class="mb-3">
+                            <label class="form-label">Material Type</label>
+                            <select wire:model="type" x-model="selectedType" class="form-select" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="pdf">PDF</option>
+                                <option value="ppt">PPT</option>
+                                <option value="image">Image</option>
+                                <option value="video">Video (Link)</option>
+                            </select>
+                        </div>
+
+                        {{-- Title --}}
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" wire:model.defer="title" class="form-control" required>
+                            @error('title') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Video URL --}}
+                        <div class="mb-3" x-show="selectedType === 'video'" x-cloak>
+                            <label class="form-label">Video URL</label>
+                            <input type="url"
+                                   wire:model.defer="video_url"
+                                   class="form-control"
+                                   :required="selectedType === 'video'">
+                            @error('video_url') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- File Upload --}}
+                        <div class="mb-3" x-show="selectedType && selectedType !== 'video'" x-cloak wire:ignore>
+                            <label class="form-label">
+                                Upload <span x-text="selectedType.toUpperCase()"></span>
+                            </label>
+                            <input type="file"
+                                   class="form-control"
+                                   wire:model="material"
+                                   :required="selectedType !== 'video'">
+                            @error('material') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" :disabled="!selectedType">Upload</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade"
+         id="assessmentUploaderModal"
+         tabindex="-1"
+         aria-labelledby="assessmentUploaderModalLabel"
+         aria-hidden="true"
+         wire:ignore.self>
+
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assessmentUploaderModalLabel">Upload Assessment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form wire:submit.prevent="uploadAssessment" enctype="multipart/form-data">
+                    <div class="modal-body">
+
+                        {{-- Type --}}
+                        <div class="mb-3">
+                            <label class="form-label">Assessment Type</label>
+                            <select wire:model="type" class="form-select" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="CAT">CAT</option>
+                                <option value="Exam">Exam</option>
+                            </select>
+                            @error('type') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Title --}}
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" wire:model.defer="title" class="form-control" required>
+                            @error('title') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Due Date --}}
+                        <div class="mb-3">
+                            <label class="form-label">Due On</label>
+                            <input type="date" wire:model.defer="due_on" class="form-control">
+                            @error('due_on') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Max Marks --}}
+                        <div class="mb-3">
+                            <label class="form-label">Maximum Marks</label>
+                            <input type="number" wire:model.defer="max_marks" class="form-control" min="1" max="100"
+                                   required>
+                            @error('max_marks') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- File Upload (optional) --}}
+                        <div class="mb-3" wire:ignore>
+                            <label class="form-label">Attach File (optional)</label>
+                            <input type="file" class="form-control" wire:model="assessment_file"
+                                   accept=".pdf,.doc,.docx">
+                            @error('assessment_file') <span class="text-danger">{{ $message }}</span> @enderror
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
 
 
 </div>
+
+
+</div>
 @push('scripts')
     <script>
+
+        window.addEventListener('show-assessment-offcanvas', () => {
+            const el = document.getElementById('moduleAssessments');
+            const offcanvas = new bootstrap.Offcanvas(el);
+            offcanvas.show();
+        });
+
+        window.addEventListener('show-material-offcanvas', () => {
+            const el = document.getElementById('moduleMaterial');
+            const offcanvas = new bootstrap.Offcanvas(el);
+            offcanvas.show();
+        });
+
         window.addEventListener('show-course-modal', () => {
-            console.log('test');
             new bootstrap.Modal(document.getElementById('manageModulesModal')).show();
         });
 
         window.addEventListener('hide-course-modal', () => {
-            bootstrap.Modal.getInstance(document.getElementById('manageModulesModal'))?.hide();
+            bootstrap.Modal.getInstance(document.getElementById('addCourseModal'))?.hide();
         });
+
+        window.addEventListener('hide-material-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('materialUploaderModal'))?.hide();
+        });
+
+        window.addEventListener('hide-assessment-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('assessmentUploaderModal'))?.hide();
+        });
+
     </script>
 
 @endpush

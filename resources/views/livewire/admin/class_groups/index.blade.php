@@ -46,7 +46,7 @@ new class extends Component {
     public function loadClassGroups()
     {
         $this->classGroups = ClassGroup::with('intake')
-            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+            ->when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->latest()
             ->get();
     }
@@ -109,7 +109,7 @@ new class extends Component {
             $this->loadClassGroups();
             $this->dispatch('hide-class-group-modal');
 
-            LivewireAlert::text('Class group added successfully.!')
+            LivewireAlert::text('Class group updated successfully.!')
                 ->success()
                 ->toast()
                 ->position('top-end')
@@ -118,7 +118,7 @@ new class extends Component {
         } catch (\Exception $e) {
             Log::error('Error updating class group: ' . $e->getMessage());
 
-            LivewireAlert::text('Failed to add Class group.!')
+            LivewireAlert::text('Failed to update Class group.!')
                 ->error()
                 ->toast()
                 ->position('top-end')
@@ -145,7 +145,7 @@ new class extends Component {
         $this->selectAll = false;
         $this->loadClassGroups();
 
-        LivewireAlert::text('Class groups added successfully.!')
+        LivewireAlert::text('Class groups deleted successfully.!')
             ->success()
             ->toast()
             ->position('top-end')
@@ -157,6 +157,7 @@ new class extends Component {
         $this->name = null;
         $this->intake_id = null;
         $this->editId = null;
+        $this->search = null;
     }
 
     #[On('select-all')]
@@ -234,7 +235,7 @@ new class extends Component {
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <div class="d-flex gap-6 m-0">
+                                <div class="d-flex gap-1 m-0">
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>

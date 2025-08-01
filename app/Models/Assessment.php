@@ -11,12 +11,15 @@ class Assessment extends Model
 
     /** Mass‑assignable columns */
     protected $fillable = [
-        'intake_module_id',   // FK to intake_modules
-        'type',               // CAT | Exam
+        'intake_module_id',
+        'type',
         'title',
         'due_on',
         'max_marks',
+        'file_path',
+        'original_name',
     ];
+
 
     /** Casts */
     protected $casts = [

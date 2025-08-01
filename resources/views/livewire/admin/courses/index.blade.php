@@ -57,16 +57,18 @@ new class extends Component {
 
     public function loadCourses()
     {
-        $this->courses = Course::query()
-            ->when(
-                $this->search,
-                fn($q) => $q->where(function ($query) {
-                    $query->where('title', 'like', "%{$this->search}%")->orWhere('description', 'like', "%{$this->search}%");
-                }),
-            )
-            ->latest()
-            ->get();
+        $query = Course::query();
+
+        if (!empty($this->search)) {
+            $query->where(function ($q) {
+                $q->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('description', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        $this->courses = $query->latest()->get();
     }
+
 
     public function addCourse()
     {
@@ -91,16 +93,27 @@ new class extends Component {
 
             ]);
 
+
+            $this->dispatch('hide-course-modal');
             $this->resetForm();
             $this->loadCourses();
-            $this->dispatch('hide-course-modal');
-            LivewireAlert::text('Course added successfully.!')->success()->toast()->position('top-end')->show();
-            Log::info('Course added and loadCourses called. Courses count: ' . count($this->courses)); // Add this line here
+
+            LivewireAlert::text('Course added successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
 
 
         } catch (\Exception $e) {
             Log::error('Error adding course: ' . $e->getMessage());
-            LivewireAlert::text('Failed to add Course.!')->error()->toast()->position('top-end')->show();
+
+            LivewireAlert::text('There was an error while adding course.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -191,6 +204,7 @@ new class extends Component {
         $this->image = null;
         $this->editId = null;
         $this->brochure = null;
+        $this->search = null;
         $this->dispatch('reset-file-input');
 
 
@@ -246,7 +260,7 @@ new class extends Component {
             <!-- Modal -->
             <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog"
                  aria-labelledby="addCourseModalTitle" aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">{{ $editId ? 'Update' : 'Add' }} Course</h5>
@@ -269,7 +283,8 @@ new class extends Component {
                                     <!-- Course Fee -->
                                     <div class="col-md-6 mb-3">
                                         <label for="course-fee" class="form-label">Fee</label>
-                                        <input id="course-fee" type="number" step="0.01" wire:model="price" class="form-control"
+                                        <input id="course-fee" type="number" step="0.01" wire:model="price"
+                                               class="form-control"
                                                placeholder="Enter course fee (e.g., 200 USD)"/>
                                         @error('price')
                                         <small class="text-danger">{{ $message }}</small>
@@ -280,21 +295,23 @@ new class extends Component {
                                     <div class="col-md-12 mb-3">
                                         <label for="course-description" class="form-label">Course Description</label>
                                         <textarea id="course-description" wire:model="description" class="form-control"
-                                                  placeholder="Provide a brief description of the course" rows="4"></textarea>
+                                                  placeholder="Provide a brief description of the course"
+                                                  rows="4"></textarea>
                                         @error('description')
                                         <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
                                     <!-- Duration -->
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="course-duration" class="form-label">Duration</label>
-                                        <input id="course-duration" type="text" wire:model="duration" class="form-control"
+                                        <input id="course-duration" type="text" wire:model="duration"
+                                               class="form-control"
                                                placeholder="Duration (e.g., 6 weeks, 3 months)"/>
                                     </div>
 
                                     <!-- Mode -->
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="course-mode" class="form-label">Mode of Learning</label>
                                         <select id="course-mode" wire:model="mode" class="form-control">
                                             <option value="">-- Select Mode --</option>
@@ -305,49 +322,56 @@ new class extends Component {
                                     </div>
 
                                     <!-- Level -->
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="course-level" class="form-label">Level</label>
                                         <input id="course-level" type="text" wire:model="level" class="form-control"
                                                placeholder="Level (e.g., Beginner, Intermediate)"/>
                                     </div>
 
                                     <!-- Certification -->
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="course-certification" class="form-label">Certification</label>
-                                        <input id="course-certification" type="text" wire:model="certification" class="form-control"
+                                        <input id="course-certification" type="text" wire:model="certification"
+                                               class="form-control"
                                                placeholder="Certification (e.g., Certificate of Completion)"/>
+                                    </div>
+
+                                    <!-- Course Image -->
+                                    <div class="col-md-4 mb-3">
+                                        <label for="course-image" class="form-label">Course Image</label>
+                                        <input type="file" wire:model="image"
+                                               accept="image/jpeg, image/png, image/jpg, image/gif"
+                                               class="form-control"/>
+                                        @error('image') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <!-- Course Brochure -->
+                                    <div class="col-md-4 mb-3">
+                                        <label for="course-brochure" class="form-label">Course Brochure (PDF)</label>
+                                        <input id="course-brochure" type="file" wire:model="brochure"
+                                               class="form-control" accept=".pdf"/>
+                                        @error('brochure') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <!-- Prerequisites -->
                                     <div class="col-md-12 mb-3">
                                         <label for="course-prerequisites" class="form-label">Prerequisites</label>
-                                        <textarea id="course-prerequisites" wire:model="prerequisites" class="form-control"
-                                                  placeholder="Any prerequisites or prior knowledge required" rows="2"></textarea>
-                                    </div>
-
-                                    <!-- Course Image -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="course-image" class="form-label">Course Image</label>
-                                        <input type="file" wire:model="image" accept="image/jpeg, image/png, image/jpg, image/gif" class="form-control"/>
-                                        @error('image') <small class="text-danger">{{ $message }}</small> @enderror
-                                    </div>
-
-                                    <!-- Course Brochure -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="course-brochure" class="form-label">Course Brochure (PDF)</label>
-                                        <input id="course-brochure" type="file" wire:model="brochure" class="form-control" accept=".pdf"/>
-                                        @error('brochure') <small class="text-danger">{{ $message }}</small> @enderror
+                                        <textarea id="course-prerequisites" wire:model="prerequisites"
+                                                  class="form-control"
+                                                  placeholder="Any prerequisites or prior knowledge required"
+                                                  rows="3"></textarea>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Modal Footer -->
                             <div class="modal-footer">
-                                <div class="d-flex gap-6 m-0">
+                                <div class="d-flex gap-1 m-0">
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
-                                    <button type="button" class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">
+                                    <button type="button" class="btn bg-danger-subtle text-danger"
+                                            data-bs-dismiss="modal">
                                         Discard
                                     </button>
                                 </div>
