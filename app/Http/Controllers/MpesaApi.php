@@ -85,8 +85,8 @@ class MpesaApi extends Controller
         $body = [
             'ShortCode' => env('MPESA_SHORTCODE'),
             'ResponseType' => 'Completed',
-            'ConfirmationURL' => 'https://uat.tabor.ac.ke/finance/confirmation',
-            'ValidationURL' => 'https://uat.tabor.ac.ke/finance/validation'
+            'ConfirmationURL' => 'https://uat.tabor.ac.ke/api/finance/confirmation',
+            'ValidationURL' => 'https://uat.tabor.ac.ke/api/finance/validation'
         ];
 
         $url = "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl";
