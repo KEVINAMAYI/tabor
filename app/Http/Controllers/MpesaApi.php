@@ -114,7 +114,7 @@ class MpesaApi extends Controller
     } */
 
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
-    public function triggerStk(Request $request)
+    public function initiateStk(Request $request)
     {
         $amount = $request->amount;
         $phone = $request->phone;
@@ -144,6 +144,8 @@ class MpesaApi extends Controller
         $url = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
         $response = $this->makeHttp($url, $body);
+
+        Log::info('STK Push Response: ' . $response);
 
         $response_array = json_decode($response);
 
