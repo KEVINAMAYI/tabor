@@ -14,6 +14,7 @@ return new class extends Migration {
 
             $table->id();
             $table->string('title');
+            $table->string('code')->unique();
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable();
             $table->string('duration')->nullable();

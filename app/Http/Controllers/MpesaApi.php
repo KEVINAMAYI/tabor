@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
+use App\Models\Enrollment;
+use App\Models\Course;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -166,32 +169,45 @@ class MpesaApi extends Controller
             Log::info('C2B Confirmation: ' . request()->ip());
             Log::info($response);
 
-             $mpesa_transaction_id = $response['TransID'];
-             $date_time = $response['TransTime'];
-             $amount = $response['TransAmount'];
-             $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
-             $phone = $response['MSISDN'];
-             $name = $response['FirstName'];
-             $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
+            $mpesa_transaction_id = $response['TransID'];
+            $date_time = $response['TransTime'];
+            $amount = $response['TransAmount'];
+            $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
+            $phone = $response['MSISDN'];
+            $name = $response['FirstName'];
+            $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
 
-             //save the transaction in database
-             if (!empty($mpesa_transaction_id)) {
+            //save the transaction in database
+            if (!empty($mpesa_transaction_id)) {
 
-                 $transaction = Payment::create([
-                     'payer' => $payer,
-                     'transaction_id' => $mpesa_transaction_id,
-                     'refference' => $account,
-                     'amount' => $amount,
-                     'phone' => $phone,
-                     'paid_at' => $date_time
-                 ]);
+                $transaction = Payment::create([
+                    'payer' => $payer,
+                    'transaction_id' => $mpesa_transaction_id,
+                    'reference' => $account,
+                    'amount' => $amount,
+                    'phone' => $phone,
+                    'paid_at' => $date_time
+                ]);
 
-                 /* $enrollment = Enrollment::where('account_number', $account)->first();
-                 $enrollment->paid = 1;
-                 $enrollment->save(); */
 
-             }
-             DB::commit();
+                // Extract admission number and course code
+                [$admissionNumber, $courseCode] = explode('/', $account);
+
+                // Fetch related models
+                $student = Student::where('admission_number', $admissionNumber)->first();
+                $course = Course::where('code', $courseCode)->first(); // Adjust column if needed
+                $enrollment = Enrollment::where('course_id', $course->id)
+                    ->where('student_id', $student->id)
+                    ->first();
+
+                if ($student && $course && $enrollment) {
+                    // Example: attach to pivot table, update payment record, etc.
+                    $transaction->enrollment_id = $enrollment->id;
+                    $transaction->save();
+                }
+
+            }
+            DB::commit();
         } catch (Exception $exception) {
             DB::rollBack();
             Log::info($exception);

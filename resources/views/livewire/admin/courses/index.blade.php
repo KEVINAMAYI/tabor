@@ -13,7 +13,7 @@ new class extends Component {
 
     public $courses = [];
 
-    public $title, $description, $price, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
+    public $title, $code, $description, $price, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
 
     public $editId = null;
 
@@ -27,6 +27,7 @@ new class extends Component {
     {
         return [
             'title' => 'required|string|max:255',
+            'code' => 'required|string|max:100|unique:courses,code,' . ($this->editId ?? 'NULL') . ',id', // Ensure unique code except for the current course being edited
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration' => 'nullable|string|max:100',
@@ -79,6 +80,7 @@ new class extends Component {
 
             Course::create([
                 'title' => $this->title,
+                'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
                 'duration' => $this->duration,
@@ -111,6 +113,7 @@ new class extends Component {
 
         $this->editId = $course->id;
         $this->title = $course->title;
+        $this->code = $course->code;
         $this->description = $course->description;
         $this->price = $course->price;
         $this->duration = $course->duration;
@@ -135,6 +138,7 @@ new class extends Component {
 
             $course->update([
                 'title' => $this->title,
+                'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
                 'duration' => $this->duration,
@@ -186,7 +190,7 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->title = $this->description = $this->price = $this->duration = $this->mode =
+        $this->title =  $this->code = $this->description = $this->price = $this->duration = $this->mode =
         $this->level = $this->certification = $this->prerequisites = null;
         $this->image = null;
         $this->editId = null;
@@ -266,11 +270,20 @@ new class extends Component {
                                         @enderror
                                     </div>
 
-                                    <!-- Course Fee -->
+                                    <!-- Course Code -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="course-code" class="form-label">Course Code</label>
+                                        <input id="course-code" type="text" wire:model="code" class="form-control"
+                                               placeholder="Enter the course code (e.g., WEB101)"/>
+                                        @error('code')
+                                        <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                    <!-- Course Fee -->
+                                    <div class="col-md-12 mb-3">
                                         <label for="course-fee" class="form-label">Fee</label>
                                         <input id="course-fee" type="number" step="0.01" wire:model="price" class="form-control"
-                                               placeholder="Enter course fee (e.g., 200 USD)"/>
+                                               placeholder="Enter course fee (e.g., 20000 KSH)"/>
                                         @error('price')
                                         <small class="text-danger">{{ $message }}</small>
                                         @enderror
@@ -369,6 +382,7 @@ new class extends Component {
                                 </div>
                             </th>
                             <th>Title</th>
+                            <th>Code</th>
                             <th>Description</th>
                             <th>Fee</th>
                             <th>Action</th>
@@ -384,6 +398,7 @@ new class extends Component {
                                     </div>
                                 </td>
                                 <td>{{ $course->title }}</td>
+                                <td>{{ $course->code  }}</td>
                                 <td>{{ \Illuminate\Support\Str::limit($course->description, 60) }}</td>
                                 <td>KES {{ number_format($course->price, 2) }}</td>
                                 <td>
@@ -408,7 +423,7 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No courses found.</td>
+                                <td colspan="6" class="text-center">No courses found.</td>
                             </tr>
                         @endforelse
                         </tbody>
