@@ -203,6 +203,8 @@ class MpesaApi extends Controller
                 if ($student && $course && $enrollment) {
                     // Example: attach to pivot table, update payment record, etc.
                     $transaction->enrollment_id = $enrollment->id;
+                    $transaction->status = 'completed';
+                    $transaction->payment_method = 'mpesa';
                     $transaction->save();
                 }
 
