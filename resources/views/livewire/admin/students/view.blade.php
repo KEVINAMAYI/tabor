@@ -596,7 +596,7 @@ new class extends Component {
                                                     </td>
                                                     <td>
                                                         <span class="usr-email-addr"
-                                                            data-email="">{{ $this->student->admission_number.'/'. $course->code }}</span>
+                                                            data-email="">{{ $this->student->admission_number . '/' . $course->code }}</span>
                                                     </td>
                                                     <td>
                                                         <span class="usr-email-addr"
@@ -712,54 +712,38 @@ new class extends Component {
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Amount</th>
+                                <th>Reference</th>
                                 <th>Date</th>
+                                <th>Payment Method</th>
+                                <th>Amount</th>
+                                <th>Paid By</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>$500</td>
-                                <td>Jan 10, 2025</td>
-                                <td><a href="#" class="btn btn-warning btn-sm">
-                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>$500</td>
-                                <td>Feb 5, 2025</td>
-                                <td><a href="#" class="btn btn-warning btn-sm">
-                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>$500</td>
-                                <td>Mar 1, 2025</td>
-                                <td><a href="#" class="btn btn-warning btn-sm">
-                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td>$500</td>
-                                <td>Apr 1, 2025</td>
-                                <td><a href="#" class="btn btn-warning btn-sm">
-                                        <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                    </a>
-                                </td>
-                            </tr>
+                            @foreach ($student->enrollments as $enrollment)
+                                @foreach ($enrollment->payments as $payment)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $payment->transaction_id ?? 'N/A' }}</td>
+                                        <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d M, Y h:i A') }}</td>
+                                        <td>{{ ucfirst($payment->payment_method) ?? 'N/A' }}</td>
+                                        <td>{{ number_format($payment->amount, 2) }}</td>
+                                        <td>{{ $payment->payer ?? 'N/A' }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-warning btn-sm">
+                                                <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
                             <!-- Add more rows as needed -->
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="1">Total</th>
-                                <th colspan="2">$2000</th>
+                                <th colspan="4">Total</th>
+                                <th colspan="2">${{ number_format($student->enrollments->sum('payments.amount'), 2) }}</th>
                             </tr>
                         </tfoot>
                     </table>

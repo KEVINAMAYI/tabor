@@ -12,7 +12,7 @@ new class extends Component {
 
     public $payments = [];
     public $selectAll = false;
-    public $amount, $method, $reference, $paid_at, $enrollment_id;
+    public $amount, $payment_method, $reference, $paid_at, $enrollment_id;
     public $editId = null;
     public $selected = [];
     public $search = '';
@@ -22,7 +22,7 @@ new class extends Component {
     {
         return [
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|in:cash,mpesa,card,bank',
+            'payment_method' => 'required|in:cash,mpesa,card,bank',
             'reference' => 'nullable|string|max:255',
             'paid_at' => 'nullable|date',
             'enrollment_id' => 'required|exists:enrollments,id',
@@ -50,7 +50,7 @@ new class extends Component {
                         ->orWhere('last_name', 'like', "%{$this->search}%")
                         ->orWhere('email', 'like', "%{$this->search}%");
                 })
-                    ->orWhere('method', 'like', "%{$this->search}%")
+                    ->orWhere('payment_method', 'like', "%{$this->search}%")
                     ->orWhere('reference', 'like', "%{$this->search}%");
             }))
             ->latest()
@@ -67,7 +67,7 @@ new class extends Component {
             Payment::create([
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
-                'method' => $this->method,
+                'payment_method' => $this->payment_method,
                 'reference' => $this->reference,
                 'paid_at' => $this->paid_at,
             ]);
@@ -103,7 +103,7 @@ new class extends Component {
         $this->editId = $payment->id;
         $this->enrollment_id = $payment->enrollment_id;
         $this->amount = $payment->amount;
-        $this->method = $payment->method;
+        $this->payment_method = $payment->payment_method;
         $this->reference = $payment->reference;
         $this->paid_at = $payment->paid_at;
 
@@ -122,7 +122,7 @@ new class extends Component {
             $payment->update([
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
-                'method' => $this->method,
+                'payment_method' => $this->payment_method,
                 'reference' => $this->reference,
                 'paid_at' => $this->paid_at,
             ]);
@@ -309,8 +309,8 @@ new class extends Component {
                                            wire:model="selectAll"/>
                                 </div>
                             </th>
-                            <th>Course</th>
-                            <th>Student</th>
+                            <th>#</th>
+                            <th>Reference</th>
                             <th>Amount</th>
                             <th>Method</th>
                             <th>Status</th>
@@ -327,25 +327,20 @@ new class extends Component {
                                                value="{{ (string) $payment->id }}"/>
                                     </div>
                                 </td>
-                                <td><span class="badge bg-light text-dark">{{ $payment->course->title }}</span></td> <!-- Assuming `course` is a property of $payment -->
+                                <td>{{ $loop->iteration }}</td> <!-- Assuming `course` is a property of $payment -->
                                 <td>
-                                    <div class="user-meta-info">
-                                        <h6 class="user-name mb-0">{{ $payment->student->first_name }}</h6> <!-- Assuming `payer_name` is a property -->
-                                        <span class="user-work fs-3">{{ $payment->reference }}</span> <!-- Assuming `payer_reference` -->
-                                    </div>
+                                    <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
                                 </td>
                                 <td><span class="badge bg-secondary">{{ $payment->amount }}</span></td>
-                                <td><span class="badge bg-secondary">{{ $payment->method }}</span></td>
+                                <td><span >{{ $payment->payment_method }}</span></td>
                                 <td>
-                                    @if($payment->status == 'Completed')
-                                        <span class="badge bg-success-subtle text-success">Completed</span>
-                                    @elseif($payment->status == 'Pending')
+                                    @if($payment->status == 'completed')
+                                        <span class="badge bg-success-subtle text-success">Mapped</span>
+                                    @elseif($payment->status == 'pending')
                                         <span class="badge bg-warning-subtle text-warning">Pending</span>
-                                    @else
-                                        <span class="badge bg-danger-subtle text-danger">Failed</span>
                                     @endif
                                 </td>
-                                <td>{{ $payment->paid_at }}</td>
+                                <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d M, Y h:i A') }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <!-- Edit Payment Button -->
