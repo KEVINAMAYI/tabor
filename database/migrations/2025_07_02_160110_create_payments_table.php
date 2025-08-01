@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('enrollment_id')->constrained()->nullable();
             $table->decimal('amount', 10, 2)->default(0.00);
             $table->enum('payment_method', ['cash','mpesa','card','bank'])->default('cash');
+            $table->enum('status', ['pending','completed','failed'])->default('pending');
             $table->string('transaction_id')->nullable();
             $table->string('reference')->nullable();
             $table->string('payer',255)->nullable();
