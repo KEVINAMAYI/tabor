@@ -144,71 +144,85 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
 
 
+    <!-- ------------------------------------- -->
+    <!-- Team Start -->
+    <!-- ------------------------------------- -->
     <section class="bg-dark py-7 py-md-14 py-lg-11">
         <div class="container-fluid">
             <div class="row mb-7 mb-lg-0">
-                <div class="col-lg-7">
-                    <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm">
-                        Meet our team
-                    </h2>
+                <div class="row mb-7 mb-lg-0">
+                    <div class="col-12">
+                        <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm text-center">
+                            Meet our team
+                        </h2>
+                    </div>
                 </div>
             </div>
+
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div></div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg"
+                             alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
+                            <p class="fs-3 mb-0">Director HR & Operations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jotham.png" alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Dr. Jotham Mukundi</h4>
+                            <p class="fs-3 mb-0">Director & Chief Executive</p>
+                        </div>
+                    </div>
+                </div>
+                <div></div>
+
+            </div>
+
             <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Jacklyne.jpg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Jacklyne.png" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Jacklyne Nekesa Wangwe</h4>
                             <p class="fs-3 mb-0">Lead Trainer – Caregiving and Health Services Support</p>
                         </div>
                     </div>
                 </div>
+
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Slyvia.jpg" alt="leader" style="width: 280px; height: 360px;" class="">
+                        <img src="../assets/images/frontend-pages/Slyvia.png" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Slyvia Njeri Kimani</h4>
                             <p class="fs-3 mb-0">Head of Training</p>
                         </div>
                     </div>
                 </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
-                            <p class="fs-3 mb-0">Academic Director</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Jotham.jpeg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-8">Dr. Jotham Mukundi</h4>
-                            <p class="fs-3 mb-0">Director & Chief Executive</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
-                <div class="item">
-                </div>
-                <div class="item">
-                </div>
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
                             <p class="fs-3 mb-0">Lead Trainer Orthopedic & Trauma Medicine</p>
                         </div>
                     </div>
                 </div>
+
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Victoria Wanjiku</h4>
                             <p class="fs-3 mb-0">Wellness Officer</p>
@@ -219,6 +233,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
         </div>
     </section>
+    <!-- ------------------------------------- -->
 
 
 {{--    <div class="col-lg-12 mt-md-0 mt-7">--}}
