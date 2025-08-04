@@ -123,7 +123,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             border-radius: 12px;
             color: #0e2f44;
             transition: all 0.3s ease;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
             padding-top: 1.5rem;
             padding-bottom: 1.5rem;
             font-weight: 600;
@@ -191,6 +191,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
         .list-group-numbered .list-group-item:not(:last-child) {
             margin-bottom: 0.5rem;
         }
+
         .carousel-img {
             max-height: 550px;
             object-fit: cover;
@@ -210,54 +211,58 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- banner Start -->
     <!-- ------------------------------------- -->
     <section class="bg-light-gray overflow-hidden">
-            <div class="row align-items-center">
-                <!-- ------------------------------------------ -->
-                <div class="col-lg-12">
-                    <div class="card border-0 shadow-lg">
-                        <div class="card-body p-0">
-                            <div id="carouselExampleCaptions" class="carousel slide carousel-dark" data-bs-ride="carousel">
-                                <ol class="carousel-indicators">
-                                    <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active"></li>
-                                    <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1"></li>
-                                    <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2"></li>
-                                </ol>
-                                <div class="carousel-inner">
-                                    <div class="carousel-item   active">
-                                        <img src="../assets/images/frontend-pages/background-1.jpg" class="d-block w-100 carousel-img" alt="TVET Slide 1" />
-                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
-                                            <h2 class="fw-bold text-white">Empowering Careers</h2>
-                                            <p class="lead text-light">Through Quality TVET Education</p>
-                                        </div>
-                                    </div>
-                                    <div class="carousel-item">
-                                        <img src="../assets/images/frontend-pages/background-2.jpg" class="d-block w-100 carousel-img" alt="TVET Slide 2" />
-                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
-                                            <h2 class="fw-bold text-white">Empowering Careers</h2>
-                                            <p class="lead text-light">Through Quality TVET Education</p>
-                                        </div>
-                                    </div>
-                                    <div class="carousel-item">
-                                        <img src="../assets/images/frontend-pages/background-5.jpg" class="d-block w-100 carousel-img" alt="TVET Slide 3" />
-                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
-                                            <h2 class="fw-bold text-white">Empowering Careers</h2>
-                                            <p class="lead text-light">Through Quality TVET Education</p>
-                                        </div>
+        <div class="row align-items-center">
+            <!-- ------------------------------------------ -->
+            <div class="col-lg-12">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-0">
+                        <div id="carouselExampleCaptions" class="carousel slide carousel-dark" data-bs-ride="carousel">
+                            <ol class="carousel-indicators">
+                                <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active"></li>
+                                <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1"></li>
+                                <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2"></li>
+                            </ol>
+                            <div class="carousel-inner">
+                                <div class="carousel-item   active">
+                                    <img src="../assets/images/frontend-pages/background-1.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 1"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Success on the Mountain Top</h2>
                                     </div>
                                 </div>
-                                <a class="carousel-control-prev" href="#carouselExampleCaptions" role="button" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </a>
-                                <a class="carousel-control-next" href="#carouselExampleCaptions" role="button" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </a>
+                                <div class="carousel-item">
+                                    <img src="../assets/images/frontend-pages/background-2.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 2"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Empowering Careers</h2>
+                                        <p class="lead text-light">Through Quality TVET Education</p>
+                                    </div>
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="../assets/images/frontend-pages/background-3.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 3"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Empowering Careers</h2>
+                                        <p class="lead text-light">Through Quality TVET Education</p>
+                                    </div>
+                                </div>
                             </div>
+                            <a class="carousel-control-prev" href="#carouselExampleCaptions" role="button"
+                               data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </a>
+                            <a class="carousel-control-next" href="#carouselExampleCaptions" role="button"
+                               data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </a>
                         </div>
                     </div>
                 </div>
-                <!-- ------------------------------------------ -->
             </div>
+            <!-- ------------------------------------------ -->
+        </div>
     </section>
 
     <!-- ------------------------------------- -->
@@ -272,7 +277,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         Over <span class="highlight">5,000</span> students and counting.
                     </h2>
                     <p class="count-subtitle mb-4">
-                        Join Kenya's leading Technical and Vocational Education Training institute with global placement opportunities.
+                        Join Kenya's leading Technical and Vocational Education Training institute with global placement
+                        opportunities.
                     </p>
                     <a href="javascript:void(0)" class="btn-request-callback">
                         Request a Callback
@@ -364,18 +370,21 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             <div class="tab-content mt-7 mt-lg-12 pb-lg-9" id="myTabContent">
 
                 <!-- Mission Tab -->
-                <div class="tab-pane fade show active" id="pills-mission" role="tabpanel" aria-labelledby="pills-mission-tab" tabindex="0">
+                <div class="tab-pane fade show active" id="pills-mission" role="tabpanel"
+                     aria-labelledby="pills-mission-tab" tabindex="0">
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/mission.jpg" alt="Our Mission" class="w-100 rounded-24">
+                                <img src="../assets/images/frontend-pages/mission.jpg" alt="Our Mission"
+                                     class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To provide quality, relevant, and innovative technical and vocational education and training that meets industry standards and global market demands.
+                                    To intentionally Equip Students with talents that meet both Local and International
+                                    Standards
                                 </p>
                                 <a href="javascript:void(0)">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
@@ -386,18 +395,21 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
 
                 <!-- Vision Tab -->
-                <div class="tab-pane fade" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab" tabindex="0">
+                <div class="tab-pane fade" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab"
+                     tabindex="0">
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/vision-tabor.jpg" alt="Our Vision" class="w-100 rounded-24">
+                                <img src="../assets/images/frontend-pages/vision-tabor.jpg" alt="Our Vision"
+                                     class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Vision</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To be the leading TVET institution in East Africa, producing globally competitive graduates who contribute to sustainable development.
+                                    To intentionally Equip Students with talents that meet both Local and International
+                                    Standards.
                                 </p>
                                 <a href="javascript:void(0)">
                                     <button class="btn btn-primary px-7 py-3 btn-shadow">Learn More</button>
@@ -408,11 +420,13 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
 
                 <!-- Core Values Tab -->
-                <div class="tab-pane fade" id="pills-values" role="tabpanel" aria-labelledby="pills-values-tab" tabindex="0">
+                <div class="tab-pane fade" id="pills-values" role="tabpanel" aria-labelledby="pills-values-tab"
+                     tabindex="0">
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/hero-students.jpg" alt="Our Core Values" class="w-100 rounded-24">
+                                <img src="../assets/images/frontend-pages/hero-students.jpg" alt="Our Core Values"
+                                     class="w-100 rounded-24">
                             </div>
                         </div>
                         <div class="col-lg-6">
@@ -423,7 +437,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <ol class="list-group list-group-numbered fs-5">
                                             <li class="list-group-item border-0 px-0 py-2">Excellence in Education</li>
                                             <li class="list-group-item border-0 px-0 py-2">Innovation & Creativity</li>
-                                            <li class="list-group-item border-0 px-0 py-2">Integrity & Accountability</li>
+                                            <li class="list-group-item border-0 px-0 py-2">Integrity & Accountability
+                                            </li>
                                             <li class="list-group-item border-0 px-0 py-2">Global Competitiveness</li>
                                         </ol>
                                     </div>
@@ -449,68 +464,79 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <section class="bg-dark py-7 py-md-14 py-lg-11">
         <div class="container-fluid">
             <div class="row mb-7 mb-lg-0">
-                <div class="col-lg-7">
-                    <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm">
-                        Meet our team
-                    </h2>
+                <div class="row mb-7 mb-lg-0">
+                    <div class="col-12">
+                        <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm text-center">
+                            Meet our team
+                        </h2>
+                    </div>
                 </div>
             </div>
+
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div></div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg"
+                             alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
+                            <p class="fs-3 mb-0">Director HR & Operations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jotham.png" alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Dr. Jotham Mukundi</h4>
+                            <p class="fs-3 mb-0">Director & Chief Executive</p>
+                        </div>
+                    </div>
+                </div>
+                <div></div>
+
+            </div>
+
             <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Jacklyne.jpg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Jacklyne.png" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Jacklyne Nekesa Wangwe</h4>
                             <p class="fs-3 mb-0">Lead Trainer – Caregiving and Health Services Support</p>
                         </div>
                     </div>
                 </div>
+
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Slyvia.jpg" alt="leader" style="width: 280px; height: 360px;" class="">
+                        <img src="../assets/images/frontend-pages/Slyvia.png" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Slyvia Njeri Kimani</h4>
                             <p class="fs-3 mb-0">Head of Training</p>
                         </div>
                     </div>
                 </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
-                            <p class="fs-3 mb-0">Director HR & Operations</p>
-                        </div>
-                    </div>
-                </di>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Jotham.jpeg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-8">Dr. Jotham Mukundi</h4>
-                            <p class="fs-3 mb-0">Director & Chief Executive</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
-                <div class="item">
-                </div>
-                <div class="item">
-                </div>
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
                             <p class="fs-3 mb-0">Lead Trainer Orthopedic & Trauma Medicine</p>
                         </div>
                     </div>
                 </div>
+
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader"
+                             style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Victoria Wanjiku</h4>
                             <p class="fs-3 mb-0">Wellness Officer</p>
@@ -522,6 +548,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
         </div>
     </section>
     <!-- ------------------------------------- -->
+
     <!-- Team End -->
     <!-- ------------------------------------- -->
 
