@@ -144,7 +144,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
 
 
-    <!-- ------------------------------------- -->
     <section class="bg-dark py-7 py-md-14 py-lg-11">
         <div class="container-fluid">
             <div class="row mb-7 mb-lg-0">
@@ -175,7 +174,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Ann.jpg" alt="leader" class="">
+                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg" alt="leader" class="">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
                             <p class="fs-3 mb-0">Academic Director</p>
@@ -192,9 +191,75 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     </div>
                 </div>
             </div>
+
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div class="item">
+                </div>
+                <div class="item">
+                </div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
+                            <p class="fs-3 mb-0">Lead Trainer Orthopedic & Trauma Medicine</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader" style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Victoria Wanjiku</h4>
+                            <p class="fs-3 mb-0">Wellness Officer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
-    <!-- ------------------------------------- -->
+
+
+{{--    <div class="col-lg-12 mt-md-0 mt-7">--}}
+{{--        <div class="owl-carousel testimonial-carousel owl-theme">--}}
+{{--            <!-- Carousel Item 1 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-1.png" alt="Logo 1" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-2.png" alt="Logo 2" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-3.png" alt="Logo 3" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 2 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-4.png" alt="Logo 4" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-5.png" alt="Logo 5" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-6.png" alt="Logo 6" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 3 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-7.png" alt="Logo 7" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-8.png" alt="Logo 8" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-9.png" alt="Logo 9" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 4 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-10.png" alt="Logo 10" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-11.png" alt="Logo 11" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-12.png" alt="Logo 12" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 5 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-13.png" alt="Logo 13" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-14.png" alt="Logo 14" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-15.png" alt="Logo 15" class="img-fluid">--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--    </div>--}}
+
 
 
     <!-- ------------------------------------- -->
@@ -425,7 +490,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         Join thousands of successful graduates who have transformed their careers with Tabor Training
                         Institute..
                     </h4>
-                    <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
+                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
                         Register
                     </a>
                 </div>

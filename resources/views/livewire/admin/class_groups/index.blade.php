@@ -6,10 +6,12 @@ use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component {
 
-    public $classGroups = [];
+    use WithPagination;
+
 
     public $name, $intake_id;
 
@@ -34,21 +36,26 @@ new class extends Component {
     public function mount()
     {
         $this->intakes = Intake::latest()->get();
-        $this->loadClassGroups();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadClassGroups();
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
     }
 
-    public function loadClassGroups()
+    public function with()
     {
-        $this->classGroups = ClassGroup::with('intake')
+        $classGroups = ClassGroup::with('intake')
             ->when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->latest()
-            ->get();
+            ->paginate(10);
+
+        return [
+            'classGroups' => $classGroups,
+        ];
     }
 
     public function addClassGroup()
@@ -62,7 +69,7 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadClassGroups();
+            $this->resetPage();
             $this->dispatch('hide-class-group-modal');
 
             LivewireAlert::text('Class group added successfully.!')
@@ -106,7 +113,7 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadClassGroups();
+            $this->resetPage();
             $this->dispatch('hide-class-group-modal');
 
             LivewireAlert::text('Class group updated successfully.!')
@@ -129,7 +136,7 @@ new class extends Component {
     public function deleteClassGroup($id)
     {
         ClassGroup::findOrFail($id)->delete();
-        $this->loadClassGroups();
+        $this->resetPage();
 
         LivewireAlert::text('Class group deleted successfully.!')
             ->success()
@@ -143,7 +150,7 @@ new class extends Component {
         ClassGroup::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadClassGroups();
+        $this->resetPage();
 
         LivewireAlert::text('Class groups deleted successfully.!')
             ->success()
@@ -164,13 +171,30 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->classGroups->pluck('id')->map(fn($id) => (string)$id)->toArray();
+
+            $currentPageClassGroupIds = ClassGroup::with('intake')
+                ->when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageClassGroupIds;
         } else {
             $this->selected = [];
         }
     }
 }; ?>
 
+
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
 
 <div class="row">
     <div class="col-12">
@@ -297,6 +321,12 @@ new class extends Component {
                         @endforelse
                         </tbody>
                     </table>
+
+                    {{-- Add the pagination links here --}}
+                    <div class="d-flex justify-content-center mt-4">
+                        {{ $classGroups->links() }}
+                    </div>
+
                 </div>
             </div>
 

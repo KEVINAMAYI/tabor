@@ -29,7 +29,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                 </div>
             </div>
             <div class="mt-4 mt-md-5 mt-lg-12">
-                <iframe class="rounded-3" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d193595.2527998699!2d-74.14448787425354!3d40.697631233397885!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xc80b8f06e177fe62!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2sin!4v1727857429230!5m2!1sen!2sin" width="100%" height="439" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <iframe class="rounded-3" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3874.5782400289413!2d36.83165577482915!3d-1.2675908987203388!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f16dc9f2039cb%3A0x970dde5d44f9d97d!2sShowbe%20Plaza%20-%20Block%20C!5e1!3m2!1sen!2ske!4v1754067363436!5m2!1sen!2ske" width="100%" height="439"  style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
     </section>
@@ -314,7 +314,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
                         Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
                     </h4>
-                    <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
+                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
                         Register
                     </a>
                 </div>

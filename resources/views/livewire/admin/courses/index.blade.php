@@ -6,12 +6,11 @@ use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component {
 
-    use WithFileUploads;
-
-    public $courses = [];
+    use WithFileUploads, WithPagination;
 
     public $title, $description, $price, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
 
@@ -46,16 +45,17 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
-        $this->loadCourses();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadCourses();
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
     }
 
-    public function loadCourses()
+    public function with()
     {
         $query = Course::query();
 
@@ -66,7 +66,11 @@ new class extends Component {
             });
         }
 
-        $this->courses = $query->latest()->get();
+        $courses = $query->latest()->paginate(10);
+
+        return [
+            'courses' => $courses,
+        ];
     }
 
 
@@ -96,7 +100,7 @@ new class extends Component {
 
             $this->dispatch('hide-course-modal');
             $this->resetForm();
-            $this->loadCourses();
+            $this->resetPage();
 
             LivewireAlert::text('Course added successfully.')
                 ->success()
@@ -160,7 +164,7 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadCourses();
+            $this->resetPage();
             $this->dispatch('hide-course-modal');
 
             LivewireAlert::text('Course updated successfully.!')->success()->toast()->position('top-end')->show();
@@ -174,7 +178,7 @@ new class extends Component {
     public function deleteCourse($id)
     {
         Course::findOrFail($id)->delete();
-        $this->loadCourses();
+        $this->resetPage();
 
         LivewireAlert::text('Course deleted successfully.!')
             ->success()
@@ -188,7 +192,7 @@ new class extends Component {
         Course::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadCourses();
+        $this->resetPage();
 
         LivewireAlert::text('Courses deleted successfully.!')
             ->success()
@@ -214,12 +218,33 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->courses->pluck('id')->map(fn($id) => (string)$id)->toArray();
+
+            $currentPageCourseIds = Course::query()
+                ->when(!empty($this->search), fn($q) => $q->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('description', 'like', '%' . $this->search . '%')
+                )
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageCourseIds;
         } else {
             $this->selected = [];
         }
     }
+
 }; ?>
+
+
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
 
 <div class="row">
     <div class="col-12">
@@ -438,7 +463,16 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Add the pagination links here --}}
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $courses->links() }}
+                </div>
+
             </div>
+
+
+
         </div>
     </div>
 </div>
