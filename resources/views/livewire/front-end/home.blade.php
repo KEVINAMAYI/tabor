@@ -223,27 +223,32 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 <li data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2"></li>
                             </ol>
                             <div class="carousel-inner">
-                                <div class="carousel-item   active">
-                                    <img src="../assets/images/frontend-pages/background-1.jpeg"
+                                <div class="carousel-item active">
+                                    <img src="../assets/images/frontend-pages/medical.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 2"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Medical Courses</h2>
+                                    </div>
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="../assets/images/frontend-pages/foreign_language_2.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 3"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Foreign Language Courses</h2>
+                                    </div>
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="../assets/images/frontend-pages/food_production.jpeg"
+                                         class="d-block w-100 carousel-img" alt="TVET Slide 3"/>
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                                        <h2 class="fw-bold text-white">Food Production Courses</h2>
+                                    </div>
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="../assets/images/frontend-pages/success.jpeg"
                                          class="d-block w-100 carousel-img" alt="TVET Slide 1"/>
                                     <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
                                         <h2 class="fw-bold text-white">Success on the Mountain Top</h2>
-                                    </div>
-                                </div>
-                                <div class="carousel-item">
-                                    <img src="../assets/images/frontend-pages/background-2.jpeg"
-                                         class="d-block w-100 carousel-img" alt="TVET Slide 2"/>
-                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
-                                        <h2 class="fw-bold text-white">Empowering Careers</h2>
-                                        <p class="lead text-light">Through Quality TVET Education</p>
-                                    </div>
-                                </div>
-                                <div class="carousel-item">
-                                    <img src="../assets/images/frontend-pages/background-3.jpeg"
-                                         class="d-block w-100 carousel-img" alt="TVET Slide 3"/>
-                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
-                                        <h2 class="fw-bold text-white">Empowering Careers</h2>
-                                        <p class="lead text-light">Through Quality TVET Education</p>
                                     </div>
                                 </div>
                             </div>
@@ -375,7 +380,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/mission.jpg" alt="Our Mission"
+                                <img src="../assets/images/frontend-pages/mission.jpeg" alt="Our Mission"
                                      class="w-100 rounded-24">
                             </div>
                         </div>
@@ -400,7 +405,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/vision-tabor.jpg" alt="Our Vision"
+                                <img src="../assets/images/frontend-pages/vision.jpeg" alt="Our Vision"
                                      class="w-100 rounded-24">
                             </div>
                         </div>
@@ -425,7 +430,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
                             <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/hero-students.jpg" alt="Our Core Values"
+                                <img src="../assets/images/frontend-pages/core_values.jpeg" alt="Our Core Values"
                                      class="w-100 rounded-24">
                             </div>
                         </div>
@@ -524,7 +529,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader"
+                        <img src="../assets/images/frontend-pages/Felix.jpg" alt="leader"
                              style="width: 280px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
@@ -594,26 +599,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
                 <div class="col-lg-6 mt-md-0 mt-7">
                     <div class="owl-carousel testimonial-carousel owl-theme">
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I want to sincerely thank the entire institution for the incredible support and quality
-                                training I’ve received. This opportunity has truly changed my life, and I feel more
-                                confident stepping into my career. Forever grateful!
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-12.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Angela Muthoni</p>
-                                        <p class="mb-0 fs-4">Student - Information Technology</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
+
 
                         <div class="item">
                             <p class="fs-6 text-dark mb-13">
@@ -625,8 +611,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                     <img src="../assets/images/profile/user-7.jpg" alt="user" width="56px" height="56px"
                                          class="rounded-circle w-auto">
                                     <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Kevin Amayi</p>
-                                        <p class="mb-0 fs-4">Student - Nursing</p>
+                                        <p class="mb-1 fs-5 fw-bolder text-dark">Onyango Truphena</p>
+                                        <p class="mb-0 fs-4">Student - Caregiver</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -646,7 +632,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          height="56px" class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Samuel Kiprotich</p>
-                                        <p class="mb-0 fs-4">Student - Electrical Engineering</p>
+                                        <p class="mb-0 fs-4">Student - Orthopedic & Truma Medicine</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -666,27 +652,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Mercy Nyambura</p>
-                                        <p class="mb-0 fs-4">Student - Hospitality Management</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
-
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I'm grateful for the personalized guidance I’ve received here. It’s more than just a
-                                school — it’s a community that truly wants students to succeed.
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-11.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Brian Otieno</p>
-                                        <p class="mb-0 fs-4">Student - Mechanical Engineering</p>
+                                        <p class="mb-0 fs-4">Student - Food Production</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -698,7 +664,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     </div>
                 </div>
             </div>
-        </div>
     </section>
     <!-- ------------------------------------- -->
     <!-- Testimonial End -->
