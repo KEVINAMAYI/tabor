@@ -51,11 +51,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     <h2 class="fs-16 fw-normal text-lg-start text-center mb-4">
                         About Tabor Training Institute
                     </h2>
-                    <div class="d-flex justify-content-lg-start justify-content-center gap-3">
-                        <a class="btn btn-primary" href="../main/authentication-register.html">
-                            Join our Community
-                        </a>
-                    </div>
                 </div>
                 <div class="col-lg-6">
                     <p class="fs-4 mb-0 text-muted lh-lg">
@@ -90,11 +85,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 doors is on a journey of professional transformation.
                             </p>
                             <div class="d-flex justify-content-lg-start justify-content-center gap-3">
-                                <a class="btn btn-primary" href="../main/authentication-register.html">
+                                <a class="btn btn-primary" href="{{ route('front-end.courses') }}">
                                     Explore Programs
                                 </a>
-                                <a class="btn btn-outline-primary" href="javascript:void(0)">
-                                    Download TVET Guide
+                                <a class="btn btn-outline-primary" href="../assets/images/frontend-pages/course_guide.jpeg" target="_blank">
+                                    Download Course Guide
                                 </a>
                             </div>
                         </div>
@@ -210,8 +205,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
                 <div class="item">
                     <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/Felix.jpeg" alt="leader"
-                             style="width: 280px; height: 360px;">
+                        <img src="../assets/images/frontend-pages/Felix.jpg" alt="leader"
+                             style="width: 270px; height: 360px;">
                         <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
                             <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
                             <p class="fs-3 mb-0">Lead Trainer Orthopedic & Trauma Medicine</p>
@@ -380,26 +375,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
                 <div class="col-lg-6 mt-md-0 mt-7">
                     <div class="owl-carousel testimonial-carousel owl-theme">
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I want to sincerely thank the entire institution for the incredible support and quality
-                                training I’ve received. This opportunity has truly changed my life, and I feel more
-                                confident stepping into my career. Forever grateful!
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-12.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Angela Muthoni</p>
-                                        <p class="mb-0 fs-4">Student - Information Technology</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
 
                         <div class="item">
                             <p class="fs-6 text-dark mb-13">
@@ -411,8 +386,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                     <img src="../assets/images/profile/user-7.jpg" alt="user" width="56px" height="56px"
                                          class="rounded-circle w-auto">
                                     <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Kevin Amayi</p>
-                                        <p class="mb-0 fs-4">Student - Nursing</p>
+                                        <p class="mb-1 fs-5 fw-bolder text-dark">Onyango Truphena</p>
+                                        <p class="mb-0 fs-4">Student - Caregiver</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -432,7 +407,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          height="56px" class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Samuel Kiprotich</p>
-                                        <p class="mb-0 fs-4">Student - Electrical Engineering</p>
+                                        <p class="mb-0 fs-4">Student - Orthopedic & Truma Medicine</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -452,7 +427,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Mercy Nyambura</p>
-                                        <p class="mb-0 fs-4">Student - Hospitality Management</p>
+                                        <p class="mb-0 fs-4">Student - Food Production</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -461,27 +436,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                             </div>
                         </div>
 
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I'm grateful for the personalized guidance I’ve received here. It’s more than just a
-                                school — it’s a community that truly wants students to succeed.
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-11.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Brian Otieno</p>
-                                        <p class="mb-0 fs-4">Student - Mechanical Engineering</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
             </div>
         </div>
