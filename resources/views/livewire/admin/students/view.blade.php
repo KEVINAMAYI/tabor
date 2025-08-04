@@ -20,6 +20,9 @@ new class extends Component {
     public $intakes;
     public $class_group_id;
     public $classGroups = [];
+    public $availableStatuses= ['pending', 'approved', 'rejected'];
+    public $enrollmentId;
+    public $enrollmentStatus;
 
     public function rules()
     {
@@ -28,6 +31,7 @@ new class extends Component {
         ];
 
     }
+
 
     public function mount($student_id)
     {
@@ -69,6 +73,29 @@ new class extends Component {
             ->show();
 
         $this->dispatch('hide-enrollment-modal');
+
+    }
+
+    public function openEditModal($id)
+    {
+        $this->enrollmentId = $id;
+        $this->dispatch('show-enrollment-status-modal');
+    }
+
+
+    public function updateEnrollmentStatus()
+    {
+        $enrollment = Enrollment::findOrFail($this->enrollmentId);
+        $enrollment->status = $this->enrollmentStatus;
+        $enrollment->save();
+
+        $this->dispatch('hide-enrollment-status-modal');
+
+        LivewireAlert::text('Enrollment status updated successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
 
     }
 
@@ -248,12 +275,30 @@ new class extends Component {
 
                                         <!-- Enrollment Status Badge -->
                                         <div class="d-flex justify-content-between mb-3">
-                        <span class="badge
-                            @if($enrollmentStatus == 'Completed') bg-success
-                            @elseif($enrollmentStatus == 'In Progress') bg-warning
-                            @else bg-secondary @endif text-light">
-                            {{ strtoupper($enrollmentStatus) }}
-                        </span>
+
+                                            @php
+                                                $statusClass = match(strtolower($enrollmentStatus)) {
+                                                    'approved' => 'bg-success',
+                                                    'pending' => 'bg-warning',
+                                                    'rejected' => 'bg-danger',
+                                                    default => 'bg-secondary'
+                                                };
+                                            @endphp
+
+                                            <div class="d-flex align-items-center p-2 gap-2">
+                                                <span class="badge {{ $statusClass }} text-light">
+                                                    Enrollment Status: {{ ucfirst($enrollmentStatus) }}
+                                                </span>
+
+                                                <!-- Pencil Icon Button -->
+                                                <button style="border:0px;" wire:click="openEditModal({{ $enrollment->id }})"
+                                                        class="btn btn-sm btn-outline-warning" title="Edit Status">
+                                                    <iconify-icon style="font-weight:bold;" icon="mdi:pencil" width="16" height="16"></iconify-icon>
+                                                </button>
+
+                                            </div>
+
+
                                         </div>
 
                                         <!-- Course Description -->
@@ -262,41 +307,54 @@ new class extends Component {
                                         <!-- Course Details -->
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:calendar-clock"
+                                                              class="text-primary fs-4 mt-1"></iconify-icon>
+                                                <span
+                                                    class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:laptop"
+                                                              class="text-success fs-4 mt-1"></iconify-icon>
+                                                <span
+                                                    class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
+                                                <iconify-icon icon="mdi:school-outline"
+                                                              class="text-warning fs-4 mt-1"></iconify-icon>
                                                 <span class="text-dark fs-3">Level: {{ $course->level ?? 'N/A' }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:certificate-outline"
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span
+                                                    class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
                                             </li>
                                         </ul>
 
                                         <!-- Course Tabs (Overview and Details) -->
                                         <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
                                             <li class="nav-item">
-                                                <a class="nav-link active" data-bs-toggle="tab" href="#overview-{{ $course->id }}" role="tab"><span>Overview</span></a>
+                                                <a class="nav-link active" data-bs-toggle="tab"
+                                                   href="#overview-{{ $course->id }}"
+                                                   role="tab"><span>Overview</span></a>
                                             </li>
                                             <li class="nav-item">
-                                                <a class="nav-link" data-bs-toggle="tab" href="#details-{{ $course->id }}" role="tab"><span>Details</span></a>
+                                                <a class="nav-link" data-bs-toggle="tab"
+                                                   href="#details-{{ $course->id }}" role="tab"><span>Details</span></a>
                                             </li>
                                         </ul>
 
                                         <!-- Tab Content -->
                                         <div class="tab-content mt-2">
-                                            <div class="tab-pane active p-3" id="overview-{{ $course->id }}" role="tabpanel">
+                                            <div class="tab-pane active p-3" id="overview-{{ $course->id }}"
+                                                 role="tabpanel">
                                                 <h5 class="fw-bold mb-3">Course Highlights:</h5>
                                                 @if (!empty($course->modules))
                                                     <ul class="list-unstyled">
                                                         @foreach ($course->modules as $module)
-                                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>{{ $module->title }}</span></li>
+                                                            <li class="mb-2 d-flex gap-2"><span
+                                                                    class="text-primary">•</span><span>{{ $module->title }}</span>
+                                                            </li>
                                                         @endforeach
                                                     </ul>
                                                 @else
@@ -309,21 +367,16 @@ new class extends Component {
                                                     <li class="mb-2 d-flex gap-2">
                                                         <strong>Fee:</strong><span>KES {{ number_format($course->price, 2) }}</span>
                                                     </li>
-                                                    <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span></li>
-                                                    <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span></li>
+                                                    <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span>
+                                                    </li>
+                                                    <li class="d-flex gap-2">
+                                                        <strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
 
-                                        <!-- Action Buttons -->
-                                        <div>
-                                            <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
-                                            @if($course->brochure_url)
-                                                <a href="{{ asset('storage/' . $course->brochure_url) }}" class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
-                                                    <i class="ti ti-download me-1"></i> Download Brochure
-                                                </a>
-                                            @endif
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -826,6 +879,33 @@ new class extends Component {
         </div>
     </div>
 
+
+    <div class="modal fade" id="enrollmentStatusModal" tabindex="-1" role="dialog" aria-labelledby="enrollmentStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Enrollment Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label class="my-2" for="status">Select Status:</label>
+                    <select wire:model="enrollmentStatus" class="form-control" id="status">
+                        @foreach($availableStatuses as $status)
+                            <option value="{{ $status }}">{{ ucfirst($status) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                    <button type="button" class="btn btn-primary" wire:click="updateEnrollmentStatus">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 </div>
 
 
@@ -840,6 +920,15 @@ new class extends Component {
         window.addEventListener('hide-enrollment-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('enrollCourseModal'))?.hide();
         });
+
+        window.addEventListener('show-enrollment-status-modal', () => {
+            new bootstrap.Modal(document.getElementById('enrollmentStatusModal')).show();
+        });
+
+        window.addEventListener('hide-enrollment-status-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('enrollmentStatusModal'))?.hide();
+        });
+
     </script>
 @endpush
 

@@ -6,11 +6,13 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
-new class extends Component
-{
+new class extends Component {
+
+    use WithPagination;
+
     /* ───────── Public props ─────────────────────────── */
-    public $intakes = [];
     public $selectAll = false;
     public $name, $starts_at, $ends_at;
     public $editId = null;
@@ -21,23 +23,30 @@ new class extends Component
     public function rules()
     {
         return [
-            'name'      => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'starts_at' => 'required|date',
-            'ends_at'   => 'nullable|date|after_or_equal:starts_at',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
         ];
     }
 
-    /* ───────── Lifecycle ────────────────────────────── */
-    public function mount()  { $this->loadIntakes(); }
-
-    #[On('search')] public function search()  { $this->loadIntakes(); }
+    #[On('search')] public function search()
+    {
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
+    }
 
     /* ───────── Load records ─────────────────────────── */
-    public function loadIntakes()
+    public function with()
     {
-        $this->intakes = Intake::when(!empty($this->search), fn ($q) =>
-        $q->where('name', 'like', "%{$this->search}%"))
-            ->latest()->get();
+        $intakes = Intake::when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%")
+        )
+            ->latest()
+            ->paginate(10);
+
+        return [
+            'intakes' => $intakes,
+        ];
     }
 
     /* ───────── Create ──────────────────────────────── */
@@ -47,13 +56,13 @@ new class extends Component
 
         try {
             Intake::create([
-                'name'      => $this->name,
+                'name' => $this->name,
                 'starts_at' => $this->starts_at,
-                'ends_at'   => $this->ends_at,
+                'ends_at' => $this->ends_at,
             ]);
 
             $this->resetForm();
-            $this->loadIntakes();
+            $this->resetPage();
             $this->dispatch('hide-intake-modal');
 
             LivewireAlert::text('Intake added successfully.!')
@@ -63,7 +72,7 @@ new class extends Component
                 ->show();
 
         } catch (\Exception $e) {
-            Log::error('Error adding intake: '.$e->getMessage());
+            Log::error('Error adding intake: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to add Intake.!')
                 ->error()
@@ -77,11 +86,11 @@ new class extends Component
     /* ───────── Edit ─────────────────────────────────── */
     public function editIntake($id)
     {
-        $intake        = Intake::findOrFail($id);
-        $this->editId  = $intake->id;
-        $this->name    = $intake->name;
+        $intake = Intake::findOrFail($id);
+        $this->editId = $intake->id;
+        $this->name = $intake->name;
         $this->starts_at = $intake->starts_at->format('Y-m-d');
-        $this->ends_at   = optional($intake->ends_at)->format('Y-m-d');
+        $this->ends_at = optional($intake->ends_at)->format('Y-m-d');
 
         $this->dispatch('show-intake-modal');
     }
@@ -93,13 +102,13 @@ new class extends Component
         try {
             $intake = Intake::findOrFail($this->editId);
             $intake->update([
-                'name'      => $this->name,
+                'name' => $this->name,
                 'starts_at' => $this->starts_at,
-                'ends_at'   => $this->ends_at,
+                'ends_at' => $this->ends_at,
             ]);
 
             $this->resetForm();
-            $this->loadIntakes();
+            $this->resetPage();
             $this->dispatch('hide-intake-modal');
 
             LivewireAlert::text('Intake updated successfully.!')
@@ -109,7 +118,7 @@ new class extends Component
                 ->show();
 
         } catch (\Exception $e) {
-            Log::error('Failed to update intake: '.$e->getMessage());
+            Log::error('Failed to update intake: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to update Intake.!')
                 ->error()
@@ -123,7 +132,7 @@ new class extends Component
     public function deleteIntake($id)
     {
         Intake::findOrFail($id)->delete();
-        $this->loadIntakes();
+        $this->resetPage();
 
         LivewireAlert::text('Intake deleted successfully.!')
             ->success()
@@ -135,8 +144,9 @@ new class extends Component
     public function deleteSelected()
     {
         Intake::whereIn('id', $this->selected)->delete();
-        $this->selected = [];  $this->selectAll = false;
-        $this->loadIntakes();
+        $this->selected = [];
+        $this->selectAll = false;
+        $this->resetPage();
 
         LivewireAlert::text('Intakes deleted successfully.!')
             ->success()
@@ -157,9 +167,19 @@ new class extends Component
     #[On('select-all')]
     public function selectAll()
     {
-        $this->selected = $this->selectAll
-            ? $this->intakes->pluck('id')->map(fn ($id) => (string) $id)->toArray()
-            : [];
+        if ($this->selectAll) {
+            $currentPageIntakeIds = Intake::when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%")
+            )
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageIntakeIds;
+        } else {
+            $this->selected = [];
+        }
     }
 
 
@@ -186,7 +206,15 @@ new class extends Component
 
 }; ?>
 
-    <!-- ====================  Blade / HTML  ==================== -->
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
+
+<!-- ====================  Blade / HTML  ==================== -->
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
@@ -202,7 +230,8 @@ new class extends Component
                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
                     </div>
-                    <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+                    <div
+                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                         @if (count($selected))
                             <a href="#" class="delete-multiple bg-danger-subtle btn me-2 text-danger"
                                wire:click.prevent="deleteSelected">
@@ -229,12 +258,14 @@ new class extends Component
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label small">Starts At</label>
-                                        <input type="date" id="starts_at" class="form-control" wire:model.live="starts_at">
+                                        <input type="date" id="starts_at" class="form-control"
+                                               wire:model.live="starts_at">
                                         @error('starts_at') <small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label small">Ends At</label>
-                                        <input type="date" wire:change="$dispatch('generate-intake-name')" id="ends_at" class="form-control" wire:model.live="ends_at">
+                                        <input type="date" wire:change="$dispatch('generate-intake-name')" id="ends_at"
+                                               class="form-control" wire:model.live="ends_at">
                                         @error('ends_at') <small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                 </div>
@@ -248,7 +279,8 @@ new class extends Component
                                 <button class="btn btn-success" type="submit">
                                     {{ $editId ? 'Save' : 'Add' }}
                                 </button>
-                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard</button>
+                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -276,8 +308,8 @@ new class extends Component
                             <tr class="search-items">
                                 <td>
                                     <div class="form-check text-center">
-                                    <input type="checkbox" class="form-check-input"
-                                           wire:model="selected" value="{{ (string)$intake->id }}">
+                                        <input type="checkbox" class="form-check-input"
+                                               wire:model="selected" value="{{ (string)$intake->id }}">
                                     </div>
                                 </td>
                                 <td>{{ $intake->name }}</td>
@@ -289,21 +321,31 @@ new class extends Component
                                            class="text-primary">
                                             <i class="ti ti-eye fs-5"></i>
                                         </a>
-                                        <a href="javascript:void(0)" wire:click="editIntake({{ $intake->id }})" class="text-primary">
+                                        <a href="javascript:void(0)" wire:click="editIntake({{ $intake->id }})"
+                                           class="text-primary">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
-                                        <a href="javascript:void(0)" wire:click="deleteIntake({{ $intake->id }})" class="text-dark ms-2">
+                                        <a href="javascript:void(0)" wire:click="deleteIntake({{ $intake->id }})"
+                                           class="text-dark ms-2">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center">No intakes found.</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center">No intakes found.</td>
+                            </tr>
                         @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Add the pagination links here --}}
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $intakes->links() }}
+                </div>
+
             </div>
 
         </div>

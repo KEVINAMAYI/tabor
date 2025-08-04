@@ -57,7 +57,7 @@ class Attendance extends Model
             Student::class,
             Enrollment::class,
             'id',          // PK on enrollments
-            'id',          // PK on students
+            'id',          // PK on student
             'enrollment_id',
             'student_id'
         );

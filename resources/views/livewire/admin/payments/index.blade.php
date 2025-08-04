@@ -7,10 +7,12 @@ use Livewire\Volt\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component {
 
-    public $payments = [];
+    use WithPagination;
+
     public $selectAll = false;
     public $amount, $method, $reference, $paid_at, $enrollment_id;
     public $editId = null;
@@ -32,31 +34,36 @@ new class extends Component {
     public function mount()
     {
         $this->enrollments = Enrollment::all(); // Get all enrollments
-        $this->loadPayments();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadPayments();
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
     }
 
-    public function loadPayments()
+    public function with()
     {
-        $this->payments = Payment::with('enrollment')
-            ->when(!empty($this->search), function ($q) {
-                $q->where(function ($query) {
-                    $query->whereHas('enrollment.student', function ($query) {
-                        $query->where('first_name', 'like', "%{$this->search}%")
-                            ->orWhere('last_name', 'like', "%{$this->search}%")
-                            ->orWhere('email', 'like', "%{$this->search}%");
-                    })
-                        ->orWhere('method', 'like', "%{$this->search}%")
-                        ->orWhere('reference', 'like', "%{$this->search}%");
-                });
-            })
+        $payments = Payment::with(['enrollment.student', 'enrollment.course']) // Eager load nested relationships for display
+        ->when(!empty($this->search), function ($q) {
+            $q->where(function ($query) {
+                $query->whereHas('enrollment.student', function ($query) {
+                    $query->where('first_name', 'like', "%{$this->search}%")
+                        ->orWhere('last_name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%");
+                })
+                    ->orWhere('method', 'like', "%{$this->search}%")
+                    ->orWhere('reference', 'like', "%{$this->search}%");
+            });
+        })
             ->latest()
-            ->get();
+            ->paginate(10); // Use paginate() instead of get(), specify items per page
+
+        return [
+            'payments' => $payments, // Pass the Paginator instance
+        ];
     }
 
 
@@ -65,8 +72,8 @@ new class extends Component {
         $this->validate();
 
         try {
-            DB::beginTransaction();
 
+            DB::beginTransaction();
             Payment::create([
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
@@ -78,7 +85,7 @@ new class extends Component {
             DB::commit();
 
             $this->resetForm();
-            $this->loadPayments();
+            $this->resetPage();
             $this->dispatch('hide-payment-modal');
 
             LivewireAlert::text('Payment added successfully.!')
@@ -88,6 +95,7 @@ new class extends Component {
                 ->show();
 
         } catch (\Exception $e) {
+
             DB::rollBack();
             Log::error('Error adding payment: ' . $e->getMessage());
 
@@ -133,7 +141,7 @@ new class extends Component {
             DB::commit();
 
             $this->resetForm();
-            $this->loadPayments();
+            $this->resetPage();
             $this->dispatch('hide-payment-modal');
 
             LivewireAlert::text('Payment updated successfully.!')
@@ -145,7 +153,6 @@ new class extends Component {
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update payment: ' . $e->getMessage());
-
             LivewireAlert::text('Failed to update payment.!')
                 ->error()
                 ->toast()
@@ -158,7 +165,7 @@ new class extends Component {
     public function deletePayment($id)
     {
         Payment::findOrFail($id)->delete();
-        $this->loadPayments();
+        $this->resetPage();
 
         LivewireAlert::text('Payment deleted successfully.!')
             ->success()
@@ -172,7 +179,7 @@ new class extends Component {
         Payment::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadPayments();
+        $this->resetPage();
 
         LivewireAlert::text('Payments deleted successfully.!')
             ->success()
@@ -183,20 +190,46 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->enrollment_id = $this->search =  $this->amount = $this->method = $this->reference = $this->paid_at = null;
+        $this->enrollment_id = $this->search = $this->amount = $this->method = $this->reference = $this->paid_at = null;
         $this->editId = null;
     }
 
     #[On('select-all')]
-    public function selectAll()
-    {
-        if ($this->selectAll) {
-            $this->selected = $this->payments->pluck('id')->map(fn($id) => (string)$id)->toArray();
-        } else {
-            $this->selected = [];
-        }
-    }
+     public function selectAll()
+     {
+         if ($this->selectAll) {
+             $currentPagePaymentIds = Payment::with(['enrollment.student', 'enrollment.course']) // Ensure the same query logic
+             ->when(!empty($this->search), function ($q) {
+                 $q->where(function ($query) {
+                     $query->whereHas('enrollment.student', function ($query) {
+                         $query->where('first_name', 'like', "%{$this->search}%")
+                             ->orWhere('last_name', 'like', "%{$this->search}%")
+                             ->orWhere('email', 'like', "%{$this->search}%");
+                     })
+                         ->orWhere('method', 'like', "%{$this->search}%")
+                         ->orWhere('reference', 'like', "%{$this->search}%");
+                 });
+             })
+                 ->latest()
+                 ->paginate(10)
+                 ->pluck('id')
+                 ->map(fn($id) => (string)$id)
+                 ->toArray();
+
+             $this->selected = $currentPagePaymentIds;
+         } else {
+             $this->selected = [];
+         }
+     }
 }; ?>
+
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
 
 <div class="row">
     <div class="col-12">
@@ -210,11 +243,12 @@ new class extends Component {
                                    type="text"
                                    class="form-control product-search ps-5"
                                    placeholder="Search Payments..."
-                                   wire:model="search" />
+                                   wire:model="search"/>
                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
                     </div>
-                    <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+                    <div
+                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                         @if (count($selected) > 0)
                             <!-- Delete Selected Button -->
                             <div class="action-btn">
@@ -239,7 +273,7 @@ new class extends Component {
             <div class="modal fade" id="addPaymentModal" tabindex="-1"
                  role="dialog" aria-labelledby="addPaymentModalTitle"
                  aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Payment</h5>
@@ -253,21 +287,32 @@ new class extends Component {
                                         <select wire:model="enrollment_id" class="form-control">
                                             <option value="">Select Enrollment</option>
                                             @foreach($enrollments as $enrollment)
+                                                @php
+                                                    $student = $enrollment->student;
+                                                    $course = $enrollment->course;
+                                                    $intake = $enrollment->intake;
+                                                @endphp
                                                 <option value="{{ $enrollment->id }}">
-                                                    {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+                                                    {{ $student->first_name }} {{ $student->last_name }} —
+                                                    {{ $course->title }} —
+                                                    Intake: {{ $intake->name ?? 'N/A' }}
                                                 </option>
                                             @endforeach
+
                                         </select>
-                                        @error('enrollment_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                        @error('enrollment_id') <small
+                                            class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Amount Input -->
                                     <div class="col-md-6 mb-3">
-                                        <input type="number" wire:model="amount" class="form-control" placeholder="Amount"/>
+                                        <input type="number" wire:model="amount" class="form-control"
+                                               placeholder="Amount"/>
                                         @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Payment Method Selector -->
                                     <div class="col-md-6 mb-3">
                                         <select wire:model="method" class="form-control">
+                                            <option value="">Select Payment Method</option>
                                             <option value="cash">Cash</option>
                                             <option value="mpesa">M-Pesa</option>
                                             <option value="card">Card</option>
@@ -277,7 +322,8 @@ new class extends Component {
                                     </div>
                                     <!-- Reference Input -->
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" wire:model="reference" class="form-control" placeholder="Reference"/>
+                                        <input type="text" wire:model="reference" class="form-control"
+                                               placeholder="Reference"/>
                                     </div>
                                     <!-- Paid Date Input -->
                                     <div class="col-md-6 mb-3">
@@ -290,7 +336,9 @@ new class extends Component {
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
-                                    <button type="button" class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard</button>
+                                    <button type="button" class="btn bg-danger-subtle text-danger"
+                                            data-bs-dismiss="modal">Discard
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -314,9 +362,9 @@ new class extends Component {
                             </th>
                             <th>Course</th>
                             <th>Student</th>
+                            <th>Reference</th>
                             <th>Amount</th>
                             <th>Method</th>
-                            <th>Status</th>
                             <th>Paid On</th>
                             <th>Action</th>
                         </tr>
@@ -330,33 +378,30 @@ new class extends Component {
                                                value="{{ (string) $payment->id }}"/>
                                     </div>
                                 </td>
-                                <td><span class="badge bg-light text-dark">{{ $payment->course->title }}</span></td> <!-- Assuming `course` is a property of $payment -->
+                                <td><span class="badge bg-light text-dark">{{ $payment->course->title }}</span></td>
+                                <!-- Assuming `course` is a property of $payment -->
                                 <td>
                                     <div class="user-meta-info">
-                                        <h6 class="user-name mb-0">{{ $payment->student->first_name }}</h6> <!-- Assuming `payer_name` is a property -->
-                                        <span class="user-work fs-3">{{ $payment->reference }}</span> <!-- Assuming `payer_reference` -->
+                                        <h6 class="user-name mb-0">{{ $payment->student->first_name }}</h6>
+                                        <!-- Assuming `payer_name` is a property -->
+                                        <span class="user-work fs-3">{{ $payment->last_name }}</span>
+                                        <!-- Assuming `payer_reference` -->
                                     </div>
                                 </td>
+                                <td><span class="">{{ $payment->reference }}</span></td>
                                 <td><span class="badge bg-secondary">{{ $payment->amount }}</span></td>
                                 <td><span class="badge bg-secondary">{{ $payment->method }}</span></td>
-                                <td>
-                                    @if($payment->status == 'Completed')
-                                        <span class="badge bg-success-subtle text-success">Completed</span>
-                                    @elseif($payment->status == 'Pending')
-                                        <span class="badge bg-warning-subtle text-warning">Pending</span>
-                                    @else
-                                        <span class="badge bg-danger-subtle text-danger">Failed</span>
-                                    @endif
-                                </td>
                                 <td>{{ $payment->paid_at }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <!-- Edit Payment Button -->
-                                        <a href="javascript:void(0)" wire:click="editPayment({{ $payment->id }})" class="text-primary">
+                                        <a href="javascript:void(0)" wire:click="editPayment({{ $payment->id }})"
+                                           class="text-primary">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
                                         <!-- Delete Payment Button -->
-                                        <a href="javascript:void(0)" wire:click="deletePayment({{ $payment->id }})" class="text-dark ms-2">
+                                        <a href="javascript:void(0)" wire:click="deletePayment({{ $payment->id }})"
+                                           class="text-dark ms-2">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
@@ -369,6 +414,11 @@ new class extends Component {
                         @endforelse
                         </tbody>
                     </table>
+
+                    {{-- Add the pagination links here --}}
+                    <div class="d-flex justify-content-center mt-4">
+                        {{ $payments->links() }}
+                    </div>
 
                 </div>
             </div>
