@@ -247,8 +247,9 @@ new class extends Component {
                                 <div class="row">
                                     <!-- Enrollment Selector -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="enrollment_id" class="form-label">Name</label>
                                         <select wire:model="enrollment_id" class="form-control">
-                                            <option value="">Select Enrollment</option>
+                                            <option value="">Select Name</option>
                                             @foreach($enrollments as $enrollment)
                                                 <option value="{{ $enrollment->id }}">
                                                     {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
@@ -259,25 +260,28 @@ new class extends Component {
                                     </div>
                                     <!-- Amount Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="amount" class="form-label">Amount</label>
                                         <input type="number" wire:model="amount" class="form-control" placeholder="Amount"/>
                                         @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Payment Method Selector -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="method" class="form-label">Payment Method</label>
                                         <select wire:model="method" class="form-control">
                                             <option value="cash">Cash</option>
                                             <option value="mpesa">M-Pesa</option>
-                                            <option value="card">Card</option>
                                             <option value="bank">Bank</option>
                                         </select>
                                         @error('method') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Reference Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="reference" class="form-label">Reference</label>
                                         <input type="text" wire:model="reference" class="form-control" placeholder="Reference"/>
                                     </div>
                                     <!-- Paid Date Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="paid_at" class="form-label">Paid On</label>
                                         <input type="date" wire:model="paid_at" class="form-control"/>
                                     </div>
                                 </div>
