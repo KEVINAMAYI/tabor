@@ -329,7 +329,7 @@ new class extends Component {
                                 </td>
                                 <td>{{ $loop->iteration }}</td> <!-- Assuming `course` is a property of $payment -->
                                 <td>
-                                    <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
+                                    <span class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
                                 </td>
                                 <td><span class="badge bg-secondary">{{ $payment->amount }}</span></td>
                                 <td><span >{{ $payment->payment_method }}</span></td>
