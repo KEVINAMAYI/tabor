@@ -51,11 +51,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                     <h2 class="fs-16 fw-normal text-lg-start text-center mb-4">
                         About Tabor Training Institute
                     </h2>
-                    <div class="d-flex justify-content-lg-start justify-content-center gap-3">
-                        <a class="btn btn-primary" href="../main/authentication-register.html">
-                            Join our Community
-                        </a>
-                    </div>
                 </div>
                 <div class="col-lg-6">
                     <p class="fs-4 mb-0 text-muted lh-lg">
@@ -90,11 +85,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 doors is on a journey of professional transformation.
                             </p>
                             <div class="d-flex justify-content-lg-start justify-content-center gap-3">
-                                <a class="btn btn-primary" href="../main/authentication-register.html">
+                                <a class="btn btn-primary" href="{{ route('front-end.courses') }}">
                                     Explore Programs
                                 </a>
-                                <a class="btn btn-outline-primary" href="javascript:void(0)">
-                                    Download TVET Guide
+                                <a class="btn btn-outline-primary" href="../assets/images/frontend-pages/course_guide.jpeg" target="_blank">
+                                    Download Course Guide
                                 </a>
                             </div>
                         </div>
@@ -142,6 +137,139 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
     <!-- Details End -->
     <!-- ------------------------------------- -->
+
+
+    <!-- ------------------------------------- -->
+    <!-- Team Start -->
+    <!-- ------------------------------------- -->
+    <section class="bg-dark py-7 py-md-14 py-lg-11">
+        <div class="container-fluid">
+            <div class="row mb-7 mb-lg-0">
+                <div class="row mb-7 mb-lg-0">
+                    <div class="col-12">
+                        <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm text-center">
+                            Meet our team
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div></div>
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img style="height:360px; width:280px;" src="../assets/images/frontend-pages/Ann.jpeg"
+                             alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
+                            <p class="fs-3 mb-0">Director HR & Operations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jotham.png" alt="leader">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Dr. Jotham Mukundi</h4>
+                            <p class="fs-3 mb-0">Director & Chief Executive</p>
+                        </div>
+                    </div>
+                </div>
+                <div></div>
+
+            </div>
+
+            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Jacklyne.png" alt="leader"
+                             style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Jacklyne Nekesa Wangwe</h4>
+                            <p class="fs-3 mb-0">Lead Trainer – Caregiving and Health Services Support</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Slyvia.png" alt="leader"
+                             style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Slyvia Njeri Kimani</h4>
+                            <p class="fs-3 mb-0">Head of Training</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Felix.jpg" alt="leader"
+                             style="width: 270px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Felix Wakhu Murule</h4>
+                            <p class="fs-3 mb-0">Lead Trainer Orthopedic & Trauma Medicine</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
+                        <img src="../assets/images/frontend-pages/Victoria.jpeg" alt="leader"
+                             style="width: 280px; height: 360px;">
+                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
+                            <h4 class="fs-5 fw-bold mb-2">Victoria Wanjiku</h4>
+                            <p class="fs-3 mb-0">Wellness Officer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+    <!-- ------------------------------------- -->
+
+
+{{--    <div class="col-lg-12 mt-md-0 mt-7">--}}
+{{--        <div class="owl-carousel testimonial-carousel owl-theme">--}}
+{{--            <!-- Carousel Item 1 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-1.png" alt="Logo 1" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-2.png" alt="Logo 2" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-3.png" alt="Logo 3" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 2 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-4.png" alt="Logo 4" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-5.png" alt="Logo 5" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-6.png" alt="Logo 6" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 3 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-7.png" alt="Logo 7" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-8.png" alt="Logo 8" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-9.png" alt="Logo 9" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 4 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-10.png" alt="Logo 10" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-11.png" alt="Logo 11" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-12.png" alt="Logo 12" class="img-fluid">--}}
+{{--            </div>--}}
+
+{{--            <!-- Carousel Item 5 with 3 images -->--}}
+{{--            <div class="item">--}}
+{{--                <img src="../assets/images/logos/logo-13.png" alt="Logo 13" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-14.png" alt="Logo 14" class="img-fluid">--}}
+{{--                <img src="../assets/images/logos/logo-15.png" alt="Logo 15" class="img-fluid">--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--    </div>--}}
+
 
 
     <!-- ------------------------------------- -->
@@ -232,74 +360,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
 
     <!-- ------------------------------------- -->
-    <!-- Team Start -->
-    <!-- ------------------------------------- -->
-    <section class="bg-dark py-7 py-md-14 py-lg-11">
-        <div class="container-fluid">
-            <div class="row mb-7 mb-lg-0">
-                <div class="col-lg-7">
-                    <h2 class="text-white fs-15 fw-bolder mb-lg-0 lh-sm">
-                        Meet our team
-                    </h2>
-                </div>
-                <div class="col-lg-5">
-                    <p class="mb-0 fs-4">
-                        Meet the experienced professionals guiding our institution
-                    </p>
-                </div>
-            </div>
-            <div class="owl-carousel leadership-carousel owl-theme mt-lg-5 mb-lg-7">
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/morgan.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Sarah Wanjiku</h4>
-                            <p class="fs-3 mb-0">Student Affairs Director</p>
-                            <p class="fs-3 mb-0">Dedicated to student success and comprehensive support services.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/taylor.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">James Kipchoge</h4>
-                            <p class="fs-3 mb-0">International Relations Manager</p>
-                            <p class="fs-3 mb-0">Specialist in global partnerships and student placement programs.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/jordan.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-2">Anne Ngumo</h4>
-                            <p class="fs-3 mb-0">Academic Director</p>
-                            <p class="fs-3 mb-0">Expert in curriculum development and quality assurance with extensive
-                                industry experience.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="meet-our-team position-relative rounded-3 overflow-hidden">
-                        <img src="../assets/images/frontend-pages/alex.jpg" alt="leader" class="">
-                        <div class="leadership-card z-1 bg-white rounded py-3 px-8 mx-6 my-6 w-90 text-center">
-                            <h4 class="fs-5 fw-bold mb-8">Dr. Jotham Mukundi</h4>
-                            <p class="fs-3 mb-0">Director & Chief Executive</p>
-                            <p class="fs-3 mb-0">Educational leader with over 15 years in TVET development and
-                                international partnerships.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- ------------------------------------- -->
-    <!-- Team End -->
-    <!-- ------------------------------------- -->
-
-
-    <!-- ------------------------------------- -->
     <!-- Testimonial Start -->
     <!-- ------------------------------------- -->
     <section class="pt-7 pt-md-14 pt-lg-11">
@@ -315,26 +375,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </div>
                 <div class="col-lg-6 mt-md-0 mt-7">
                     <div class="owl-carousel testimonial-carousel owl-theme">
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I want to sincerely thank the entire institution for the incredible support and quality
-                                training I’ve received. This opportunity has truly changed my life, and I feel more
-                                confident stepping into my career. Forever grateful!
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-12.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Angela Muthoni</p>
-                                        <p class="mb-0 fs-4">Student - Information Technology</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
 
                         <div class="item">
                             <p class="fs-6 text-dark mb-13">
@@ -346,8 +386,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                     <img src="../assets/images/profile/user-7.jpg" alt="user" width="56px" height="56px"
                                          class="rounded-circle w-auto">
                                     <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Kevin Amayi</p>
-                                        <p class="mb-0 fs-4">Student - Nursing</p>
+                                        <p class="mb-1 fs-5 fw-bolder text-dark">Onyango Truphena</p>
+                                        <p class="mb-0 fs-4">Student - Caregiver</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -367,7 +407,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          height="56px" class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Samuel Kiprotich</p>
-                                        <p class="mb-0 fs-4">Student - Electrical Engineering</p>
+                                        <p class="mb-0 fs-4">Student - Orthopedic & Truma Medicine</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -387,7 +427,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                          class="rounded-circle w-auto">
                                     <div>
                                         <p class="mb-1 fs-5 fw-bolder text-dark">Mercy Nyambura</p>
-                                        <p class="mb-0 fs-4">Student - Hospitality Management</p>
+                                        <p class="mb-0 fs-4">Student - Food Production</p>
                                     </div>
                                 </div>
                                 <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
@@ -396,27 +436,6 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                             </div>
                         </div>
 
-                        <div class="item">
-                            <p class="fs-6 text-dark mb-13">
-                                I'm grateful for the personalized guidance I’ve received here. It’s more than just a
-                                school — it’s a community that truly wants students to succeed.
-                            </p>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../assets/images/profile/user-11.jpg" alt="user" width="56px"
-                                         height="56px" class="rounded-circle w-auto">
-                                    <div>
-                                        <p class="mb-1 fs-5 fw-bolder text-dark">Brian Otieno</p>
-                                        <p class="mb-0 fs-4">Student - Mechanical Engineering</p>
-                                    </div>
-                                </div>
-                                <span class="bg-primary round-48 rounded-circle hstack justify-content-center">
-            <img src="../assets/images/frontend-pages/icon-quotes.svg" alt="user" class="w-auto">
-        </span>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
             </div>
         </div>
@@ -440,7 +459,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         Join thousands of successful graduates who have transformed their careers with Tabor Training
                         Institute..
                     </h4>
-                    <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
+                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
                         Register
                     </a>
                 </div>

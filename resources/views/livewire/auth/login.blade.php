@@ -40,7 +40,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false));
+        $this->redirectIntended(default: route(auth()->user()->hasRole('student') ? 'student.dashboard' : 'dashboard', absolute: false));
+
     }
 
     /**

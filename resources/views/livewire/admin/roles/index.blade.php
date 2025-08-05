@@ -14,9 +14,7 @@ new class extends Component {
     public $selectedPermissions = [];
     public $groupedPermissions = [];
 
-    public $name,
-        $editId = null,
-        $search = '';
+    public $name, $editId = null, $search = '';
 
     public function mount()
     {
@@ -50,7 +48,7 @@ new class extends Component {
 
     public function loadRoles()
     {
-        $this->roles = Role::when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))->get();
+        $this->roles = Role::when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))->get();
     }
 
     public function store()
@@ -164,6 +162,7 @@ new class extends Component {
     {
         $this->name = null;
         $this->editId = null;
+        $this->search = null;
         $this->selectedPermissions = [];
     }
 }; ?>
@@ -196,7 +195,7 @@ new class extends Component {
             <!-- Modal -->
             <div class="modal fade" id="rolesModal" tabindex="-1" role="dialog" aria-labelledby="rolesModalTitle"
                  aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">{{ $editId ? 'Update' : 'Add' }} Role</h5>

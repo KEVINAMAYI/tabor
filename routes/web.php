@@ -38,5 +38,6 @@ Route::get('/clear-cache', function () {
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
+require __DIR__ . '/dashboard/student.php';
 require __DIR__ . '/front-end/index.php';
 // require __DIR__ . '/api.php';

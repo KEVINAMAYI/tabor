@@ -8,11 +8,15 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component
 {
+
+    use WithPagination;
+
+
     /* ------------- Public props ------------- */
-    public $lecturers = [];
     public $selectAll = false;
 
     /* Form fields */
@@ -40,16 +44,19 @@ new class extends Component
         ];
     }
 
-    /* ------------- Lifecycle ------------- */
-    public function mount() { $this->loadLecturers(); }
 
-    #[On('search')] public function search() { $this->loadLecturers(); }
+    #[On('search')]
+    public function search() {
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
+    }
 
     /* ------------- Fetch records ------------- */
-    public function loadLecturers()
+    public function with()
     {
-        $this->lecturers = Lecturer::with('user')
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
+        $lecturers = Lecturer::with('user')
+            ->when(!empty($this->search), fn ($q) => $q->where(function ($query) {
                 $query->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")
@@ -58,7 +65,11 @@ new class extends Component
                     ->orWhere('id_number', 'like', "%{$this->search}%");
             }))
             ->latest()
-            ->get();
+            ->paginate(10);
+
+        return [
+            'lecturers' => $lecturers,
+        ];
     }
 
     /* ------------- Create ------------- */
@@ -91,7 +102,7 @@ new class extends Component
             DB::commit();
 
             $this->resetForm();
-            $this->loadLecturers();
+            $this->resetPage();
             $this->dispatch('hide-lecturer-modal');
 
             LivewireAlert::text('Lecturer added successfully.!')
@@ -160,7 +171,6 @@ new class extends Component
             DB::commit();
 
             $this->resetForm();
-            $this->loadLecturers();
             $this->dispatch('hide-lecturer-modal');
 
             LivewireAlert::text('Lecturer updated successfully.!')
@@ -186,7 +196,7 @@ new class extends Component
     public function deleteLecturer($id)
     {
         Lecturer::findOrFail($id)->user()->delete();
-        $this->loadLecturers();
+        $this->resetPage();
     }
 
     public function deleteSelected()
@@ -195,7 +205,7 @@ new class extends Component
             ->each(fn ($l) => $l->user()->delete());
 
         $this->selected = []; $this->selectAll = false;
-        $this->loadLecturers();
+        $this->resetPage();
 
         LivewireAlert::text('Lecturers deleted successfully.!')
             ->success()
@@ -208,7 +218,7 @@ new class extends Component
     private function resetForm()
     {
         foreach (['first_name','last_name','email','phone_number','kra_pin',
-                     'id_number','next_of_kin','alternative_contact','date_of_birth'] as $prop) {
+                     'id_number','next_of_kin','alternative_contact','date_of_birth','search'] as $prop) {
             $this->$prop = null;
         }
         $this->editId = null;
@@ -217,13 +227,38 @@ new class extends Component
     #[On('select-all')]
     public function selectAll()
     {
-        $this->selected = $this->selectAll
-            ? $this->lecturers->pluck('id')->map(fn ($id) => (string)$id)->toArray()
-            : [];
+        if ($this->selectAll) {
+            $currentPageLecturerIds = Lecturer::with('user')
+                ->when(!empty($this->search), fn ($q) => $q->where(function ($query) {
+                    $query->where('first_name', 'like', "%{$this->search}%")
+                        ->orWhere('last_name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%")
+                        ->orWhere('phone', 'like', "%{$this->search}%")
+                        ->orWhere('kra_pin', 'like', "%{$this->search}%")
+                        ->orWhere('id_number', 'like', "%{$this->search}%");
+                }))
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageLecturerIds;
+        } else {
+            $this->selected = [];
+        }
     }
 }; ?>
 
-    <!-- ===============================  HTML  =============================== -->
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
+
+<!-- ===============================  HTML  =============================== -->
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
@@ -315,7 +350,7 @@ new class extends Component
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer d-flex gap-6">
+                            <div class="modal-footer d-flex gap-1">
                                 <button class="btn btn-success" type="submit">
                                     {{ $editId ? 'Save' : 'Add' }}
                                 </button>
@@ -373,6 +408,12 @@ new class extends Component
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Add the pagination links here --}}
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $lecturers->links() }}
+                </div>
+
             </div>
 
         </div>

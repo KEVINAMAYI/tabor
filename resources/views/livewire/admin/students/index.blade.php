@@ -5,15 +5,15 @@ use App\Models\User;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
-    use WithFileUploads;
 
-    public $students = [];
+    use WithFileUploads, WithPagination;
 
     public $selectAll = false;
 
@@ -51,20 +51,19 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-students')) {
             abort(403, 'Unauthorized action.');
         }
-        $this->loadStudents();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadStudents();
+        $this->resetPage();
     }
 
-    public function loadStudents()
+    public function with()
     {
-        $this->students = Student::with(['user'])
+        $students = Student::with(['user'])
             ->when(
-                $this->search,
+                !empty($this->search),
                 fn($q) => $q->where(function ($query) {
                     $query
                         ->where('first_name', 'like', "%{$this->search}%")
@@ -75,7 +74,11 @@ new class extends Component {
                 }),
             )
             ->latest()
-            ->get();
+            ->paginate(10);
+
+        return [
+            'students' => $students, // Pass the Paginator instance
+        ];
     }
 
     public function addStudent()
@@ -85,7 +88,6 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
-            // Create the user
             $user = User::create([
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
@@ -115,13 +117,12 @@ new class extends Component {
                 'user_id' => $user->id,
             ]);
 
-            // Assign the 'student' role
             $user->assignRole('student');
 
             DB::commit();
 
             $this->resetForm();
-            $this->loadStudents();
+            $this->resetPage();
             $this->dispatch('hide-student-modal');
 
             LivewireAlert::text('Student added successfully.!')->success()->toast()->position('top-end')->show();
@@ -135,7 +136,6 @@ new class extends Component {
 
     public function editStudent($id)
     {
-        // Load the student with user and additional fields
         $student = Student::with('user')->findOrFail($id);
 
         $this->editId = $student->id;
@@ -148,12 +148,10 @@ new class extends Component {
         $this->country = $student->country;
         $this->highest_level_of_education = $student->highest_level_of_education;
 
-        // Assign the file URLs if they exist
         $this->id_url = $student->id_url;
         $this->kcse_certificate = $student->kcse_certificate;
         $this->passport_size_url = $student->passport_size_url;
 
-        // Dispatch the modal open event
         $this->dispatch('show-student-modal');
     }
 
@@ -166,13 +164,11 @@ new class extends Component {
 
             $student = Student::with('user')->findOrFail($this->editId);
 
-            // Update user details
             $student->user->update([
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
             ]);
 
-            // Update student details
             $student->update([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
@@ -190,7 +186,6 @@ new class extends Component {
             DB::commit();
 
             $this->resetForm();
-            $this->loadStudents();
             $this->dispatch('hide-student-modal');
 
             LivewireAlert::text('Student updated successfully.!')->success()->toast()->position('top-end')->show();
@@ -206,7 +201,7 @@ new class extends Component {
     {
         $student = Student::findOrFail($id);
         $student->user()->delete();
-        $this->loadStudents();
+        $this->resetPage();
 
         LivewireAlert::text('Student deleted successfully.!')->success()->toast()->position('top-end')->show();
     }
@@ -220,7 +215,8 @@ new class extends Component {
 
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadStudents();
+        $this->resetPage();
+
 
         LivewireAlert::text('Students deleted successfully.!')->success()->toast()->position('top-end')->show();
     }
@@ -235,13 +231,38 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->students->pluck('id')->map(fn($id) => (string) $id)->toArray();
+
+            $currentPageStudentIds = Student::with(['user'])
+                ->when(
+                    !empty($this->search),
+                    fn($q) => $q->where(function ($query) {
+                        $query
+                            ->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                            ->orWhere('email', 'like', "%{$this->search}%")
+                            ->orWhere('phone', 'like', "%{$this->search}%");
+                    }),
+                )
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageStudentIds;
         } else {
             $this->selected = [];
         }
     }
 }; ?>
 
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
@@ -263,7 +284,7 @@ new class extends Component {
                             @can('delete-students')
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                        class="delete-multiple bg-error-subtle btn me-2 text-error">
+                                       class="delete-multiple bg-danger-subtle btn me-2 text-danger">
                                         <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                                     </a>
                                 </div>
@@ -281,8 +302,8 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="addStudentModal" tabindex="-1" role="dialog"
-                aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                 aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
+                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Add Student</h5>
@@ -292,68 +313,61 @@ new class extends Component {
                         <form wire:submit.prevent="{{ $editId ? 'updateStudent' : 'addStudent' }}">
                             <div class="modal-body">
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="first_name" class="form-label">First Name</label>
                                         <input type="text" wire:model.live="first_name" id="first_name"
-                                            class="form-control" placeholder="Enter your first name" />
-                                        @error('first_name')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                               class="form-control" placeholder="Enter your first name"/>
+                                        @error('first_name')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="last_name" class="form-label">Last Name</label>
                                         <input type="text" wire:model.live="last_name" id="last_name"
-                                            class="form-control" placeholder="Enter your last name" />
-                                        @error('last_name')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                               class="form-control" placeholder="Enter your last name"/>
+                                        @error('last_name')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="email" class="form-label">Email Address</label>
-                                        <input type="email" wire:model.live="email" id="email"
-                                            class="form-control" placeholder="Enter your email address" />
-                                        @error('email')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                        <input type="email" wire:model.live="email" id="email" class="form-control"
+                                               placeholder="Enter your email address"/>
+                                        @error('email')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="phone_number" class="form-label">Phone Number</label>
                                         <input type="text" wire:model.live="phone_number" id="phone_number"
-                                            class="form-control" placeholder="Enter your phone number" />
-                                        @error('phone_number')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                               class="form-control" placeholder="Enter your phone number"/>
+                                        @error('phone_number')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
 
-                                    <div class="col-md-12 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="country" class="form-label">Country</label>
-                                        <input type="text" wire:model.live="country" id="country"
-                                            class="form-control" placeholder="Enter your country" />
-                                        @error('country')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                        <input type="text" wire:model.live="country" id="country" class="form-control"
+                                               placeholder="Enter your country"/>
+                                        @error('country')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
 
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="date_of_birth" class="form-label">Date of Birth</label>
                                         <input type="date" wire:model.live="date_of_birth" id="date_of_birth"
-                                            class="form-control" placeholder="Select your date of birth" />
-                                        @error('date_of_birth')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                               class="form-control" placeholder="Select your date of birth"/>
+                                        @error('date_of_birth')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
 
                                     <!-- New Fields -->
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="address" class="form-label">Address</label>
-                                        <input type="text" wire:model.live="address" id="address"
-                                            class="form-control" placeholder="Enter your address" />
-                                        @error('address')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                        <input type="text" wire:model.live="address" id="address" class="form-control"
+                                               placeholder="Enter your address"/>
+                                        @error('address')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
 
-                                    <div class="col-md-12 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="highest_level_of_education" class="form-label">Highest Level of
                                             Education</label>
                                         <input type="text" wire:model.live="highest_level_of_education"
@@ -365,25 +379,21 @@ new class extends Component {
                                     </div>
 
                                     <!-- File Inputs -->
-                                    <div class="col-md-12 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="id_url" class="form-label">Upload ID</label>
-                                        <input type="file" wire:model.live="id_url" id="id_url"
-                                            class="form-control" placeholder="Upload your ID" />
-                                        @error('id_url')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                        <input type="file" wire:model.live="id_url" id="id_url" class="form-control"
+                                               placeholder="Upload your ID"/>
+                                        @error('id_url')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
-                                    <div class="col-md-12 mb-3">
-                                        <label for="kcse_certificate" class="form-label">Upload KCSE
-                                            Certificate</label>
-                                        <input type="file" wire:model.live="kcse_certificate"
-                                            id="kcse_certificate" class="form-control"
-                                            placeholder="Upload your KCSE certificate" />
-                                        @error('kcse_certificate')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
+                                    <div class="col-md-4 mb-3">
+                                        <label for="kcse_certificate" class="form-label">Upload KCSE Certificate</label>
+                                        <input type="file" wire:model.live="kcse_certificate" id="kcse_certificate"
+                                               class="form-control" placeholder="Upload your KCSE certificate"/>
+                                        @error('kcse_certificate')<small
+                                            class="text-error text-danger">{{ $message }}</small>@enderror
                                     </div>
-                                    <div class="col-md-12 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="passport_size_url" class="form-label">Upload Passport Size
                                             Photo</label>
                                         <input type="file" wire:model.live="passport_size_url"
@@ -397,7 +407,7 @@ new class extends Component {
                             </div>
 
                             <div class="modal-footer">
-                                <div class="d-flex gap-6 m-0">
+                                <div class="d-flex gap-1 m-0">
                                     <button type="button" class="btn btn-danger bg-error-subtle"
                                         data-bs-dismiss="modal">Discard
                                     </button>
@@ -475,6 +485,12 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Add the pagination links here --}}
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $students->links() }}
+                </div>
+
             </div>
         </div>
     </div>

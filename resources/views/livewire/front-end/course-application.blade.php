@@ -616,11 +616,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                             <h4 class="fs-3 fw-bold  text-muted mb-0 ">Quick Links</h4>
                             <div>
                                 <a class="btn btn-primary d-block w-100 mb-3"
-                                   href="../main/authentication-register.html">
+                                   href="{{ route('front-end.course-application') }}">
                                     Apply Now
                                 </a>
-                                <a class="btn btn-outline-primary d-block w-100" href="javascript:void(0)">
-                                    Download Brochure
+                                <a class="btn btn-outline-primary d-block w-100" href="../assets/images/frontend-pages/course_guide.jpeg" target="_blank">
+                                    Download Course Guide
                                 </a>
                             </div>
                         </div>
@@ -631,26 +631,27 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                             <div class="d-flex flex-column gap-3">
                                 <div class="d-flex align-items-center gap-2">
                                     <iconify-icon icon="mdi:phone-outline" class="text-primary fs-4"></iconify-icon>
-                                    <span class="fs-3 text-dark">+254 712 345 678</span>
+                                    <span class="fs-3 text-dark">+254 798496129</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <iconify-icon icon="mdi:phone-outline" class="text-primary fs-4"></iconify-icon>
+                                    <span class="fs-3 text-dark">+254 726241095</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <iconify-icon icon="mdi:email-outline" class="text-primary fs-4"></iconify-icon>
-                                    <span class="fs-3 text-dark">info@collegeexample.ac.ke</span>
+                                    <span class="fs-3 text-dark">office@tabor.ac.ke</span>
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="d-flex flex-column gap-3">
-                                <a class="btn btn-primary d-block w-100" href="../main/authentication-register.html">
+                            <div class="d-flex flex-column gap-2">
+                                <a class="btn btn-primary d-block w-100 mb-3"
+                                   href="{{ route('front-end.course-application') }}">
                                     Apply Now
                                 </a>
-                                <a class="btn btn-outline-success d-block w-100" href="javascript:void(0)">
-                                    <iconify-icon icon="mdi:chat-outline" class="me-2"></iconify-icon>
-                                    Live Chat
-                                </a>
-                                <a class="btn btn-outline-warning d-block w-100" href="javascript:void(0)">
-                                    <iconify-icon icon="mdi:phone-in-talk-outline" class="me-2"></iconify-icon>
-                                    Request Call Back
+                                <a class="btn btn-outline-success d-block w-100" target="_blank" href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor">
+                                    <iconify-icon  icon="mdi:whatsapp"></iconify-icon>
+                                    <span class="mb-1">Whatsapp</span>
                                 </a>
                             </div>
                         </div>
@@ -852,7 +853,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         Join thousands of successful graduates who have transformed their careers with Tabor Training
                         Institute..
                     </h4>
-                    <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
+                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
                         Register
                     </a>
                 </div>
