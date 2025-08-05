@@ -35,6 +35,10 @@ Route::get('/clear-cache', function () {
 
     return 'Caches cleared!';
 });
+Route::get('/create-storage-link', function () {
+    Artisan::call('storage:link');
+    return 'Storage links created!';
+});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
