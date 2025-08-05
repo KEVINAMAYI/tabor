@@ -18,10 +18,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $permissions = [
 
             // Student-related
-            'view-student',
-            'add-student',
-            'edit-student',
-            'delete-student',
+            'view-students',
+            'add-students',
+            'edit-students',
+            'delete-students',
 
             // lecturer-related
             'view-lecturers',
