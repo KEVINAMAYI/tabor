@@ -26,7 +26,7 @@ new class extends Component {
     public function mount($course_id)
     {
         $this->course_id = $course_id;
-        $this->course = Course::find($course_id)->withCount('enrolments')->first();
+        $this->course = Course::where('id', $course_id)->with('enrolments')->first();
         $this->loadModules();
     }
 
@@ -211,7 +211,7 @@ new class extends Component {
                             </div>
                             <div class="text-center">
                                 <i class="ti ti-user-circle fs-6 d-block mb-2"></i>
-                                <h4 class="mb-0 fw-semibold lh-1">{{ $this->course->enrolments_count }}</h4>
+                                <h4 class="mb-0 fw-semibold lh-1">{{ $this->course->enrolments->count() }}</h4>
                                 <p class="mb-0 ">Students</p>
                             </div>
                         </div>
