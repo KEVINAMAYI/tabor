@@ -165,7 +165,7 @@
                            href="javascript:void(0)"
                            aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}">
                             <iconify-icon icon="solar:wallet-line-duotone"></iconify-icon>
-                            <span class="hide-menu">Payments</span>
+                            <span class="hide-menu">Finance</span>
                         </a>
                         <ul aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}"
                             class="collapse first-level {{ request()->routeIs('payments.*') ? 'in' : '' }}">
@@ -173,7 +173,7 @@
                                 <a class="sidebar-link {{ request()->routeIs('payments.index') ? 'active' : '' }}"
                                    href="{{ route('payments.index') }}">
                                     <span class="icon-small"></span>
-                                    <span class="hide-menu">View Payment</span>
+                                    <span class="hide-menu">All Transactions</span>
                                 </a>
                             </li>
                         </ul>
