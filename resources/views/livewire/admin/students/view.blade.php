@@ -755,10 +755,13 @@ new class extends Component {
                                 <th>Payment Method</th>
                                 <th>Amount</th>
                                 <th>Paid By</th>
-                                <th>Action</th>
+                                {{-- <th>Action</th> --}}
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $totalPayments = 0;
+                            @endphp
                             @foreach ($student->enrollments as $enrollment)
                                 @foreach ($enrollment->payments as $payment)
                                     <tr>
@@ -768,12 +771,15 @@ new class extends Component {
                                         <td>{{ ucfirst($payment->payment_method) ?? 'N/A' }}</td>
                                         <td>{{ number_format($payment->amount, 2) }}</td>
                                         <td>{{ $payment->payer ?? 'N/A' }}</td>
-                                        <td>
+                                        {{-- <td>
                                             <a href="#" class="btn btn-warning btn-sm">
                                                 <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
                                             </a>
-                                        </td>
+                                        </td> --}}
                                     </tr>
+                                    @php
+                                        $totalPayments += $payment->amount;
+                                    @endphp
                                 @endforeach
                             @endforeach
                             <!-- Add more rows as needed -->
@@ -781,7 +787,7 @@ new class extends Component {
                         <tfoot>
                             <tr>
                                 <th colspan="4">Total</th>
-                                <th colspan="2">${{ number_format($student->enrollments->sum('payments.amount'), 2) }}</th>
+                                <th colspan="1">Ksh{{ number_format($totalPayments, 2) }}</th>
                             </tr>
                         </tfoot>
                     </table>

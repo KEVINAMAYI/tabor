@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('enrollment_id')->constrained()->nullable();
+            $table->foreignId('enrollment_id')->nullable()->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2)->default(0.00);
             $table->enum('payment_method', ['cash','mpesa','card','bank'])->default('cash');
             $table->enum('status', ['pending','completed','failed'])->default('pending');
