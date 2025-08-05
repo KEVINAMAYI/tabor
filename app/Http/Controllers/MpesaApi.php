@@ -205,8 +205,10 @@ class MpesaApi extends Controller
                     $transaction->enrollment_id = $enrollment->id;
                     $transaction->status = 'completed';
                     $transaction->payment_method = 'mpesa';
-                    $transaction->save();
                 }
+                $transaction->status = 'completed';
+                $transaction->payment_method = 'mpesa';
+                $transaction->save();
 
             }
             DB::commit();
