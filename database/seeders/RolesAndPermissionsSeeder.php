@@ -18,10 +18,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $permissions = [
 
             // Student-related
-            'view-students',
-            'add-students',
-            'edit-students',
-            'delete-students',
+            'view-student',
+            'add-student',
+            'edit-student',
+            'delete-student',
 
             // lecturer-related
             'view-lecturers',
@@ -41,10 +41,32 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit-courses',
             'delete-courses',
 
+            // Class groups
+            'view-class-groups',
+            'add-class-groups',
+            'edit-class-groups',
+            'delete-class-groups',
+
+            //Attendance
+            'view-attendance',
+            'add-attendance',
+            'edit-attendance',
+            'delete-attendance',
+
+            // Intakes
+            'view-intakes',
+            'add-intakes',
+            'edit-intakes',
+            'delete-intakes',
+
             // Accounting
-            'manage-money',
+            'manage-payments',
             'view-transactions',
             'generate-financial-reports',
+
+            //reports
+            'manage-reports'
+
         ];
 
         // Create all permissions
@@ -60,7 +82,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin' => 'all',
 
             'finance-manager' => [
-                'manage-money',
+                'manage-payments',
                 'view-transactions',
                 'generate-financial-reports',
             ],

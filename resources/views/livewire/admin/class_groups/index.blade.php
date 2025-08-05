@@ -6,10 +6,12 @@ use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component {
 
-    public $classGroups = [];
+    use WithPagination;
+
 
     public $name, $intake_id;
 
@@ -34,21 +36,26 @@ new class extends Component {
     public function mount()
     {
         $this->intakes = Intake::latest()->get();
-        $this->loadClassGroups();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadClassGroups();
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
     }
 
-    public function loadClassGroups()
+    public function with()
     {
-        $this->classGroups = ClassGroup::with('intake')
-            ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+        $classGroups = ClassGroup::with('intake')
+            ->when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->latest()
-            ->get();
+            ->paginate(10);
+
+        return [
+            'classGroups' => $classGroups,
+        ];
     }
 
     public function addClassGroup()
@@ -62,7 +69,7 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadClassGroups();
+            $this->resetPage();
             $this->dispatch('hide-class-group-modal');
 
             LivewireAlert::text('Class group added successfully.!')
@@ -106,10 +113,10 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadClassGroups();
+            $this->resetPage();
             $this->dispatch('hide-class-group-modal');
 
-            LivewireAlert::text('Class group added successfully.!')
+            LivewireAlert::text('Class group updated successfully.!')
                 ->success()
                 ->toast()
                 ->position('top-end')
@@ -118,7 +125,7 @@ new class extends Component {
         } catch (\Exception $e) {
             Log::error('Error updating class group: ' . $e->getMessage());
 
-            LivewireAlert::text('Failed to add Class group.!')
+            LivewireAlert::text('Failed to update Class group.!')
                 ->error()
                 ->toast()
                 ->position('top-end')
@@ -129,7 +136,7 @@ new class extends Component {
     public function deleteClassGroup($id)
     {
         ClassGroup::findOrFail($id)->delete();
-        $this->loadClassGroups();
+        $this->resetPage();
 
         LivewireAlert::text('Class group deleted successfully.!')
             ->success()
@@ -143,9 +150,9 @@ new class extends Component {
         ClassGroup::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadClassGroups();
+        $this->resetPage();
 
-        LivewireAlert::text('Class groups added successfully.!')
+        LivewireAlert::text('Class groups deleted successfully.!')
             ->success()
             ->toast()
             ->position('top-end')
@@ -157,19 +164,37 @@ new class extends Component {
         $this->name = null;
         $this->intake_id = null;
         $this->editId = null;
+        $this->search = null;
     }
 
     #[On('select-all')]
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->classGroups->pluck('id')->map(fn($id) => (string)$id)->toArray();
+
+            $currentPageClassGroupIds = ClassGroup::with('intake')
+                ->when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageClassGroupIds;
         } else {
             $this->selected = [];
         }
     }
 }; ?>
 
+
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
 
 <div class="row">
     <div class="col-12">
@@ -234,7 +259,7 @@ new class extends Component {
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <div class="d-flex gap-6 m-0">
+                                <div class="d-flex gap-1 m-0">
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
@@ -296,6 +321,12 @@ new class extends Component {
                         @endforelse
                         </tbody>
                     </table>
+
+                    {{-- Add the pagination links here --}}
+                    <div class="d-flex justify-content-center mt-4">
+                        {{ $classGroups->links() }}
+                    </div>
+
                 </div>
             </div>
 

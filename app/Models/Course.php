@@ -68,7 +68,7 @@ class Course extends Model
             Student::class,
             Enrollment::class,
             'course_id',  // FK on enrolments
-            'id',         // PK on students
+            'id',         // PK on student
             'id',         // PK on courses
             'student_id'  // FK on enrolments
         )->distinct();

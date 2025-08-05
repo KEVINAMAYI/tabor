@@ -413,7 +413,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component
                     <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
                         Join thousands of successful graduates who have transformed their careers with Tabor Training Institute..
                     </h4>
-                    <a href="../main/authentication-register.html" class="btn px-5 btn-outline-light">
+                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
                         Register
                     </a>
                 </div>
