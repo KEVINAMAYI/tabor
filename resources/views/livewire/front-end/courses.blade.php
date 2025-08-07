@@ -90,44 +90,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
     <section class="bg-light-gray pb-3 pb-md-7 pb-lg-12">
         <div class="container-fluid">
-            <div class="card data-shadow rounded-3 overflow-hidden mb-7">
-                <div class="row">
-                    <div class="col-lg-6 order-last order-lg-first">
-                        <div class="p-7 p-lg-5 flex-grow-1">
-                            <div class="py-lg-4 d-flex flex-column gap-3">
-                                <a href="../main/frontend-blogdetailpage.html">
-                                    <h4 class="fw-bolder fs-6">
-                                        Discover our comprehensive range of TVET programs designed to prepare you for
-                                        successful careers in growing industries.
-                                    </h4>
-                                </a>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex gap-9">
-                                        <div class="d-flex gap-2">
-                                            <i class="ti ti-book fs-5 text-dark"></i>
-                                            <p class="mb-0 fs-2 fw-semibold text-dark">{{ $courseCount }} Courses</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 order-first order-lg-last">
-                        <div class="blog-bg d-flex flex-column justify-content-between p-9 h-100 flex-grow-1">
-                            <img src="../assets/images/profile/user-6.jpg" alt="user" width="44" height="44"
-                                 class="rounded-circle">
-                            <div class="d-flex justify-content-end">
-                                <p class="fs-2 py-1 px-2 bg-white rounded-1 fw-semibold mb-0 text-dark">2 min Read
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="row">
-
                 <!-- Check if there are any courses -->
                 @if ($courses->isEmpty())
                     <div class="col-12">
@@ -233,25 +196,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <!-- ------------------------------------- -->
     <!-- Focus Start -->
     <!-- ------------------------------------- -->
-    <section class="bg-primary py-lg-11 py-5 position-relative">
-        <div class="container-fluid">
-            <div class="row justify-content-center">
-                <div class="col-lg-9 text-center">
-                    <a href="../main/frontend-landingpage.html">
-                        <img width="140" height="140" src="../assets/images/logos/tabor_logo_transparent.png"
-                             alt="logo">
-                    </a>
-                    <h4 class="fs-7 my-9 fw-bolder text-white text-center lh-sm">
-                        Join thousands of successful graduates who have transformed their careers with Tabor Training
-                        Institute..
-                    </h4>
-                    <a href="{{ route('front-end.course-application') }}" class="btn px-5 btn-outline-light">
-                        Register
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
+    @include('livewire.front-end.common.focus')
     <!-- ------------------------------------- -->
     <!-- Focus End -->
     <!-- ------------------------------------- -->
