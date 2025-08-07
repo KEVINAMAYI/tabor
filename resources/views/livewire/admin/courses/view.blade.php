@@ -223,7 +223,8 @@ new class extends Component {
 
         <div class="card overflow-hidden">
             <div class="card-body p-0">
-                <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid">
+                <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                     alt="matdash-img" class="img-fluid" style="height: 550px; width: 100%; object-fit: cover;">
                 <div class="row align-items-center">
                     <div class="col-lg-4 order-lg-1 order-2">
                         <div class="d-flex align-items-center justify-content-around m-4">
