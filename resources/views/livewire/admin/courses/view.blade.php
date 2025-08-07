@@ -200,6 +200,14 @@ new class extends Component {
 
 }; ?>
 
+@push('styles')
+    <style>
+        .pagination {
+            margin-left: 10px;
+        }
+    </style>
+@endpush
+
 <div class="col-12">
     <div class="container-fluid">
         <div class="card card-body py-3">
