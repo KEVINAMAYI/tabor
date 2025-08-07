@@ -105,20 +105,22 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                 Monday – Friday<br>
                                 08:00 – 17:00
                             </p>
+                            <hr>
+                            <p class="fs-4 text-white mb-0">
+                                A Saturday class Training option is also available on special arrangements (8am-4pm)
+                            </p>
                         </div>
                     </div>
                     <!-- Need Help -->
                     <div class="py-9 d-flex flex-column gap-4 border-bottom">
                         <div class="d-flex flex-column gap-3">
-                            <a class="btn btn-primary d-block w-100" href="../main/authentication-register.html">
+                            {{-- <a class="btn btn-primary d-block w-100" href="../main/authentication-register.html">
                                 Shedule Campus Visit
-                            </a>
+                            </a> --}}
                             <a class="btn btn-outline-success d-block w-100" target="_blank"
-                                href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor Training Institute.
-I'm reaching out to enquire more about the courses you offer.
-Thanks!">
-                                <iconify-icon icon="mdi:chat-outline" class="me-2"></iconify-icon>
-                                Live Chat
+                                href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor">
+                                <iconify-icon icon="mdi:whatsapp"></iconify-icon>
+                                <span class="mb-1">Whatsapp</span>
                             </a>
                         </div>
                     </div>
@@ -164,8 +166,7 @@ Thanks!">
                                     <select class="form-select w-auto">
                                         <option value="1">General Enquiry</option>
                                         <option value="2">Customer Service Enquiry</option>
-                                        <option value="3">Legal Enquiry</option>
-                                        <option value="4">General Enquiry</option>
+                                        <option value="3">Available Courses & Intakes</option>
                                     </select>
                                 </div>
                                 <div class="d-flex flex-column gap-2">
