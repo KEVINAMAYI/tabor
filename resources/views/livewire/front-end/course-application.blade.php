@@ -394,7 +394,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                             <select wire:model="selected_course_id" class="form-select">
                                                 <option value="">Select Course</option>
                                                 @foreach($courses as $course)
-                                                    <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                                    <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level ?? '' }}</option>
                                                 @endforeach
                                             </select>
                                             @error('selected_course_id') <span

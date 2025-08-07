@@ -112,7 +112,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 </a>
                                 <div class="mt-7 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title }}</a>
+                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title  }} - {{ $course->level ?? '' }}</a>
                                         <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
@@ -139,13 +139,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                                     {{ $course->certification ?? 'N/A' }}</span>
                                             </li>
                                         </ul>
-                                        <h5 class="fw-bold mb-3">Course Details:</h5>
-                                        <ul class="list-unstyled">
-                                            <li class="d-flex gap-2">
-                                                <strong>Prerequisites:</strong> <br>
-                                                <span>{{ $course->prerequisites ?? 'N/A' }}</span>
-                                            </li>
-                                        </ul>
+                                        <div class="mt-0" id="details-{{ $course->id }}">
+                                            <ol class="list-unstyled">
+                                                <p class="mb-1 text-primary"><strong>Prerequisites:</strong></p>
+                                                @foreach (explode("\n", $course->prerequisites ?? '') as $prerequisite)
+                                                    @if (trim($prerequisite) !== '')
+                                                        <li class="d-flex align-items-start gap-2">
+                                                            <i class="ti ti-check text-success mt-1"></i>
+                                                            <span>{{ $prerequisite }}</span>
+                                                        </li>
+                                                    @endif
+                                                @endforeach
+                                            </ol>
+                                        </div>
 
                                         <div>
                                             <a class="btn btn-primary d-block w-100 mb-3"
