@@ -43,7 +43,8 @@ new class extends Component {
                 $query->where('course_id', $this->course_id);
             })
             ->when(!empty($this->search), function ($query) {
-                $query->where('title', 'like', "%{$this->search}%")
+                $query
+                    ->where('title', 'like', "%{$this->search}%")
                     ->orWhere('description', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
             })
@@ -67,20 +68,11 @@ new class extends Component {
             $this->dispatch('hide-module-modal');
 
             session()->flash('message', 'Module added successfully');
-            LivewireAlert::text('Module added successfully.')
-                ->success()
-                ->toast()
-                ->position('top-end')
-                ->show();
-
+            LivewireAlert::text('Module added successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Exception $e) {
             \Log::info('Error adding module: ' . $e->getMessage());
 
-            LivewireAlert::text('There was an error while adding module.')
-                ->error()
-                ->toast()
-                ->position('top-end')
-                ->show();
+            LivewireAlert::text('There was an error while adding module.')->error()->toast()->position('top-end')->show();
         }
     }
 
@@ -115,21 +107,11 @@ new class extends Component {
             $this->dispatch('hide-module-modal');
 
             session()->flash('message', 'Module updated successfully');
-            LivewireAlert::text('module updated successfully.')
-                ->success()
-                ->toast()
-                ->position('top-end')
-                ->show();
-
+            LivewireAlert::text('module updated successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Exception $e) {
             Log::error('Error updating module: ' . $e->getMessage());
 
-            LivewireAlert::text('There was an error while updating module.')
-                ->error()
-                ->toast()
-                ->position('top-end')
-                ->show();
-
+            LivewireAlert::text('There was an error while updating module.')->error()->toast()->position('top-end')->show();
         }
     }
 
@@ -178,7 +160,8 @@ new class extends Component {
             <div class="row align-items-center">
                 <div class="col-12">
                     <div class="d-sm-flex align-items-center justify-space-between">
-                        <h4 class="mb-4 mb-sm-0 card-title">{{ $this->course->title . ' - ' . ($this->course->code) }}</h4>
+                        <h4 class="mb-4 mb-sm-0 card-title">{{ $this->course->title . ' - ' . $this->course->code }}
+                        </h4>
                         <nav aria-label="breadcrumb" class="ms-auto">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item d-flex align-items-center">
@@ -200,14 +183,15 @@ new class extends Component {
 
         <div class="card overflow-hidden">
             <div class="card-body p-0">
-                <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid">
+                <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                    alt="matdash-img" class="img-fluid" style="height: 550px; width: 100%; object-fit: cover;">
                 <div class="row align-items-center">
                     <div class="col-lg-4 order-lg-1 order-2">
                         <div class="d-flex align-items-center justify-content-around m-4">
                             <div class="text-center">
                                 <i class="ti ti-file-description fs-6 d-block mb-2"></i>
                                 <h4 class="mb-0 fw-semibold lh-1">{{ $this->modules->count() }}</h4>
-                                <p class="mb-0 ">Modules</p>
+                                <p class="mb-0 ">Units</p>
                             </div>
                             <div class="text-center">
                                 <i class="ti ti-user-circle fs-6 d-block mb-2"></i>
