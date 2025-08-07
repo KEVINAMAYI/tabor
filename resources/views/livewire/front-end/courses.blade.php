@@ -7,7 +7,6 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 
 new #[Layout('components.layouts.app.frontend')] class extends Component {
-
     public $courses = [];
     public $courseCount;
 
@@ -15,10 +14,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     {
         $this->courses = Course::latest()->get();
         $this->courseCount = $this->courses->count();
-
     }
-
-} ?>
+}; ?>
 
 @push('styles')
     <style>
@@ -38,7 +35,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
         }
 
         .custom-course-tabs .nav-link.active {
-            background-color: #f79020 !important; /* Match Apply Now */
+            background-color: #f79020 !important;
+            /* Match Apply Now */
             color: #fff !important;
             font-weight: 600 !important;
             border-color: #f79020 !important;
@@ -70,7 +68,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </h2>
                 <div class="d-flex align-items-center gap-6">
                     <a href="../main/frontend-landingpage.html"
-                       class="text-muted fw-bolder link-primary fs-3 text-uppercase">
+                        class="text-muted fw-bolder link-primary fs-3 text-uppercase">
                         Tabor
                     </a>
                     <iconify-icon icon="solar:alt-arrow-right-outline" class="fs-5 text-muted"></iconify-icon>
@@ -97,7 +95,9 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="alert alert-info text-center py-5">
                             <h3 class="fw-bold">Currently, there are no courses available.</h3>
                             <p class="fs-5">
-                                We are constantly adding new courses. Please check back later or <a href="{{ route('front-end.contact') }}" class="text-primary">contact us</a> if you have any questions.
+                                We are constantly adding new courses. Please check back later or <a
+                                    href="{{ route('front-end.contact') }}" class="text-primary">contact us</a> if you
+                                have any questions.
                             </p>
                         </div>
                     </div>
@@ -107,11 +107,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card rounded-3 overflow-hidden h-100">
                                 <a href="#" class="position-relative">
-                                    <img
-                                        src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
-                                        alt="{{ $course->title }}"
-                                        class="w-100 img-fluid"
-                                    />
+                                    <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                                        alt="{{ $course->title }}" class="w-100 img-fluid" />
                                 </a>
                                 <div class="mt-7 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
@@ -119,45 +116,44 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:calendar-clock" class="text-primary fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:calendar-clock"
+                                                    class="text-primary fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Duration:
+                                                    {{ $course->duration ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:laptop" class="text-success fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:laptop"
+                                                    class="text-success fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Mode:
+                                                    {{ ucfirst($course->mode) ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:school-outline" class="text-warning fs-4 mt-1"></iconify-icon>
+                                                <iconify-icon icon="mdi:school-outline"
+                                                    class="text-warning fs-4 mt-1"></iconify-icon>
                                                 <span class="text-dark fs-3">Level: {{ $course->level ?? 'N/A' }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2">
-                                                <iconify-icon icon="mdi:certificate-outline" class="text-info fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
+                                                <iconify-icon icon="mdi:certificate-outline"
+                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Certification:
+                                                    {{ $course->certification ?? 'N/A' }}</span>
                                             </li>
                                         </ul>
-
-                                        <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                            <li class="nav-item">
-                                                <a class="nav-link active" data-bs-toggle="tab" href="#overview-{{ $course->id }}" role="tab"><span>Overview</span></a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" data-bs-toggle="tab" href="#details-{{ $course->id }}" role="tab"><span>Details</span></a>
+                                        <h5 class="fw-bold mb-3">Course Details:</h5>
+                                        <ul class="list-unstyled">
+                                            <li class="d-flex gap-2">
+                                                <strong>Prerequisites:</strong> <br>
+                                                <span>{{ $course->prerequisites ?? 'N/A' }}</span>
                                             </li>
                                         </ul>
-
-                                        <div class="tab-content mt-2">
-                                            <div class="tab-pane p-3" id="details-{{ $course->id }}" role="tabpanel">
-                                                <h5 class="fw-bold mb-3">Course Details:</h5>
-                                                <ul class="list-unstyled">
-                                                    <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span></li>
-                                                </ul>
-                                            </div>
-                                        </div>
 
                                         <div>
-                                            <a class="btn btn-primary d-block w-100 mb-3" href="{{ route('front-end.course-application', ['course_id' => $course->id]) }}">Apply Now</a>
-                                            @if($course->brochure_url)
-                                                <a href="{{ asset('storage/' . $course->brochure_url) }}" class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
+                                            <a class="btn btn-primary d-block w-100 mb-3"
+                                                href="{{ route('front-end.course-application', ['course_id' => $course->id]) }}">Apply
+                                                Now</a>
+                                            @if ($course->brochure_url)
+                                                <a href="{{ asset('storage/' . $course->brochure_url) }}"
+                                                    class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
                                                     <i class="ti ti-download me-1"></i> Download Brochure
                                                 </a>
                                             @endif
