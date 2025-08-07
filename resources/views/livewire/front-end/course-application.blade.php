@@ -26,7 +26,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     public $terms = false;
     public $step = 1;
 
-    public function mount($course_id)
+    public function mount(?int $course_id = null)
     {
         // Load available courses and intakes
         $this->courses = Course::all();
