@@ -5,11 +5,14 @@ use App\Models\Course;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
+use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
+
+    use WithPagination;
+
     public $course = null;
-    public $modules = [];
     public $title, $description, $course_id, $code;
     public $editId = null;
     public $selected = [];
@@ -27,29 +30,34 @@ new class extends Component {
     {
         $this->course_id = $course_id;
         $this->course = Course::where('id', $course_id)->with('enrolments')->first();
-        $this->loadModules();
     }
 
     #[On('search')]
     public function search()
     {
-        $this->loadModules();
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
     }
 
-    public function loadModules()
+
+    public function with()
     {
-        $this->modules = Module::query()
+        $modules = Module::query()
             ->when($this->course_id, function ($query) {
                 $query->where('course_id', $this->course_id);
             })
             ->when(!empty($this->search), function ($query) {
-                $query
-                    ->where('title', 'like', "%{$this->search}%")
+                $query->where('title', 'like', "%{$this->search}%")
                     ->orWhere('description', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
             })
             ->latest()
-            ->get();
+            ->paginate(10);
+
+        return [
+            'modules' => $modules,
+        ];
     }
 
     public function addModule()
@@ -64,15 +72,23 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadModules();
+            $this->resetPage();
             $this->dispatch('hide-module-modal');
 
-            session()->flash('message', 'Module added successfully');
-            LivewireAlert::text('Module added successfully.')->success()->toast()->position('top-end')->show();
+            LivewireAlert::text('Module added successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             \Log::info('Error adding module: ' . $e->getMessage());
 
-            LivewireAlert::text('There was an error while adding module.')->error()->toast()->position('top-end')->show();
+            LivewireAlert::text('There was an error while adding module.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -103,15 +119,24 @@ new class extends Component {
             ]);
 
             $this->resetForm();
-            $this->loadModules();
+            $this->resetPage();
             $this->dispatch('hide-module-modal');
 
-            session()->flash('message', 'Module updated successfully');
-            LivewireAlert::text('module updated successfully.')->success()->toast()->position('top-end')->show();
+            LivewireAlert::text('module updated successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
             Log::error('Error updating module: ' . $e->getMessage());
 
-            LivewireAlert::text('There was an error while updating module.')->error()->toast()->position('top-end')->show();
+            LivewireAlert::text('There was an error while updating module.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         }
     }
 
@@ -120,11 +145,23 @@ new class extends Component {
         try {
             $module = Module::findOrFail($id);
             $module->delete();
-            $this->loadModules();
-            session()->flash('message', 'Module deleted successfully');
+            $this->resetPage();
+
+            LivewireAlert::text('module deleted successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+
         } catch (\Exception $e) {
+
             Log::error('Error deleting module: ' . $e->getMessage());
-            session()->flash('error', 'Failed to delete module');
+
+            LivewireAlert::text('There was an error while updating module.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -133,7 +170,7 @@ new class extends Component {
         Module::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
-        $this->loadModules();
+        $this->resetPage();
         session()->flash('message', 'Selected modules deleted successfully');
     }
 
@@ -147,11 +184,20 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $this->selected = $this->modules->pluck('id')->map(fn($id) => (string) $id)->toArray();
+            $currentPageModuleIds = Module::query()
+                ->when(!empty($this->search), fn($q) => $q->where('title', 'like', '%' . $this->search . '%')->orWhere('description', 'like', '%' . $this->search . '%'))
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
+
+            $this->selected = $currentPageModuleIds;
         } else {
             $this->selected = [];
         }
     }
+
 }; ?>
 
 <div class="col-12">
@@ -160,8 +206,7 @@ new class extends Component {
             <div class="row align-items-center">
                 <div class="col-12">
                     <div class="d-sm-flex align-items-center justify-space-between">
-                        <h4 class="mb-4 mb-sm-0 card-title">{{ $this->course->title . ' - ' . $this->course->code }}
-                        </h4>
+                        <h4 class="mb-4 mb-sm-0 card-title">{{ $course->title . ' - ' . ($course->code) }}</h4>
                         <nav aria-label="breadcrumb" class="ms-auto">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item d-flex align-items-center">
@@ -169,11 +214,6 @@ new class extends Component {
                                         <iconify-icon icon="solar:home-2-line-duotone" class="fs-6"></iconify-icon>
                                     </a>
                                 </li>
-                                {{-- <li class="breadcrumb-item" aria-current="page">
-                                    <span class="badge fw-medium fs-2 bg-primary-subtle text-primary">
-                                        {{ $this->course->title }}</h4>
-                                    </span>
-                                </li> --}}
                             </ol>
                         </nav>
                     </div>
@@ -183,19 +223,18 @@ new class extends Component {
 
         <div class="card overflow-hidden">
             <div class="card-body p-0">
-                <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
-                    alt="matdash-img" class="img-fluid" style="height: 550px; width: 100%; object-fit: cover;">
+                <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid">
                 <div class="row align-items-center">
                     <div class="col-lg-4 order-lg-1 order-2">
                         <div class="d-flex align-items-center justify-content-around m-4">
                             <div class="text-center">
                                 <i class="ti ti-file-description fs-6 d-block mb-2"></i>
-                                <h4 class="mb-0 fw-semibold lh-1">{{ $this->modules->count() }}</h4>
-                                <p class="mb-0 ">Units</p>
+                                <h4 class="mb-0 fw-semibold lh-1">{{ $modules->count() }}</h4>
+                                <p class="mb-0 ">Modules</p>
                             </div>
                             <div class="text-center">
                                 <i class="ti ti-user-circle fs-6 d-block mb-2"></i>
-                                <h4 class="mb-0 fw-semibold lh-1">{{ $this->course->enrolments->count() }}</h4>
+                                <h4 class="mb-0 fw-semibold lh-1">{{ $course->enrolments->count() }}</h4>
                                 <p class="mb-0 ">Students</p>
                             </div>
                         </div>
@@ -204,15 +243,16 @@ new class extends Component {
                         <div class="mt-n5">
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <div class="d-flex align-items-center justify-content-center round-110">
-                                    <div class="border border-4 border-white d-flex align-items-center justify-content-center rounded-circle overflow-hidden"
+                                    <div
+                                        class="border border-4 border-white d-flex align-items-center justify-content-center rounded-circle overflow-hidden"
                                         style="background-color: #f0f0f0; width: 100px; height: 100px;">
                                         <i class="ti ti-book text-primary"
-                                            style="font-size: 3rem !important; line-height: 1;"></i>
+                                           style="font-size: 3rem !important; line-height: 1;"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-center">
-                                <h5 class="mb-0">{{ $this->title }}</h5>
+                                <h5 class="mb-0">{{ $course->title }}</h5>
                             </div>
                         </div>
                     </div>
@@ -223,8 +263,8 @@ new class extends Component {
                     id="pills-tab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active hstack gap-2 rounded-0 fs-12 py-6" id="pills-modules-tab"
-                            data-bs-toggle="pill" data-bs-target="#pills-modules" type="button" role="tab"
-                            aria-controls="pills-modules" aria-selected="true">
+                                data-bs-toggle="pill" data-bs-target="#pills-modules" type="button" role="tab"
+                                aria-controls="pills-modules" aria-selected="true">
                             <i class="ti ti-book fs-5"></i> <!-- Book icon for Courses -->
                             <span class="d-none d-md-block">Modules</span>
                         </button>
@@ -235,7 +275,7 @@ new class extends Component {
         </div>
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade show active" id="pills-modules" role="tabpanel"
-                aria-labelledby="pills-modules-tab" tabindex="0">
+                 aria-labelledby="pills-modules-tab" tabindex="0">
                 <div class="row">
                     <div class="col-12">
                         <div class="widget-content searchable-container list">
@@ -244,8 +284,9 @@ new class extends Component {
                                     <div class="col-md-4 col-xl-3">
                                         <form class="position-relative">
                                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                                class="form-control product-search ps-5" placeholder="Search Modules..."
-                                                wire:model="search" />
+                                                   class="form-control product-search ps-5"
+                                                   placeholder="Search Modules..."
+                                                   wire:model="search"/>
                                             <i
                                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                                         </form>
@@ -255,13 +296,13 @@ new class extends Component {
                                         @if (count($selected) > 0)
                                             <div class="action-btn">
                                                 <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                                    class="delete-multiple bg-danger-subtle btn me-2 text-danger">
+                                                   class="delete-multiple bg-danger-subtle btn me-2 text-danger">
                                                     <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                                                 </a>
                                             </div>
                                         @endif
                                         <a href="javascript:void(0)" wire:click="$dispatch('show-module-modal')"
-                                            class="btn btn-primary d-flex align-items-center">
+                                           class="btn btn-primary d-flex align-items-center">
                                             <i class="ti ti-book text-white me-1 fs-5"></i> Add Module
                                         </a>
                                     </div>
@@ -272,49 +313,56 @@ new class extends Component {
                                 <div class="table-responsive">
                                     <table class="table search-table align-middle text-nowrap">
                                         <thead class="header-item">
-                                            <tr>
-                                                <th>
-                                                    <div class="form-check text-center">
-                                                        <input wire:click="$dispatch('select-all')" type="checkbox"
-                                                            class="form-check-input" wire:model="selectAll" />
-                                                    </div>
-                                                </th>
-                                                <th>Title</th>
-                                                <th>Code</th>
-                                                <th>Description</th>
-                                                <th>Action</th>
-                                            </tr>
+                                        <tr>
+                                            <th>
+                                                <div class="form-check text-center">
+                                                    <input wire:click="$dispatch('select-all')" type="checkbox"
+                                                           class="form-check-input" wire:model="selectAll"/>
+                                                </div>
+                                            </th>
+                                            <th>Title</th>
+                                            <th>Code</th>
+                                            <th>Description</th>
+                                            <th>Action</th>
+                                        </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($modules as $module)
-                                                <tr>
-                                                    <td>
-                                                        <div class="form-check text-center">
-                                                            <input type="checkbox" class="form-check-input"
-                                                                wire:model="selected" value="{{ $module->id }}" />
-                                                        </div>
-                                                    </td>
-                                                    <td>{{ $module->title }}</td>
-                                                    <td>{{ strtoupper($module->code) }}</td>
-                                                    <td>{{ Str::limit($module->description, 60) }}</td>
-                                                    <td>
-                                                        <a href="javascript:void(0)"
-                                                            wire:click="editModule({{ $module->id }})"
-                                                            class="text-primary">
-                                                            <i class="ti ti-pencil  fs-5">
-                                                            </i>
-                                                        </a>
-                                                        <a href="javascript:void(0)"
-                                                            wire:click="deleteModule({{ $module->id }})"
-                                                            class="text-danger ms-2">
-                                                            <i class="ti ti-trash fs-5"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
+                                        @foreach ($modules as $module)
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check text-center">
+                                                        <input type="checkbox" class="form-check-input"
+                                                               wire:model="selected" value="{{ $module->id }}"/>
+                                                    </div>
+                                                </td>
+                                                <td>{{ $module->title }}</td>
+                                                <td>{{ strtoupper($module->code) }}</td>
+                                                <td>{{ Str::limit($module->description, 60) }}</td>
+                                                <td>
+                                                    <a href="javascript:void(0)"
+                                                       wire:click="editModule({{ $module->id }})"
+                                                       class="text-primary">
+                                                        <i class="ti ti-pencil  fs-5">
+                                                        </i>
+                                                    </a>
+                                                    <a href="javascript:void(0)"
+                                                       wire:click="deleteModule({{ $module->id }})"
+                                                       class="text-danger ms-2">
+                                                        <i class="ti ti-trash fs-5"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {{-- Add the pagination links here --}}
+                                <div class="d-flex justify-content-center mt-4">
+                                    {{ $modules->links() }}
+                                </div>
+
+
                             </div>
                         </div>
                     </div>
@@ -326,7 +374,7 @@ new class extends Component {
 
     <!-- Module Modal -->
     <div class="modal fade" id="addModuleModal" tabindex="-1" role="dialog" aria-labelledby="addModuleModalTitle"
-        aria-hidden="true" wire:ignore.self>
+         aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header d-flex align-items-center">
@@ -338,14 +386,15 @@ new class extends Component {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <input type="text" wire:model="title" class="form-control"
-                                    placeholder="Module Title" />
+                                       placeholder="Module Title"/>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <input type="text" wire:model="code" class="form-control"
-                                    placeholder="Module Code" />
+                                       placeholder="Module Code"/>
                             </div>
                             <div class="col-md-12 mb-3">
-                                <textarea wire:model="description" class="form-control" placeholder="Module Description" rows="4"></textarea>
+                                <textarea wire:model="description" class="form-control" placeholder="Module Description"
+                                          rows="4"></textarea>
                             </div>
                         </div>
                     </div>
