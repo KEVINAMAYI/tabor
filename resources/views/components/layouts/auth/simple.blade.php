@@ -11,7 +11,6 @@
         <script type="module" src="{{ asset('build/assets/app-CFeSwWEE.js') }}"></script>
     @endif
 
-
     <style>
         body {
             color: rgb(11, 41, 71);
