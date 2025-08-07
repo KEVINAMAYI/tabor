@@ -18,6 +18,10 @@
                         <img src="../assets/images/frontend-pages/partners/nita.jpg" alt="NITA" style="width: 100px; height: auto;">
                     </a>
                     <a href="javascript:void(0)" data-bs-toggle="tooltip" data-bs-placement="top"
+                       data-bs-title="AJ Global Consult">
+                        <img src="../assets/images/frontend-pages/partners/ajglobal.png" alt="AJ Global Consult" style="width: 100px; height: auto;">
+                    </a>
+                    <a href="javascript:void(0)" data-bs-toggle="tooltip" data-bs-placement="top"
                        data-bs-title="German Embassy - International collaboration and recognition">
                         <img src="../assets/images/frontend-pages/partners/german-embassy.jpg" alt="German Embassy" style="width: 100px; height: auto;">
                     </a>
