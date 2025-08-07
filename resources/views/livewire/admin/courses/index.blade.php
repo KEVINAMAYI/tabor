@@ -9,6 +9,8 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 
 new class extends Component {
+
+
     use WithFileUploads, WithPagination;
 
     public $title, $code, $description, $price, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
