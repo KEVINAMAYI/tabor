@@ -442,15 +442,15 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                             Tabor Training Institute
                                         </p>
                                         <ol class="list-group list-group-numbered fs-5">
-                                            <li class="list-group-item border-0 px-0 py-2">Commitment to excellence: We
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Commitment to excellence:</b> We
                                                 strive for the highest standards in teaching, learning, clinical
                                                 practice, and service delivery, consistently pursuing improvement
                                             </li>
-                                            <li class="list-group-item border-0 px-0 py-2">Stewardship: We take
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Stewardship:</b> We take
                                                 responsibility for upholding, modeling, and promoting our values across
                                                 all levels of the Institute.
                                             </li>
-                                            <li class="list-group-item border-0 px-0 py-2">Responsive: We act promptly
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Responsive:</b> We act promptly
                                                 and effectively to meet the changing needs of students, communities, and
                                                 the health sector
                                             </li>
