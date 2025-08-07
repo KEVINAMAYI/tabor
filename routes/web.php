@@ -39,6 +39,14 @@ Route::get('/create-storage-link', function () {
     Artisan::call('storage:link');
     return 'Storage links created!';
 });
+Route::get('/refresh-db', function () {
+    Artisan::call('migrate:fresh --seed');
+    return 'Database refreshed!';
+});
+Route::get('/migrate', function () {
+    Artisan::call('migrate');
+    return 'Database migrated!';
+});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
