@@ -26,14 +26,14 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     public $terms = false;
     public $step = 1;
 
-    public function mount()
+    public function mount($course_id)
     {
         // Load available courses and intakes
         $this->courses = Course::all();
         $this->intakes = Intake::all();
 
         // Optionally, set default values if needed
-        $this->selected_course_id = $this->courses->first()->id ?? null;
+        $this->selected_course_id = !empty($course_id) ? $course_id : $this->courses->first()->id;
         $this->selected_intake_id = $this->intakes->first()->id ?? null;
     }
 
