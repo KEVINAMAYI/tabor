@@ -5,8 +5,7 @@ namespace App\Livewire;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 
-new #[Layout('components.layouts.app.frontend')] class extends Component {
-} ?>
+new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
 
 <div class="main-wrapper overflow-hidden">
     <!-- ------------------------------------- -->
@@ -20,7 +19,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 </h2>
                 <div class="d-flex align-items-center gap-6">
                     <a href="../main/frontend-landingpage.html"
-                       class="text-muted fw-bolder link-primary fs-3 text-uppercase">
+                        class="text-muted fw-bolder link-primary fs-3 text-uppercase">
                         Tabor
                     </a>
                     <iconify-icon icon="solar:alt-arrow-right-outline" class="fs-5 text-muted"></iconify-icon>
@@ -31,9 +30,9 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             </div>
             <div class="mt-4 mt-md-5 mt-lg-12">
                 <iframe class="rounded-3"
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3874.5782400289413!2d36.83165577482915!3d-1.2675908987203388!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f16dc9f2039cb%3A0x970dde5d44f9d97d!2sShowbe%20Plaza%20-%20Block%20C!5e1!3m2!1sen!2ske!4v1754067363436!5m2!1sen!2ske"
-                        width="100%" height="439" style="border:0;" allowfullscreen="" loading="lazy"
-                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3874.5782400289413!2d36.83165577482915!3d-1.2675908987203388!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f16dc9f2039cb%3A0x970dde5d44f9d97d!2sShowbe%20Plaza%20-%20Block%20C!5e1!3m2!1sen!2ske!4v1754067363436!5m2!1sen!2ske"
+                    width="100%" height="439" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
     </section>
@@ -114,7 +113,10 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                             <a class="btn btn-primary d-block w-100" href="../main/authentication-register.html">
                                 Shedule Campus Visit
                             </a>
-                            <a class="btn btn-outline-success d-block w-100" target="_blank" href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor">
+                            <a class="btn btn-outline-success d-block w-100" target="_blank"
+                                href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor Training Institute.
+I'm reaching out to enquire more about the courses you offer.
+Thanks!">
                                 <iconify-icon icon="mdi:chat-outline" class="me-2"></iconify-icon>
                                 Live Chat
                             </a>
@@ -131,14 +133,14 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                             First Name *
                                         </label>
                                         <input type="text" name="Fname" id="Fname" placeholder="First Name"
-                                               class="form-control">
+                                            class="form-control">
                                     </div>
                                     <div class="d-flex flex-column flex-grow-1 gap-2">
                                         <label for="Lname" class="fs-3 fw-semibold">
                                             Last Name *
                                         </label>
                                         <input type="text" name="Lname" id="Lname" placeholder="Last name"
-                                               class="form-control">
+                                            class="form-control">
                                     </div>
                                 </div>
                                 <div class="d-flex flex-sm-row flex-column gap-sm-7 gap-3">
@@ -147,14 +149,14 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                             Phone Number *
                                         </label>
                                         <input type="tel" name="phone" id="phone" placeholder="XXX XXX XXXX"
-                                               class="form-control">
+                                            class="form-control">
                                     </div>
                                     <div class="d-flex flex-column flex-grow-1 gap-2">
                                         <label for="email" class="fs-3 fw-semibold">
                                             Email *
                                         </label>
                                         <input type="email" name="email" id="email" placeholder="Email"
-                                               class="form-control">
+                                            class="form-control">
                                     </div>
                                 </div>
                                 <div class="d-flex flex-column gap-2">
