@@ -82,16 +82,17 @@
             </div>
         </div>
         <div class="row">
-            <!-- Victoria -->
+            <!-- Jacklyne -->
             <div class="col-md-4">
                 <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
-                    data-name="Victoria Wanjiku" data-title="Wellness Officer"
-                    data-img="../assets/images/frontend-pages/Victoria.jpeg"
-                    data-desc="Victoria holds a Bachelor’s degree in Counselling Psychology and is passionate about mental health and holistic student support. She fosters a nurturing environment that promotes emotional well-being, personal growth, and resilience among learners.">
-                    <img src="../assets/images/frontend-pages/Victoria.jpeg" class="card-img-top" alt="Victoria">
+                    data-name="Jacklyne Nekesa Wangwe"
+                    data-title="Lead Trainer – Caregiving and Health Services Support"
+                    data-img="../assets/images/frontend-pages/Jacklyne.png"
+                    data-desc="Jacklyne holds a Diploma in Kenya Registered Community Health Nursing and a Bachelor of Arts in Psychology and Counselling. She is a licensed psychologist who delivers expert instruction in caregiving and health service support, guided by a holistic and compassionate approach to wellness and training.">
+                    <img src="../assets/images/frontend-pages/Jacklyne.png" class="card-img-top" alt="Jacklyne">
                     <div class="card-body text-center">
-                        <h5 class="card-title mb-1">Victoria Wanjiku</h5>
-                        <p class="card-text small">Wellness Officer</p>
+                        <h5 class="card-title mb-1">Jacklyne Nekesa Wangwe</h5>
+                        <p class="card-text small">Lead Trainer Caregiving & Health Services Support</p>
                     </div>
                 </div>
             </div>
@@ -123,17 +124,16 @@
                 </div>
             </div>
 
-            <!-- Jacklyne -->
+            <!-- Victoria -->
             <div class="col-md-4">
                 <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
-                    data-name="Jacklyne Nekesa Wangwe"
-                    data-title="Lead Trainer – Caregiving and Health Services Support"
-                    data-img="../assets/images/frontend-pages/Jacklyne.png"
-                    data-desc="Jacklyne holds a Diploma in Kenya Registered Community Health Nursing and a Bachelor of Arts in Psychology and Counselling. She is a licensed psychologist who delivers expert instruction in caregiving and health service support, guided by a holistic and compassionate approach to wellness and training.">
-                    <img src="../assets/images/frontend-pages/Jacklyne.png" class="card-img-top" alt="Jacklyne">
+                    data-name="Victoria Wanjiku" data-title="Wellness Officer"
+                    data-img="../assets/images/frontend-pages/Victoria.jpeg"
+                    data-desc="Victoria holds a Bachelor’s degree in Counselling Psychology and is passionate about mental health and holistic student support. She fosters a nurturing environment that promotes emotional well-being, personal growth, and resilience among learners.">
+                    <img src="../assets/images/frontend-pages/Victoria.jpeg" class="card-img-top" alt="Victoria">
                     <div class="card-body text-center">
-                        <h5 class="card-title mb-1">Jacklyne Nekesa Wangwe</h5>
-                        <p class="card-text small">Lead Trainer Caregiving & Health Services Support</p>
+                        <h5 class="card-title mb-1">Victoria Wanjiku</h5>
+                        <p class="card-text small">Wellness Officer</p>
                     </div>
                 </div>
             </div>
