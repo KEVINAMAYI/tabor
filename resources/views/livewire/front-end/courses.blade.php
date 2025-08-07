@@ -146,32 +146,16 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         </ul>
 
                                         <div class="tab-content mt-2">
-                                            <div class="tab-pane active p-3" id="overview-{{ $course->id }}" role="tabpanel">
-                                                <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                                @if (!empty($course->modules))
-                                                    <ul class="list-unstyled">
-                                                        @foreach ($course->modules as $module)
-                                                            <li class="mb-2 d-flex gap-2"><span class="text-primary">•</span><span>{{ $module->title }}</span></li>
-                                                        @endforeach
-                                                    </ul>
-                                                @else
-                                                    <p>{{ $course->description }}</p>
-                                                @endif
-                                            </div>
                                             <div class="tab-pane p-3" id="details-{{ $course->id }}" role="tabpanel">
                                                 <h5 class="fw-bold mb-3">Course Details:</h5>
                                                 <ul class="list-unstyled">
-                                                    <li class="mb-2 d-flex gap-2">
-                                                        <strong>Fee:</strong><span>KES {{ number_format($course->price, 2) }}</span>
-                                                    </li>
-                                                    <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span></li>
                                                     <li class="d-flex gap-2"><strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <div>
-                                            <a class="btn btn-primary d-block w-100 mb-3" href="#">Apply Now</a>
+                                            <a class="btn btn-primary d-block w-100 mb-3" href="{{ route('front-end.course-application', ['course_id' => $course->id]) }}">Apply Now</a>
                                             @if($course->brochure_url)
                                                 <a href="{{ asset('storage/' . $course->brochure_url) }}" class="btn btn-outline-primary d-block w-100 mb-3" target="_blank">
                                                     <i class="ti ti-download me-1"></i> Download Brochure
