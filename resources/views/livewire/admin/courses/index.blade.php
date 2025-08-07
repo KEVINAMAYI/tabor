@@ -429,6 +429,7 @@ new class extends Component {
                                            class="form-check-input" wire:model="selectAll"/>
                                 </div>
                             </th>
+                            <th>#</th>
                             <th>Title</th>
                             <th>Code</th>
                             <th>Description</th>
@@ -445,6 +446,7 @@ new class extends Component {
                                                value="{{ (string) $course->id }}"/>
                                     </div>
                                 </td>
+                                <td>{{ $loop->iteration }}</td>
                                 <td>{{ $course->title }}</td>
                                 <td>{{ $course->code  }}</td>
                                 <td>{{ \Illuminate\Support\Str::limit($course->description, 60) }}</td>

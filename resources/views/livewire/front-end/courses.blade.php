@@ -112,7 +112,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 </a>
                                 <div class="mt-7 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
-                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title  }} - {{ $course->level ?? '' }}</a>
+                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title }}
+                                            {{ $course->level ? ' - ' . $course->level : '' }} </a>
                                         <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
