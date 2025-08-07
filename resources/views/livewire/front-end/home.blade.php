@@ -387,8 +387,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To intentionally Equip Students with talents that meet both Local and International
-                                    Standards
+                                    To intentionally equip students with talents that meet both local and inter National standards.
                                 </p>
                                 <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
@@ -412,9 +411,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Vision</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To intentionally Equip Students with talents that meet both Local and International
-                                    Standards.
-                                </p>
+                                    To be the most preferred Thought-Leadership TVET Vision Institution in Building Diaspora workers.</p>
                                 <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
                                 </a>
