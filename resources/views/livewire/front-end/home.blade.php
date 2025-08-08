@@ -346,19 +346,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
 
             <ul class="nav nav-pills tabs-pills justify-content-between gap-3" id="pills-tab" role="tablist">
                 <li class="nav-item flex-grow-1" role="presentation">
-                    <button class="nav-link active fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-mission-tab"
-                        data-bs-toggle="pill" data-bs-target="#pills-mission" type="button" role="tab"
-                        aria-controls="pills-mission" aria-selected="true">
-                        <iconify-icon icon="mdi:target" class="fs-6 me-2 icon-accent"></iconify-icon>
-                        Mission
-                    </button>
-                </li>
-                <li class="nav-item flex-grow-1" role="presentation">
-                    <button class="nav-link fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-vision-tab"
+                    <button class="nav-link active fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-vision-tab"
                         data-bs-toggle="pill" data-bs-target="#pills-vision" type="button" role="tab"
                         aria-controls="pills-vision" aria-selected="false">
                         <iconify-icon icon="mdi:eye-outline" class="fs-6 me-2 icon-accent"></iconify-icon>
                         Vision
+                    </button>
+                </li>
+                <li class="nav-item flex-grow-1" role="presentation">
+                    <button class="nav-link fs-5 fw-semibold px-4 py-3 tabs-shadow" id="pills-mission-tab"
+                        data-bs-toggle="pill" data-bs-target="#pills-mission" type="button" role="tab"
+                        aria-controls="pills-mission" aria-selected="true">
+                        <iconify-icon icon="mdi:target" class="fs-6 me-2 icon-accent"></iconify-icon>
+                        Mission
                     </button>
                 </li>
                 <li class="nav-item flex-grow-1" role="presentation">
@@ -373,33 +373,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
 
             <div class="tab-content mt-7 mt-lg-12 pb-lg-9" id="myTabContent">
 
-                <!-- Mission Tab -->
-                <div class="tab-pane fade show active" id="pills-mission" role="tabpanel"
-                    aria-labelledby="pills-mission-tab" tabindex="0">
-                    <div class="row gap-lg-0 gap-7 align-items-center">
-                        <div class="col-lg-6">
-                            <div class="image-wrapper rounded-24 shadow-soft p-4">
-                                <img src="../assets/images/frontend-pages/mission.jpeg" alt="Our Mission"
-                                    class="w-100 rounded-24">
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="content-wrapper ps-lg-7 ms-lg-8">
-                                <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
-                                <p class="fs-5 text-muted mb-5">
-                                    To intentionally Equip Students with talents that meet both Local and International
-                                    Standards
-                                </p>
-                                <a href="{{ route('front-end.about') }}">
-                                    <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Vision Tab -->
-                <div class="tab-pane fade" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab"
+                <div class="tab-pane active" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab"
                     tabindex="0">
                     <div class="row gap-lg-0 gap-7 align-items-center">
                         <div class="col-lg-6">
@@ -412,8 +387,32 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Vision</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To intentionally Equip Students with talents that meet both Local and International
-                                    Standards.
+                                    To be the most preferred Thought-Leadership TVET Vision Institution in Building
+                                    Diaspora workers.</p>
+                                <a href="{{ route('front-end.about') }}">
+                                    <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mission Tab -->
+                <div class="tab-pane fade show" id="pills-mission" role="tabpanel"
+                    aria-labelledby="pills-mission-tab" tabindex="0">
+                    <div class="row gap-lg-0 gap-7 align-items-center">
+                        <div class="col-lg-6">
+                            <div class="image-wrapper rounded-24 shadow-soft p-4">
+                                <img src="../assets/images/frontend-pages/mission.jpeg" alt="Our Mission"
+                                    class="w-100 rounded-24">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="content-wrapper ps-lg-7 ms-lg-8">
+                                <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
+                                <p class="fs-5 text-muted mb-5">
+                                    To intentionally equip students with talents that meet both local and inter
+                                    National standards.
                                 </p>
                                 <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
@@ -438,16 +437,27 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Core Values</h2>
                                 <div class="card border-0 shadow-sm">
                                     <div class="card-body p-4">
+                                        <p class="fs-5 text-muted mb-4">
+                                            These are the deeply held beliefs about what is important or desirable at
+                                            Tabor Training Institute
+                                        </p>
                                         <ol class="list-group list-group-numbered fs-5">
-                                            <li class="list-group-item border-0 px-0 py-2">Excellence in Education</li>
-                                            <li class="list-group-item border-0 px-0 py-2">Innovation & Creativity</li>
-                                            <li class="list-group-item border-0 px-0 py-2">Integrity & Accountability
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Commitment to excellence:</b> We
+                                                strive for the highest standards in teaching, learning, clinical
+                                                practice, and service delivery, consistently pursuing improvement
                                             </li>
-                                            <li class="list-group-item border-0 px-0 py-2">Global Competitiveness</li>
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Stewardship:</b> We take
+                                                responsibility for upholding, modeling, and promoting our values across
+                                                all levels of the Institute.
+                                            </li>
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Responsive:</b> We act promptly
+                                                and effectively to meet the changing needs of students, communities, and
+                                                the health sector
+                                            </li>
                                         </ol>
                                     </div>
                                 </div>
-                               <a href="{{ route('front-end.about') }}">
+                                <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
                                 </a>
                             </div>
