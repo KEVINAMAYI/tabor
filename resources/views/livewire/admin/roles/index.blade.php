@@ -9,6 +9,7 @@ use Livewire\Attributes\On;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
+
     public $roles = [];
     public $permissions = [];
     public $selectedPermissions = [];
