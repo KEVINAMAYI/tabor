@@ -351,8 +351,10 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="card-body wizard-content">
                             <h4 class="card-title mb-0">Online Course Application</h4>
 
+
                             <form x-data="{ step: @entangle('step') }" wire:submit.prevent="addStudent"
                                   class="wizard-form mt-5">
+
 
                                 <!-- Step Wizard Header -->
                                 <div class="step-wizard-wrapper position-relative mb-5 px-2 px-md-5">
