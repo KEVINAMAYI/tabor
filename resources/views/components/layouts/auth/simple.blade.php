@@ -21,12 +21,10 @@
 </head>
 
 <body>
-
 <div id="main-wrapper">
     <div class="position-relative overflow-hidden radial-gradient min-vh-100 w-100">
         <div class="position-relative z-index-5">
             <div class="row gx-0">
-
                 <div class="col-lg-6 col-xl-5 col-xxl-4">
                     <div class="min-vh-100 bg-body row justify-content-center align-items-center p-5">
                         <div class="col-12 auth-card">
@@ -40,7 +38,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-6 col-xl-7 col-xxl-8 position-relative overflow-hidden d-none d-lg-block"
                      style="background: url('../images/backgrounds/graduation.jpg') center center / cover no-repeat;">
                 </div>
