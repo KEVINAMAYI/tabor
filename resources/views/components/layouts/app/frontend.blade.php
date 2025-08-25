@@ -367,11 +367,11 @@
                 <div class="col-md-3 col-6 mb-7 mb-md-0">
                     <h3 class="fs-6 text-white fw-semibold mb-7">Featured Links</h3>
                     <ul class="d-flex flex-column gap-3 mt-3 mb-0">
-                        <li><a href="#" class="fs-4 text-light">Home</a></li>
-                        <li><a href="#" class="fs-4 text-light">About</a></li>
-                        <li><a href="#" class="fs-4 text-light">Courses</a></li>
-                        <li><a href="#" class="fs-4 text-light">Course Application</a></li>
-                        <li><a href="#" class="fs-4 text-light">Contact</a></li>
+                        <li><a href="{{ route('front-end.home') }}" class="fs-4 text-light">Home</a></li>
+                        <li><a href="{{ route('front-end.about') }}" class="fs-4 text-light">About</a></li>
+                        <li><a href="{{ route('front-end.courses') }}" class="fs-4 text-light">Courses</a></li>
+                        <li><a href="{{ route('front-end.course-application') }}" class="fs-4 text-light">Course Application</a></li>
+                        <li><a href="{{ route('front-end.contact') }}" class="fs-4 text-light">Contact</a></li>
                     </ul>
                 </div>
 

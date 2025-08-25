@@ -1,24 +1,32 @@
 <style>
     .team-card img {
-    height: auto;              /* Allow natural height */
-    max-height: 300px;         /* Set a maximum height */
-    width: 100%;               /* Keep image responsive */
-    object-fit: contain;       /* Prevent cropping */
-    cursor: pointer;           /* Show hand cursor on hover */
-    transition: transform 0.2s ease-in-out;
-    padding: 4px;             /* Optional: adds some breathing room */
-}
+        height: auto;
+        /* Allow natural height */
+        max-height: 300px;
+        /* Set a maximum height */
+        width: 100%;
+        /* Keep image responsive */
+        object-fit: contain;
+        /* Prevent cropping */
+        cursor: pointer;
+        /* Show hand cursor on hover */
+        transition: transform 0.2s ease-in-out;
+        padding: 4px;
+        /* Optional: adds some breathing room */
+    }
+
     .team-card:hover img {
-        transform: scale(1.05); /* Slight zoom on hover */
+        transform: scale(1.05);
+        /* Slight zoom on hover */
     }
 
     .team-modal-content {
-    border-radius: 18px;
-    padding: 25px;
-    font-family: 'Segoe UI', 'Roboto', sans-serif;
-}
+        border-radius: 18px;
+        padding: 25px;
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+    }
 
-/* .team-modal-img {
+    /* .team-modal-img {
     width: 140px;
     height: 140px;
     object-fit: cover;
@@ -27,26 +35,26 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 } */
 
-.team-modal-desc {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    max-width: 700px;
-    margin: 0 auto;
-    color: #4f4f4f;
-}
+    .team-modal-desc {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        max-width: 700px;
+        margin: 0 auto;
+        color: #4f4f4f;
+    }
 
-.modal-header .modal-title {
-    font-size: 1.5rem;
-    color: #0b2c45;
-}
+    .modal-header .modal-title {
+        font-size: 1.5rem;
+        color: #0b2c45;
+    }
 
-.modal-header .btn-close {
-    outline: none;
-    box-shadow: none;
-}
+    .modal-header .btn-close {
+        outline: none;
+        box-shadow: none;
+    }
 </style>
 
-<section style="background-color: #0b2c45" class="py-5" >
+<section style="background-color: #0b2c45" class="py-5">
     <div class="container">
         <h2 class="text-center mb-5 text-white">Meet Our Team</h2>
 
@@ -151,6 +159,23 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Principal -->
+            <div class="col-md-4">
+                <div class="card team-card text-dark text-center">
+                    <!-- SVG Person Silhouette -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="250" fill="#ccc"
+                        class="bi bi-person-circle" viewBox="0 0 16 16">
+                        <path d="M11 10c1.105 0 2 .672 2 1.5v.5H3v-.5c0-.828.895-1.5 2-1.5h6z" />
+                        <path fill-rule="evenodd" d="M8 9a3 3 0 100-6 3 3 0 000 6zm0 8A8 8 0 108 0a8 8 0 000 16z" />
+                    </svg>
+
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">Director - Nursing</h5>
+                        <p class="card-text small">Director & College Principal</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -165,7 +190,7 @@
             <div class="modal-body text-center">
                 <img id="teamModalImg" src="" class="mb-4 team-modal-img" style="max-height: 200px;"
                     alt="">
-                    <h5 class="modal-title fw-semibold text-center mb-2" id="teamModalLabel">Member Name</h5>
+                <h5 class="modal-title fw-semibold text-center mb-2" id="teamModalLabel">Member Name</h5>
                 <h6 class="text-primary fw-bold mb-2" id="teamModalTitle"></h6>
                 <p class="text-muted lead team-modal-desc" id="teamModalDesc"></p>
             </div>
