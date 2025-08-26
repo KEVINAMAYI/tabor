@@ -112,7 +112,7 @@
                     data-desc="Sylvia Njeri is the Head of Training at Tabor Training Institute, bringing a strong background in Hospitality and Tourism Management. She holds a Bachelor's degree in Hospitality and Tourism Management and is a certified Maritime Seafarer (STCW). Sylvia is also a professional coffee barista and a seasoned expert in pastry and bakery. With hands-on experience in both the culinary and maritime service industries, she is passionate about equipping students with practical skills that meet global standards.">
                     <img src="../assets/images/frontend-pages/Slyvia.png" class="card-img-top" alt="Slyvia">
                     <div class="card-body text-center">
-                        <h5 class="card-title mb-1">Slyvia Njeri Kimani</h5>
+                        <h5 class="card-title mb-1">Sylvia Njeri Kimani</h5>
                         <p class="card-text small">Head of Training</p>
                     </div>
                 </div>
@@ -161,7 +161,7 @@
             </div>
 
             <!-- Principal -->
-            <div class="col-md-4">
+            {{-- <div class="col-md-4">
                 <div class="card team-card text-dark text-center">
                     <!-- SVG Person Silhouette -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="250" fill="#ccc"
@@ -175,7 +175,7 @@
                         <p class="card-text small">Director & College Principal</p>
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </section>
