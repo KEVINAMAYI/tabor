@@ -397,7 +397,7 @@
                     <h3 class="fs-5 text-white fw-semibold mb-7">About Tabor TVET</h3>
                     <p class="fs-3 text-light">
                         We offer TVET courses that help you build practical skills and industry-specific knowledge. Some
-                        courses prepare students for global markets, including Australia, the US, Canada, KSA and the
+                        courses prepare students for global markets including: Germany, Australia, the US, Canada, KSA and the
                         Gulf region.
                     </p>
                 </div>
