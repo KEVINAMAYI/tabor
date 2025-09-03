@@ -45,9 +45,7 @@ new class extends Component {
     {
         $this->validate();
 
-        $enrollment = Enrollment::where('student_id', $this->studentId)
-            ->where('course_id', $this->selectedCourseId)
-            ->first();
+        $enrollment = Enrollment::where('student_id', $this->studentId)->where('course_id', $this->selectedCourseId)->first();
 
         if ($enrollment) {
             LivewireAlert::text('Enrollment already exists.!')->error()->toast()->position('top-end')->show();
@@ -89,9 +87,9 @@ new class extends Component {
             $enrollment->save();
 
             if ($this->enrollmentStatus == 'approved') {
-               $user = User::find($enrollment->student->user_id);
-               $user->active = true;
-               $user->save();
+                $user = User::find($enrollment->student->user_id);
+                $user->active = true;
+                $user->save();
             }
 
             DB::commit();
@@ -277,7 +275,8 @@ new class extends Component {
 
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex align-items-center gap-1">
-                                                    <h6 class="mt-1">Status:</h6><span class="badge {{ $statusClass }} text-light">{{ ucfirst($enrollmentStatus) }}</span>
+                                                    <h6 class="mt-1">Status:</h6><span
+                                                        class="badge {{ $statusClass }} text-light">{{ ucfirst($enrollmentStatus) }}</span>
                                                 </div>
                                                 <!-- Pencil Icon Button -->
                                                 <button style="border:0px;"
@@ -551,7 +550,6 @@ new class extends Component {
                                             <th>Total Paid</th>
                                             <th>Subpayments</th>
                                             <th>Remaining Balance</th>
-                                            <th>Action</th>
                                         </thead>
                                         <tbody>
                                             @foreach ($student->enrollments as $enrollment)
@@ -598,20 +596,17 @@ new class extends Component {
                                                             data-email="">{{ number_format($enrollment->payments->sum('amount'), 2) }}</span>
                                                     </td>
                                                     <td>
-                                                        <a href="#" data-bs-toggle="modal"
-                                                            data-bs-target="#paymentModal">View</a>
-                                                    </td>
-                                                    <td>
-                                                        <span class="usr-ph-no"
-                                                            data-phone="">{{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
-                                                    </td>
-                                                    <td>
                                                         <div class="action-btn">
-                                                            <a href="#" class="btn btn-warning btn-sm">
+                                                            <a href="#" class="btn btn-warning btn-sm"
+                                                                data-bs-toggle="modal" data-bs-target="#paymentModal">
                                                                 <i class="fa fa-eye" aria-hidden="true"></i>
                                                                 View
                                                             </a>
                                                         </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="usr-ph-no"
+                                                            data-phone="">{{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -646,7 +641,8 @@ new class extends Component {
                         <select wire:model="selectedCourseId" class="form-select" id="course">
                             <option value="">-- Choose Course --</option>
                             @foreach ($courses as $course)
-                                <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}</option>
+                                <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}
+                                </option>
                             @endforeach
                         </select>
                         @error('selectedCourseId')
@@ -745,7 +741,7 @@ new class extends Component {
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="4">Total</th>
+                                <th colspan="5">Total</th>
                                 <th colspan="1">Ksh {{ number_format($totalPayments, 2) }}</th>
                             </tr>
                         </tfoot>
