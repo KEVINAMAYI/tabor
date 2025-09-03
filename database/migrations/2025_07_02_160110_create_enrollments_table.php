@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('intake_id')->constrained()->onDelete('cascade');
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->text('remarks')->nullable();
             $table->timestamp('enrolled_at')->nullable();
             $table->timestamps();
         });
