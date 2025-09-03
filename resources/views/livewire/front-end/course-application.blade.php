@@ -85,6 +85,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 'course_id' => $this->selected_course_id,
                 'intake_id' => $this->selected_intake_id,
                 'status' => 'pending',
+                'remarks' => 'Awaiting approval',
                 'enrolled_at' => now(),
             ]);
 

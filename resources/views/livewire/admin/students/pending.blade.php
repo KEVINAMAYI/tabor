@@ -17,7 +17,7 @@ new class extends Component {
 
     public $selectAll = false;
 
-    public $status;
+    public $status, $remarks;
 
     public $editId = null;
 
@@ -66,17 +66,7 @@ new class extends Component {
 
         $this->editId = $enrollment->id;
         $this->status = $enrollment->status;
-        /* $this->last_name = $student->student->last_name;
-        $this->email = $student->student->email;
-        $this->phone_number = $student->student->phone;
-        $this->date_of_birth = $student->student->dob;
-        $this->address = $student->student->address;
-        $this->country = $student->student->country;
-        $this->highest_level_of_education = $student->student->highest_level_of_education;
-
-        $this->id_url = $student->id_url;
-        $this->kcse_certificate = $student->kcse_certificate;
-        $this->passport_size_url = $student->passport_size_url; */
+        $this->remarks = $enrollment->remarks;
 
         $this->dispatch('show-enrollment-modal');
     }
@@ -88,14 +78,15 @@ new class extends Component {
 
             $enrollment = Enrollment::findOrFail($this->editId);
 
-            $enrollment->update([
-                'status' => $this->status,
-            ]);
+            $enrollment->status = $this->status;
+            $enrollment->remarks = $this->remarks;
+            $enrollment->save();
 
             if ($this->status == 'approved') {
+                $enrollment->remarks = null;
                 $user = User::find($enrollment->student->user_id);
-               $user->active = true;
-               $user->save();
+                $user->active = true;
+                $user->save();
             }
 
             //send email notification to student upon approval/rejection
@@ -131,6 +122,7 @@ new class extends Component {
     private function resetForm()
     {
         $this->status = null;
+        $this->remarks = null;
     }
 
     /* #[On('select-all')]
@@ -203,6 +195,7 @@ new class extends Component {
                                 <th>Intake</th>
                                 <th>Phone Number</th>
                                 <th>Status</th>
+                                <th>Remarks</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -232,6 +225,7 @@ new class extends Component {
                                             {{ ucfirst($enrollment->status) }}
                                         </span>
                                     </td>
+                                    <td>{{ $enrollment->remarks }}</td>
                                     <td>
                                         <div class="action-btn dropdown">
                                             <a href="#" class="text-primary dropdown-toggle" id="studentActions"
@@ -272,7 +266,7 @@ new class extends Component {
             <!-- Modal -->
             <div class="modal fade" id="enrollmentModal" tabindex="-1" role="dialog"
                 aria-labelledby="enrollmentModalTitle" aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal modal-dialog-centered" role="document">
+                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Update Status</h5>
@@ -289,6 +283,10 @@ new class extends Component {
                                             <option value="approved">Approved</option>
                                             <option value="rejected">Rejected</option>
                                         </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="remarks" class="form-label">Remarks</label>
+                                        <textarea wire:model="remarks" id="remarks" class="form-control" rows="3"></textarea>
                                     </div>
                                 </div>
                             </div>

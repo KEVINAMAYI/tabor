@@ -129,9 +129,9 @@ new class extends Component {
                                                 @can('edit-students')
                                                     <li>
                                                         <a href="javascript:void(0)"
-                                                            wire:click="editStatus({{ $enrollment->id }})"
+                                                            {{-- wire:click="editStatus({{ $enrollment->id }})" --}}
                                                             class="dropdown-item">
-                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                            <i class="ti ti-eye fs-5 me-2"></i> View
                                                         </a>
                                                     </li>
                                                 @endcan

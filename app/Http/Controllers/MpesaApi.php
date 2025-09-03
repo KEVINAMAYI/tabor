@@ -179,14 +179,14 @@ class MpesaApi extends Controller
 
             //save the transaction in database
             if (!empty($mpesa_transaction_id)) {
-
                 $transaction = Payment::create([
                     'payer' => $payer,
                     'transaction_id' => $mpesa_transaction_id,
                     'reference' => $account,
                     'amount' => $amount,
                     'phone' => $phone,
-                    'paid_at' => $date_time
+                    'paid_at' => $date_time,
+                    'payment_method' => 'mpesa'
                 ]);
 
 
