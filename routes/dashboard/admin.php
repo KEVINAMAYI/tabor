@@ -6,8 +6,13 @@ use Livewire\Volt\Volt;
 // Group all admin routes under the 'admin' prefix
 Route::middleware(['auth'])->prefix('admin')->group(function () {
 
+    // Route to manage dashboard
+    Volt::route('dashboard', 'admin.dashboard')->name('admin.dashboard');
+
     // Route to manage students
     Volt::route('students', 'admin.students.index')->name('students.index');
+    Volt::route('students/pending', 'admin.students.pending')->name('students.pending');
+    Volt::route('students/enrollments', 'admin.students.enrollments')->name('students.enrollments');
     Volt::route('students/view/{student_id}', 'admin.students.view')->name('students.view');
 
     // Route to manage courses

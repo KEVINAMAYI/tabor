@@ -6,7 +6,9 @@
     <div>
 
         <div class="brand-logo mb-3 mt-3 d-flex justify-content-center align-items-center" style="height: 100px;">
-            <img height="120" width="120" src="assets/images/logos/tabor_logo.png" alt="Logo"/>
+            <a href="/" target="_blank" rel="noopener noreferrer">
+                <img height="120" width="120" src="assets/images/logos/tabor_logo.png" alt="Logo"/>
+            </a>
         </div>
 
 
@@ -16,8 +18,8 @@
         <nav class="sidebar-nav scroll-sidebar" data-simplebar>
             <ul class="sidebar-menu" id="sidebarnav">
 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="javascript:void(0)" id="get-url" aria-expanded="false">
+                <li class="sidebar-item {{ route('admin.dashboard') ? 'active' : '' }}">
+                    <a class="sidebar-link" href="{{ route('admin.dashboard') }}" id="get-url" aria-expanded="false">
                         <iconify-icon icon="solar:widget-add-line-duotone" class=""></iconify-icon>
                         <span class="hide-menu">Dashboard</span>
                     </a>
@@ -33,12 +35,26 @@
                             <span class="hide-menu">Students</span>
                         </a>
                         <ul aria-expanded="{{ request()->routeIs('students.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('students.*') ? 'in' : '' }}">
+                            class="collapse first-level {{ request()->routeIs('students.index') ? 'in' : '' }}">
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.index') ? 'active' : '' }}"
                                    href="{{ route('students.index') }}">
                                     <span class="icon-small"></span>
-                                    <span class="hide-menu">List Students</span>
+                                    <span class="hide-menu">All Students</span>
+                                </a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link {{ request()->routeIs('students.pending') ? 'active' : '' }}"
+                                   href="{{ route('students.pending') }}">
+                                    <span class="icon-small"></span>
+                                    <span class="hide-menu">Pending Enrollments</span>
+                                </a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link {{ request()->routeIs('students.enrollments') ? 'active' : '' }}"
+                                   href="{{ route('students.enrollments') }}">
+                                    <span class="icon-small"></span>
+                                    <span class="hide-menu">Active Enrollments</span>
                                 </a>
                             </li>
                         </ul>

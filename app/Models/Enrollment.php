@@ -12,13 +12,7 @@ class Enrollment extends Model
     /**
      * Mass‑assignable columns.
      */
-    protected $fillable = [
-        'student_id',
-        'course_id',
-        'intake_id',
-        'enrolled_at',
-        'status'
-    ];
+    protected $guarded = ['id'];
 
     /* -----------------------------------------------------------------
      |  Direct relationships

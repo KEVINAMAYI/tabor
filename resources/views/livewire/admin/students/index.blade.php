@@ -62,18 +62,21 @@ new class extends Component {
     public function with()
     {
         $students = Student::with(['user'])
+            ->whereHas('user', function ($query) {
+                $query->where('active', true);
+            })
             ->when(
                 !empty($this->search),
                 fn($q) => $q->where(function ($query) {
                     $query
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%")
-                        ->orWhere('phone', 'like', "%{$this->search}%")
-                        ->orWhere('admission_number', 'like', "%{$this->search}%");
+                        ->where('first_name', 'ilike', "%{$this->search}%")
+                        ->orWhere('last_name', 'ilike', "%{$this->search}%")
+                        ->orWhere('email', 'ilike', "%{$this->search}%")
+                        ->orWhere('phone', 'ilike', "%{$this->search}%")
+                        ->orWhere('admission_number', 'ilike', "%{$this->search}%");
                 }),
             )
-            ->latest()
+            ->orderBy('admission_number', 'asc')
             ->paginate(10);
 
         return [
@@ -432,9 +435,9 @@ new class extends Component {
                                             class="form-check-input" wire:model="selectAll" />
                                     </div>
                                 </th>
+                                <th>#</th>
                                 <th>Admission Number</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
+                                <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone Number</th>
                                 <th>Action</th>
@@ -450,30 +453,43 @@ new class extends Component {
                                                 value="{{ (string) $student->id }}" />
                                         </div>
                                     </td>
+                                    <td>{{ $loop->iteration }}</td>
                                     <td>{{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}</td>
-                                    <td>{{ $student->first_name }}</td>
-                                    <td>{{ $student->last_name }}</td>
+                                    <td>{{ $student->first_name }} {{ $student->last_name }}</td>
                                     <td>{{ $student->email }}</td>
                                     <td>{{ $student->phone }}</td>
                                     <td>
-                                        <div class="action-btn">
-                                            <a href="{{ route('students.view', $student->id) }}"
-                                                class="text-primary">
-                                                <i class="ti ti-eye fs-5"></i>
+                                        <div class="action-btn dropdown">
+                                            <a href="#" class="text-primary dropdown-toggle" id="studentActions"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="ti ti-dots-vertical fs-5"></i>
                                             </a>
-                                            @can('edit-students')
-                                                <a href="javascript:void(0)"
-                                                    wire:click="editStudent({{ $student->id }})" class="text-primary">
-                                                    <i class="ti ti-pencil fs-5"></i>
-                                                </a>
-                                            @endcan
-                                            @can('delete-students')
-                                                <a href="javascript:void(0)"
-                                                    wire:click="deleteStudent({{ $student->id }})"
-                                                    class="text-dark ms-2">
-                                                    <i class="ti ti-trash fs-5"></i>
-                                                </a>
-                                            @endcan
+                                            <ul class="dropdown-menu" aria-labelledby="studentActions">
+                                                <li>
+                                                    <a href="{{ route('students.view', $student->id) }}"
+                                                        class="dropdown-item">
+                                                        <i class="ti ti-eye fs-5 me-2"></i> View
+                                                    </a>
+                                                </li>
+                                                @can('edit-students')
+                                                    <li>
+                                                        <a href="javascript:void(0)"
+                                                            wire:click="editStudent({{ $student->id }})"
+                                                            class="dropdown-item">
+                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                        </a>
+                                                    </li>
+                                                @endcan
+                                                @can('delete-students')
+                                                    <li>
+                                                        <a href="javascript:void(0)"
+                                                            wire:click="deleteStudent({{ $student->id }})"
+                                                            class="dropdown-item">
+                                                            <i class="ti ti-trash fs-5 me-2"></i> Delete
+                                                        </a>
+                                                    </li>
+                                                @endcan
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Livewire\Volt\Volt;
 
-Route::view('dashboard', 'dashboard')
+/* Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    ->name('dashboard'); */
 
 /* Route::post('finance/confirmation', [MpesaApi::class, 'c2bConfirmation'])->withoutMiddleware([VerifyCsrfToken::class]);
 Route::post('finance/validation', [MpesaApi::class, 'c2bValidation'])->withoutMiddleware([VerifyCsrfToken::class]);

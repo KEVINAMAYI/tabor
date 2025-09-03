@@ -4,6 +4,7 @@ use App\Models\Enrollment;
 use App\Models\Course;
 use App\Models\Intake;
 use App\Models\Student;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
 use App\Models\ClassGroup;
@@ -19,7 +20,7 @@ new class extends Component {
     public $intakes;
     public $class_group_id;
     public $classGroups = [];
-    public $availableStatuses= ['pending', 'approved', 'rejected'];
+    public $availableStatuses = ['pending', 'approved', 'rejected'];
     public $enrollmentId;
     public $enrollmentStatus;
 
@@ -29,7 +30,6 @@ new class extends Component {
             'selectedCourseId' => 'required|exists:courses,id',
         ];
     }
-
 
     public function mount($student_id)
     {
@@ -45,22 +45,32 @@ new class extends Component {
     {
         $this->validate();
 
-        Enrollment::create([
-            'student_id' => $this->studentId,
-            'course_id' => $this->selectedCourseId,
-            'intake_id' => $this->selectedIntakeId,
-            'status' => $this->status,
-            'enrolled_at' => now(),
-        ]);
+        $enrollment = Enrollment::where('student_id', $this->studentId)
+            ->where('course_id', $this->selectedCourseId)
+            ->first();
 
-        DB::table('student_class_group')->insert([
-            'student_id' => $this->studentId,
-            'class_group_id' => $this->class_group_id,
-        ]);
+        if ($enrollment) {
+            LivewireAlert::text('Enrollment already exists.!')->error()->toast()->position('top-end')->show();
+        } else {
+            Enrollment::create([
+                'student_id' => $this->studentId,
+                'course_id' => $this->selectedCourseId,
+                'intake_id' => $this->selectedIntakeId,
+                'status' => $this->status,
+                'enrolled_at' => now(),
+            ]);
 
-        LivewireAlert::text('Student enrolled successfully.!')->success()->toast()->position('top-end')->show();
+            //To review with Kevin
 
-        $this->dispatch('hide-enrollment-modal');
+            // DB::table('student_class_group')->insert([
+            //     'student_id' => $this->studentId,
+            //     'class_group_id' => $this->class_group_id,
+            // ]);
+
+            LivewireAlert::text('Student enrolled successfully.!')->success()->toast()->position('top-end')->show();
+
+            $this->dispatch('hide-enrollment-modal');
+        }
     }
 
     public function openEditModal($id)
@@ -69,23 +79,34 @@ new class extends Component {
         $this->dispatch('show-enrollment-status-modal');
     }
 
-
     public function updateEnrollmentStatus()
     {
-        $enrollment = Enrollment::findOrFail($this->enrollmentId);
-        $enrollment->status = $this->enrollmentStatus;
-        $enrollment->save();
+        try {
+            DB::beginTransaction();
 
-        $this->dispatch('hide-enrollment-status-modal');
+            $enrollment = Enrollment::findOrFail($this->enrollmentId);
+            $enrollment->status = $this->enrollmentStatus;
+            $enrollment->save();
 
-        LivewireAlert::text('Enrollment status updated successfully.!')
-            ->success()
-            ->toast()
-            ->position('top-end')
-            ->show();
+            if ($this->enrollmentStatus == 'approved') {
+               $user = User::find($enrollment->student->user_id);
+               $user->active = true;
+               $user->save();
+            }
 
+            DB::commit();
+
+            $this->dispatch('hide-enrollment-status-modal');
+
+            LivewireAlert::text('Enrollment status updated successfully.!')->success()->toast()->position('top-end')->show();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Failed to update enrollment status: ' . $e->getMessage());
+
+            LivewireAlert::text('Failed to update enrollment status.!')->error()->toast()->position('top-end')->show();
+        }
     }
-
 }; ?>
 @push('styles')
     <style>
@@ -134,7 +155,8 @@ new class extends Component {
                 <div class="col-12">
                     <div class="d-sm-flex align-items-center justify-space-between">
                         <h4 class="mb-4 mb-sm-0 card-title">
-                            {{ $this->student->first_name . ' ' . $this->student->last_name }}</h4>
+                            {{ 'TTI/' . $this->student->admission_number . '/' . $this->student->created_at->format('Y') }}
+                        </h4>
                         <nav aria-label="breadcrumb" class="ms-auto">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item d-flex align-items-center">
@@ -156,23 +178,9 @@ new class extends Component {
 
         <div class="card overflow-hidden">
             <div class="card-body p-0">
-                <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid">
+                {{-- <img src="../assets/images/backgrounds/profilebg.jpg" alt="matdash-img" class="img-fluid"> --}}
                 <div class="row align-items-center">
-                    <div class="col-lg-4 order-lg-1 order-2">
-                        <div class="d-flex align-items-center justify-content-around m-4">
-                            <div class="text-center">
-                                <i class="ti ti-file-description fs-6 d-block mb-2"></i>
-                                <h4 class="mb-0 fw-semibold lh-1">{{ $this->student->enrollments->count() }}</h4>
-                                <p class="mb-0 ">Courses</p>
-                            </div>
-                            <div class="text-center">
-                                <i class="ti ti-user-circle fs-6 d-block mb-2"></i>
-                                <h4 class="mb-0 fw-semibold lh-1">10</h4>
-                                <p class="mb-0 ">Assessments</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 mt-n3 order-lg-2 order-1">
+                    <div class="mt-5 order-lg-2 order-1">
                         <div class="mt-n5">
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <div class="d-flex align-items-center justify-content-center round-110">
@@ -186,21 +194,20 @@ new class extends Component {
                             <div class="text-center">
                                 <h5 class="mb-0">{{ $this->student->first_name . ' ' . $this->student->last_name }}
                                 </h5>
-                                <p class="mb-0">student</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-lg-4 order-last">
                     </div>
                 </div>
-                <ul class="nav nav-pills user-profile-tab justify-content-end mt-2 bg-primary-subtle rounded-2 rounded-top-0"
+                <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
                     id="pills-tab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active hstack gap-2 rounded-0 fs-12 py-6" id="pills-courses-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-courses" type="button" role="tab"
                             aria-controls="pills-courses" aria-selected="true">
                             <i class="ti ti-book fs-5"></i> <!-- Book icon for Courses -->
-                            <span class="d-none d-md-block">Courses</span>
+                            <span class="d-none d-md-block">Courses {{ $this->student->enrollments->count() }}</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -249,128 +256,78 @@ new class extends Component {
                             $enrollmentStatus = $enrollment->status ?? 'In Progress'; // Default status
                         @endphp
 
-                        <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="col-lg-4 col-md-6 mb-2">
                             <div class="card rounded-3 overflow-hidden h-100">
-                                <a href="#" class="position-relative">
-                                    <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
-                                        alt="{{ $course->title }}" class="w-100 img-fluid" />
-                                </a>
-                                <div class="mt-7 px-7 pb-7 h-100">
+                                <div class="mt-2 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
                                         <!-- Course Title -->
-                                        <a href="#" class="fs-5 fw-bolder">{{ $course->title }}</a>
+                                        <h4 class="fs-5 fw-bolder">{{ $course->title }}</h4>
 
                                         <!-- Enrollment Status Badge -->
-                                        <div class="d-flex justify-content-between mb-3">
+                                        <div class="d-flex justify-content-between">
 
                                             @php
-                                                $statusClass = match(strtolower($enrollmentStatus)) {
+                                                $statusClass = match (strtolower($enrollmentStatus)) {
                                                     'approved' => 'bg-success',
                                                     'pending' => 'bg-warning',
                                                     'rejected' => 'bg-danger',
-                                                    default => 'bg-secondary'
+                                                    default => 'bg-secondary',
                                                 };
                                             @endphp
 
-                                            <div class="d-flex align-items-center p-2 gap-2">
-                                                <span class="badge {{ $statusClass }} text-light">
-                                                    Enrollment Status: {{ ucfirst($enrollmentStatus) }}
-                                                </span>
-
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <h6 class="mt-1">Status:</h6><span class="badge {{ $statusClass }} text-light">{{ ucfirst($enrollmentStatus) }}</span>
+                                                </div>
                                                 <!-- Pencil Icon Button -->
-                                                <button style="border:0px;" wire:click="openEditModal({{ $enrollment->id }})"
-                                                        class="btn btn-sm btn-outline-warning" title="Edit Status">
-                                                    <iconify-icon style="font-weight:bold;" icon="mdi:pencil" width="16" height="16"></iconify-icon>
+                                                <button style="border:0px;"
+                                                    wire:click="openEditModal({{ $enrollment->id }})"
+                                                    class="btn btn-sm btn-outline-warning" title="Edit Status">
+                                                    <iconify-icon style="font-weight:bold;" icon="mdi:pencil"
+                                                        width="16" height="16"></iconify-icon>
                                                 </button>
 
                                             </div>
-
-
                                         </div>
-
-                                        <!-- Course Description -->
-                                        <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
-
                                         <!-- Course Details -->
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:map-marker-radius"
+                                                    class="text-primary fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Intake:
+                                                    {{ $enrollment->intake->name }}</span>
+                                            </li>
+                                            <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:calendar-clock"
-                                                              class="text-primary fs-4 mt-1"></iconify-icon>
-                                                <span
-                                                    class="text-dark fs-3">Duration: {{ $course->duration ?? 'N/A' }}</span>
+                                                    class="text-primary fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Duration:
+                                                    {{ $course->duration ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:laptop"
-                                                              class="text-success fs-4 mt-1"></iconify-icon>
-                                                <span
-                                                    class="text-dark fs-3">Mode: {{ ucfirst($course->mode) ?? 'N/A' }}</span>
+                                                    class="text-success fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Mode:
+                                                    {{ ucfirst($course->mode) ?? 'N/A' }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:school-outline"
-                                                              class="text-warning fs-4 mt-1"></iconify-icon>
-                                                <span class="text-dark fs-3">Level: {{ $course->level ?? 'N/A' }}</span>
+                                                    class="text-warning fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Level:
+                                                    {{ $course->level ?? 'N/A' }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:certificate-outline"
-                                                              class="text-info fs-4 mt-1"></iconify-icon>
-                                                <span
-                                                    class="text-dark fs-3">Certification: {{ $course->certification ?? 'N/A' }}</span>
+                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Certification:
+                                                    {{ $course->certification ?? 'N/A' }}</span>
+                                            </li>
+                                            <li class="d-flex align-items-start gap-2">
+                                                <iconify-icon icon="mdi:currency-usd"
+                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span class="text-dark fs-3">Fee Balance:
+                                                    {{ number_format($course->fee - $enrollment->payments->sum('amount'), 2) }}</span>
                                             </li>
                                         </ul>
-
-                                        <!-- Course Tabs (Overview and Details) -->
-                                        <ul class="nav nav-pills custom-course-tabs nav-fill mt-4" role="tablist">
-                                            <li class="nav-item">
-                                                <a class="nav-link active" data-bs-toggle="tab"
-                                                   href="#overview-{{ $course->id }}"
-                                                   role="tab"><span>Overview</span></a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" data-bs-toggle="tab"
-                                                   href="#details-{{ $course->id }}" role="tab"><span>Details</span></a>
-                                            </li>
-                                        </ul>
-
-                                        <!-- Tab Content -->
-                                        <div class="tab-content mt-2">
-                                            <div class="tab-pane active p-3" id="overview-{{ $course->id }}"
-                                                 role="tabpanel">
-                                                <h5 class="fw-bold mb-3">Course Highlights:</h5>
-                                                @if (!empty($course->modules))
-                                                    <ul class="list-unstyled">
-                                                        @foreach ($course->modules as $module)
-                                                            <li class="mb-2 d-flex gap-2"><span
-                                                                    class="text-primary">•</span><span>{{ $module->title }}</span>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                @else
-                                                    <p>{{ $course->description }}</p>
-                                                @endif
-                                            </div>
-                                            <div class="tab-pane p-3" id="details-{{ $course->id }}"
-                                                role="tabpanel">
-                                                <h5 class="fw-bold mb-3">Course Details:</h5>
-                                                <ul class="list-unstyled">
-                                                    <li class="mb-2 d-flex gap-2">
-                                                        <strong>Fee:</strong><span>KES
-                                                            {{ number_format($course->price, 2) }}</span>
-                                                    </li>
-                                                    <li class="mb-2 d-flex gap-2"><strong>Next
-                                                            Intake:</strong><span>January 2025</span></li>
-                                                    <li class="d-flex gap-2">
-                                                        <strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span>
-                                                    </li>
-                                                    <li class="mb-2 d-flex gap-2"><strong>Next Intake:</strong><span>January 2025</span>
-                                                    </li>
-                                                    <li class="d-flex gap-2">
-                                                        <strong>Prerequisites:</strong><span>{{ $course->prerequisites ?? 'N/A' }}</span>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-
                                     </div>
                                 </div>
                             </div>
@@ -689,7 +646,7 @@ new class extends Component {
                         <select wire:model="selectedCourseId" class="form-select" id="course">
                             <option value="">-- Choose Course --</option>
                             @foreach ($courses as $course)
-                                <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}</option>
                             @endforeach
                         </select>
                         @error('selectedCourseId')
@@ -712,7 +669,7 @@ new class extends Component {
                     </div>
 
                     <!-- Select Class Group -->
-                    <div class="mt-3">
+                    {{-- <div class="mt-3">
                         <label for="class_group_id" class="mb-1">Select Class Group</label>
                         <select id="class_group_id" wire:model.live="class_group_id" class="form-control">
                             <option value="">-- Choose Class Group --</option>
@@ -725,7 +682,7 @@ new class extends Component {
                         @error('class_group_id')
                             <small class="text-error">{{ $message }}</small>
                         @enderror
-                    </div>
+                    </div> --}}
 
                     <!-- Enroll Button -->
                     <div class="mt-3">
@@ -751,6 +708,7 @@ new class extends Component {
                             <tr>
                                 <th>#</th>
                                 <th>Reference</th>
+                                <th>Transaction ID</th>
                                 <th>Date</th>
                                 <th>Payment Method</th>
                                 <th>Amount</th>
@@ -766,8 +724,9 @@ new class extends Component {
                                 @foreach ($enrollment->payments as $payment)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $payment->reference ?? 'N/A' }}</td>
                                         <td>{{ $payment->transaction_id ?? 'N/A' }}</td>
-                                        <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d M, Y h:i A') }}</td>
+                                        <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
                                         <td>{{ ucfirst($payment->payment_method) ?? 'N/A' }}</td>
                                         <td>{{ number_format($payment->amount, 2) }}</td>
                                         <td>{{ $payment->payer ?? 'N/A' }}</td>
@@ -787,7 +746,7 @@ new class extends Component {
                         <tfoot>
                             <tr>
                                 <th colspan="4">Total</th>
-                                <th colspan="1">Ksh{{ number_format($totalPayments, 2) }}</th>
+                                <th colspan="1">Ksh {{ number_format($totalPayments, 2) }}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -797,7 +756,8 @@ new class extends Component {
     </div>
 
 
-    <div class="modal fade" id="enrollmentStatusModal" tabindex="-1" role="dialog" aria-labelledby="enrollmentStatusModalLabel" aria-hidden="true">
+    <div class="modal fade" id="enrollmentStatusModal" tabindex="-1" role="dialog"
+        aria-labelledby="enrollmentStatusModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -808,7 +768,7 @@ new class extends Component {
                 <div class="modal-body">
                     <label class="my-2" for="status">Select Status:</label>
                     <select wire:model="enrollmentStatus" class="form-control" id="status">
-                        @foreach($availableStatuses as $status)
+                        @foreach ($availableStatuses as $status)
                             <option value="{{ $status }}">{{ ucfirst($status) }}</option>
                         @endforeach
                     </select>
@@ -816,7 +776,8 @@ new class extends Component {
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
-                    <button type="button" class="btn btn-primary" wire:click="updateEnrollmentStatus">Update</button>
+                    <button type="button" class="btn btn-primary"
+                        wire:click="updateEnrollmentStatus">Update</button>
                 </div>
             </div>
         </div>
@@ -844,6 +805,5 @@ new class extends Component {
         window.addEventListener('hide-enrollment-status-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('enrollmentStatusModal'))?.hide();
         });
-
     </script>
 @endpush
