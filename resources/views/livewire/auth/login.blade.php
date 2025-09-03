@@ -24,25 +24,44 @@ new #[Layout('components.layouts.auth')] class extends Component {
      * Handle an incoming authentication request.
      */
     public function login(): void
-    {
-        $this->validate();
+{
+    // Validate input fields
+    $this->validate();
 
-        $this->ensureIsNotRateLimited();
+    // Prevent brute-force attacks
+    $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
-            RateLimiter::hit($this->throttleKey());
-
+    // Try authenticating the user with active = true
+    if (! Auth::attempt(
+        ['email' => $this->email, 'password' => $this->password, 'active' => true],
+        $this->remember
+    )) {
+        // Check if the user exists but is not active
+        $user = Auth::getProvider()->retrieveByCredentials(['email' => $this->email]);
+        if ($user && ! $user->active) {
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'email' => __('auth.not_active'),
             ]);
         }
 
-        RateLimiter::clear($this->throttleKey());
-        Session::regenerate();
+        // Increment the failed login attempt count
+        RateLimiter::hit($this->throttleKey());
 
-        $this->redirectIntended(default: route(auth()->user()->hasRole('student') ? 'student.dashboard' : 'dashboard', absolute: false));
-
+        throw ValidationException::withMessages([
+            'email' => __('auth.failed'),
+        ]);
     }
+
+    // Clear rate limiter on success
+    RateLimiter::clear($this->throttleKey());
+
+    // Regenerate session for security (prevents session fixation)
+    Session::regenerate();
+
+    // Redirect based on role
+    $redirectRoute = auth()->user()->hasRole('student') ? 'student.dashboard' : 'admin.dashboard';
+    $this->redirectIntended(route($redirectRoute, absolute: false));
+}
 
     /**
      * Ensure the authentication request is not rate limited.

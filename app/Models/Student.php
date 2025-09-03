@@ -9,21 +9,7 @@ class Student extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'first_name',
-        'last_name',
-        'admission_number',
-        'email',
-        'phone',
-        'dob',
-        'user_id',
-        'address',
-        'country',
-        'highest_level_of_education',
-        'id_url',
-        'kcse_certificate',
-        'passport_size_url',
-    ];
+    protected $guarded = ['id'];
 
 
     /* -----------------------------------------------------------------

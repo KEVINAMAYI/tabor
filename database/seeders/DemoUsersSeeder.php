@@ -15,6 +15,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Super Admin',
                 'email' => 'super@demo.com',
                 'password' => bcrypt('password'),
+                'active' => true,
             ]);
 
             // Admin
@@ -22,6 +23,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Admin User',
                 'email' => 'admin@demo.com',
                 'password' => bcrypt('password'),
+                'active' => true,
             ]);
 
             // Finance Manager
@@ -29,6 +31,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Finance Manager',
                 'email' => 'finance@demo.com',
                 'password' => bcrypt('password'),
+                'active' => true,
             ]);
 
             // One known Student
@@ -36,6 +39,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Student User',
                 'email' => 'student@demo.com',
                 'password' => bcrypt('password'),
+                'active' => true,
             ]);
 
             // Extra random students

@@ -52,7 +52,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             $user = User::create([
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
-                'password' => Hash::make('password'),
+                'password' => Hash::make($this->phone_number),
             ]);
 
             $admission_number = Student::generateAdmissionNumber();

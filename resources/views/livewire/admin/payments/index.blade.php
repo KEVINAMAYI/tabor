@@ -14,7 +14,7 @@ new class extends Component {
     use WithPagination;
 
     public $selectAll = false;
-    public $amount, $payment_method, $reference, $paid_at, $enrollment_id;
+    public $amount, $payment_method, $reference, $paid_at, $enrollment_id, $status, $payer;
     public $editId = null;
     public $selected = [];
     public $search = '';
@@ -78,8 +78,10 @@ new class extends Component {
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
                 'payment_method' => $this->payment_method,
+                'status' => 'completed',
                 'reference' => $this->reference,
                 'paid_at' => $this->paid_at,
+                'payer' => $this->payer,
             ]);
 
             DB::commit();
@@ -114,9 +116,11 @@ new class extends Component {
         $this->editId = $payment->id;
         $this->enrollment_id = $payment->enrollment_id;
         $this->amount = $payment->amount;
+        $this->status = $payment->status;
         $this->payment_method = $payment->payment_method;
         $this->reference = $payment->reference;
         $this->paid_at = $payment->paid_at;
+        $this->payer = $payment->payer;
 
         $this->dispatch('show-payment-modal');
     }
@@ -135,7 +139,9 @@ new class extends Component {
                 'amount' => $this->amount,
                 'payment_method' => $this->payment_method,
                 'reference' => $this->reference,
+                'status' => 'completed',
                 'paid_at' => $this->paid_at,
+                'payer' => $this->payer,
             ]);
 
             DB::commit();
@@ -284,6 +290,7 @@ new class extends Component {
                                 <div class="row">
                                     <!-- Enrollment Selector -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="enrollment_id" class="form-label">Student</label>
                                         <select wire:model="enrollment_id" class="form-control">
                                             <option value="">Select Enrollment</option>
                                             @foreach($enrollments as $enrollment)
@@ -305,13 +312,15 @@ new class extends Component {
                                     </div>
                                     <!-- Amount Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="amount" class="form-label">Amount</label>
                                         <input type="number" wire:model="amount" class="form-control"
                                                placeholder="Amount"/>
                                         @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Payment Method Selector -->
                                     <div class="col-md-6 mb-3">
-                                        <select wire:model="method" class="form-control">
+                                        <label for="method" class="form-label">Payment Method</label>
+                                        <select wire:model="payment_method" class="form-control">
                                             <option value="">Select Payment Method</option>
                                             <option value="cash">Cash</option>
                                             <option value="mpesa">M-Pesa</option>
@@ -322,12 +331,19 @@ new class extends Component {
                                     </div>
                                     <!-- Reference Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="reference" class="form-label">Reference</label>
                                         <input type="text" wire:model="reference" class="form-control"
                                                placeholder="Reference"/>
                                     </div>
                                     <!-- Paid Date Input -->
                                     <div class="col-md-6 mb-3">
+                                        <label for="paid_at" class="form-label">Paid On</label>
                                         <input type="date" wire:model="paid_at" class="form-control"/>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="payer" class="form-label">Paid By</label>
+                                        <input type="text" wire:model="payer" class="form-control"
+                                               placeholder="Paid By"/>
                                     </div>
                                 </div>
                             </div>
@@ -362,9 +378,12 @@ new class extends Component {
                             </th>
                             <th>#</th>
                             <th>Reference</th>
+                            <th>Student</th>
                             <th>Amount</th>
+                            <th>Status</th>
                             <th>Method</th>
                             <th>Paid On</th>
+                            <th>Paid By</th>
                             <th>Action</th>
                         </tr>
                         </thead>
@@ -381,9 +400,8 @@ new class extends Component {
                                 <td>
                                     <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
                                 </td>
-                                <td><span class="">{{ $payment->reference }}</span></td>
-                                <td><span class="badge bg-secondary">{{ $payment->amount }}</span></td>
-                                <td><span >{{ $payment->payment_method }}</span></td>
+                                <td><span class="">{{ $payment->enrollment?->student->first_name }}</span></td>
+                                <td>{{ number_format($payment->amount, 2) }}</td>
                                 <td>
                                     @if($payment->status == 'completed')
                                         <span class="badge bg-success-subtle text-success">Mapped</span>
@@ -391,7 +409,9 @@ new class extends Component {
                                         <span class="badge bg-warning-subtle text-warning">Pending</span>
                                     @endif
                                 </td>
-                                <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d M, Y h:i A') }}</td>
+                                <td><span >{{ ucfirst($payment->payment_method) }}</span></td>
+                                <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
+                                <td><span >{{ ucfirst($payment->payer) }}</span></td>
                                 <td>
                                     <div class="action-btn">
                                         <!-- Edit Payment Button -->
