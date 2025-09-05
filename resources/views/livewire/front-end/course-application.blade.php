@@ -652,7 +652,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                    href="{{ route('front-end.course-application') }}">
                                     Apply Now
                                 </a>
-                                <a class="btn btn-outline-success d-block w-100" target="_blank" href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor">
+                                <a class="btn btn-outline-success d-block w-100" target="_blank" href="https://api.whatsapp.com/send?phone=254798496129&text=Welcome to Tabor Training Institute, How may we help you?">
                                     <iconify-icon  icon="mdi:whatsapp"></iconify-icon>
                                     <span class="mb-1">Whatsapp</span>
                                 </a>
@@ -662,19 +662,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="py-9">
                             <h4 class="text-uppercase fs-3 fw-bold">Share</h4>
                             <div class="d-flex gap-6">
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/" class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Facebook">
                                     <img src="../assets/images/frontend-pages/icon-facebook-dark.svg" alt="facebook">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.instagram.com/" class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Instagram">
                                     <img src="../assets/images/frontend-pages/icon-instagram-dark.svg" alt="instagram">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.youtube.com/" class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="YouTube">
                                     <img src="../assets/images/frontend-pages/icon-youtube-dark.svg" alt="youtube">
                                 </a>
-                                <a href="#" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.linkedin.com/" class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Linckedin">
                                     <img src="../assets/images/frontend-pages/icon-linckedin-dark.svg" alt="linckedin">
                                 </a>

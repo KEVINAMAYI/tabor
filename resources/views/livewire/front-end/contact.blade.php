@@ -118,9 +118,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                 Shedule Campus Visit
                             </a> --}}
                             <a class="btn btn-outline-success d-block w-100" target="_blank"
-                                href="https://api.whatsapp.com/send?phone=254798496129&text=Hello Tabor Training Institute.
-I'm reaching out to enquire more about the courses you offer.
-Thanks!">
+                                href="https://api.whatsapp.com/send?phone=254798496129&text=Welcome to Tabor Training Institute, How may we help you?">
                                 <iconify-icon icon="mdi:whatsapp"></iconify-icon>
                                 <span class="mb-1">Whatsapp</span>
                             </a>
