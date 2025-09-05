@@ -154,7 +154,7 @@
     </ul>
 
     <div class="d-block d-lg-none py-9 py-xl-0">
-        <img src="assets/images/logos/logo.svg" alt="matdash-img"/>
+        <img src="assets/images/logos/tabor_logo.png" alt="matdash-img"/>
     </div>
     <a class="navbar-toggler p-0 border-0 nav-icon-hover-bg rounded-circle" href="javascript:void(0)"
        data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
