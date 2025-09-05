@@ -46,6 +46,10 @@ Route::get('/refresh-db', function () {
     Artisan::call('migrate:fresh --seed');
     return 'Database refreshed!';
 });
+Route::get('/seed', function () {
+    Artisan::call('db:seed');
+    return 'Database seeded!';
+});
 Route::get('/migrate', function () {
     Artisan::call('migrate');
     return 'Database migrated!';
