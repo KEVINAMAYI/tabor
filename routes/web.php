@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Livewire\Volt\Volt;
 
+
+Volt::route('/change-password', 'admin.change-password')
+        ->name('password.change');
 /* Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard'); */

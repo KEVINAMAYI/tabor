@@ -21,7 +21,7 @@ new class extends Component
 
     /* Form fields */
     public $first_name, $last_name, $email, $phone_number;
-    public $kra_pin, $id_number, $next_of_kin, $alternative_contact;
+    public $kra_pin, $id_number, $next_of_kin, $alternative_contact, $date_of_employment;
     public $date_of_birth;   // keep only if column exists
 
     public $editId = null;
@@ -35,7 +35,7 @@ new class extends Component
             'first_name'           => 'required|string|max:255',
             'last_name'            => 'required|string|max:255',
             'email'                => 'required|email',
-            'phone_number'         => 'required|numeric',
+            'phone_number'         => 'required|string',
             'kra_pin'              => 'nullable|string|max:20|alpha_num',
             'id_number'            => 'nullable|string|max:20',
             'next_of_kin'          => 'nullable|string|max:255',
@@ -301,52 +301,66 @@ new class extends Component
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="First Name"
+                                        <label for="first_name">First Name</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="first_name">
                                         @error('first_name')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="Last Name"
+                                        <label for="last_name">Last Name</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="last_name">
                                         @error('last_name')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="email" class="form-control" placeholder="Email"
+                                        <label for="email">Email</label>
+                                        <input type="email" class="form-control"
                                                wire:model.live="email">
                                         @error('email')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="Phone Number"
+                                        <label for="phone_number">Phone Number</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="phone_number">
                                         @error('phone_number')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
 
                                     <!-- New details -->
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="KRA PIN"
+                                        <label for="kra_pin">KRA PIN</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="kra_pin">
                                         @error('kra_pin')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="ID Number"
+                                        <label for="id_number">ID Number</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="id_number">
                                         @error('id_number')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="Next of Kin"
+                                        <label for="next_of_kin">Next of Kin</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="next_of_kin">
                                         @error('next_of_kin')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <input type="text" class="form-control" placeholder="Alternative Contact"
+                                        <label for="alternative_contact">Next of Kin Contact</label>
+                                        <input type="text" class="form-control"
                                                wire:model.live="alternative_contact">
                                         @error('alternative_contact')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
-
-                                    <div class="col-md-12 mb-3">
-                                        <input type="date" class="form-control" placeholder="Date of Birth"
+                                    <div class="col-md-6 mb-3">
+                                        <label for="DOB">DOB</label>
+                                        <input type="date" class="form-control"
                                                wire:model.live="date_of_birth">
                                         @error('date_of_birth')<small class="text-danger">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="DOB">Date of Employment</label>
+                                        <input type="date" class="form-control"
+                                               wire:model.live="date_of_employment">
+                                        @error('date_of_employment')<small class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                 </div>
                             </div>

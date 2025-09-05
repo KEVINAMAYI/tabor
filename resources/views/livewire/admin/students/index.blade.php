@@ -69,11 +69,11 @@ new class extends Component {
                 !empty($this->search),
                 fn($q) => $q->where(function ($query) {
                     $query
-                        ->where('first_name', 'ilike', "%{$this->search}%")
-                        ->orWhere('last_name', 'ilike', "%{$this->search}%")
-                        ->orWhere('email', 'ilike', "%{$this->search}%")
-                        ->orWhere('phone', 'ilike', "%{$this->search}%")
-                        ->orWhere('admission_number', 'ilike', "%{$this->search}%");
+                        ->where('first_name', 'like', "%{$this->search}%")
+                        ->orWhere('last_name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%")
+                        ->orWhere('phone', 'like', "%{$this->search}%")
+                        ->orWhere('admission_number', 'like', "%{$this->search}%");
                 }),
             )
             ->orderBy('admission_number', 'asc')

@@ -60,12 +60,19 @@ class RolesAndPermissionsSeeder extends Seeder
             'delete-intakes',
 
             // Accounting
-            'manage-payments',
-            'view-transactions',
-            'generate-financial-reports',
+            'create-payments',
+            'view-payments',
+            'edit-payments',
+            'delete-payments',
 
             //reports
-            'manage-reports'
+            'view-reports',
+
+            //manage users
+            'view-users',
+            'create-users',
+            'edit-users',
+            'delete-users'
 
         ];
 
@@ -82,9 +89,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin' => 'all',
 
             'finance-manager' => [
-                'manage-payments',
-                'view-transactions',
-                'generate-financial-reports',
+                'create-payments',
+                'view-payments',
+                'edit-payments',
             ],
 
             'student' => [
@@ -93,6 +100,11 @@ class RolesAndPermissionsSeeder extends Seeder
 
             'lecturer' => [
                 'view-courses',
+                'edit-courses',
+                'view-attendance',
+                'add-attendance',
+                'edit-attendance',
+                'delete-attendance',
             ],
         ];
 
