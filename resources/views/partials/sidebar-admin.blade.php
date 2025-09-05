@@ -175,7 +175,7 @@
                 @endcan
 
                 {{-- Financials (Payments) --}}
-                @can('manage-payments')
+                @can('view-payments')
                     <li class="sidebar-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
                         <a class="sidebar-link has-arrow {{ request()->routeIs('payments.*') ? 'active' : '' }}"
                            href="javascript:void(0)"

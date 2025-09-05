@@ -352,7 +352,7 @@ new class extends Component {
                                                         <a href="javascript:void(0)"
                                                             wire:click="editUser({{ $user->id }})"
                                                             class="dropdown-item">
-                                                            <i class="ti ti-eye fs-5 me-2"></i> view
+                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
                                                         </a>
                                                     </li>
                                                 @endcan
