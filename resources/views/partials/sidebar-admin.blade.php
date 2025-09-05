@@ -225,6 +225,15 @@
                         <span class="hide-menu">Settings</span>
                     </a>
                     <ul aria-expanded="false" class="collapse first-level">
+                        @can('view-users')
+                            <li class="sidebar-item">
+                                <a class="sidebar-link {{ request()->routeIs('roles.users') ? 'active' : '' }}"
+                                   href="{{ route('roles.users') }}">
+                                    <span class="icon-small"></span>
+                                    <span class="hide-menu">User Management</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('view-roles')
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('roles.index') ? 'active' : '' }}"
