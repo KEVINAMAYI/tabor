@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\LecturerExport;
 use App\Models\Lecturer;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -9,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
-new class extends Component
-{
+new class extends Component {
 
     use WithPagination;
 
@@ -32,21 +33,22 @@ new class extends Component
     public function rules()
     {
         return [
-            'first_name'           => 'required|string|max:255',
-            'last_name'            => 'required|string|max:255',
-            'email'                => 'required|email',
-            'phone_number'         => 'required|string',
-            'kra_pin'              => 'nullable|string|max:20|alpha_num',
-            'id_number'            => 'nullable|string|max:20',
-            'next_of_kin'          => 'nullable|string|max:255',
-            'alternative_contact'  => 'nullable|string|max:20',
-            'date_of_birth'        => 'nullable|date',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'phone_number' => 'required|string',
+            'kra_pin' => 'nullable|string|max:20|alpha_num',
+            'id_number' => 'nullable|string|max:20',
+            'next_of_kin' => 'nullable|string|max:255',
+            'alternative_contact' => 'nullable|string|max:20',
+            'date_of_birth' => 'nullable|date',
         ];
     }
 
 
     #[On('search')]
-    public function search() {
+    public function search()
+    {
         $this->resetPage();
         $this->selected = [];
         $this->selectAll = false;
@@ -56,7 +58,7 @@ new class extends Component
     public function with()
     {
         $lecturers = Lecturer::with('user')
-            ->when(!empty($this->search), fn ($q) => $q->where(function ($query) {
+            ->when(!empty($this->search), fn($q) => $q->where(function ($query) {
                 $query->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")
@@ -81,22 +83,23 @@ new class extends Component
             DB::beginTransaction();
 
             $user = User::create([
-                'name'     => $this->first_name.' '.$this->last_name,
-                'email'    => $this->email,
+                'name' => $this->first_name . ' ' . $this->last_name,
+                'first_name' => $this->first_name,
+                'email' => $this->email,
                 'password' => Hash::make('password'),
             ]);
 
             Lecturer::create([
-                'first_name'          => $this->first_name,
-                'last_name'           => $this->last_name,
-                'email'               => $this->email,
-                'phone'               => $this->phone_number,
-                'kra_pin'             => $this->kra_pin,
-                'id_number'           => $this->id_number,
-                'next_of_kin'         => $this->next_of_kin,
+                'first_name' => $this->first_name,
+                'last_name' => $this->last_name,
+                'email' => $this->email,
+                'phone' => $this->phone_number,
+                'kra_pin' => $this->kra_pin,
+                'id_number' => $this->id_number,
+                'next_of_kin' => $this->next_of_kin,
                 'alternative_contact' => $this->alternative_contact,
-                'dob'                 => $this->date_of_birth,
-                'user_id'             => $user->id,
+                'dob' => $this->date_of_birth,
+                'user_id' => $user->id,
             ]);
 
             DB::commit();
@@ -113,7 +116,7 @@ new class extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error adding lecturer: '.$e->getMessage());
+            Log::error('Error adding lecturer: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to add Lecturer.!')
                 ->error()
@@ -128,16 +131,16 @@ new class extends Component
     {
         $lec = Lecturer::with('user')->findOrFail($id);
 
-        $this->editId             = $lec->id;
-        $this->first_name         = $lec->first_name;
-        $this->last_name          = $lec->last_name;
-        $this->email              = $lec->email;
-        $this->phone_number       = $lec->phone;
-        $this->kra_pin            = $lec->kra_pin;
-        $this->id_number          = $lec->id_number;
-        $this->next_of_kin        = $lec->next_of_kin;
-        $this->alternative_contact= $lec->alternative_contact;
-        $this->date_of_birth      = $lec->dob;
+        $this->editId = $lec->id;
+        $this->first_name = $lec->first_name;
+        $this->last_name = $lec->last_name;
+        $this->email = $lec->email;
+        $this->phone_number = $lec->phone;
+        $this->kra_pin = $lec->kra_pin;
+        $this->id_number = $lec->id_number;
+        $this->next_of_kin = $lec->next_of_kin;
+        $this->alternative_contact = $lec->alternative_contact;
+        $this->date_of_birth = $lec->dob;
 
         $this->dispatch('show-lecturer-modal');
     }
@@ -152,20 +155,20 @@ new class extends Component
             $lec = Lecturer::with('user')->findOrFail($this->editId);
 
             $lec->user->update([
-                'name'  => $this->first_name.' '.$this->last_name,
+                'name' => $this->first_name . ' ' . $this->last_name,
                 'email' => $this->email,
             ]);
 
             $lec->update([
-                'first_name'          => $this->first_name,
-                'last_name'           => $this->last_name,
-                'email'               => $this->email,
-                'phone'               => $this->phone_number,
-                'kra_pin'             => $this->kra_pin,
-                'id_number'           => $this->id_number,
-                'next_of_kin'         => $this->next_of_kin,
+                'first_name' => $this->first_name,
+                'last_name' => $this->last_name,
+                'email' => $this->email,
+                'phone' => $this->phone_number,
+                'kra_pin' => $this->kra_pin,
+                'id_number' => $this->id_number,
+                'next_of_kin' => $this->next_of_kin,
                 'alternative_contact' => $this->alternative_contact,
-                'dob'                 => $this->date_of_birth,
+                'dob' => $this->date_of_birth,
             ]);
 
             DB::commit();
@@ -181,7 +184,7 @@ new class extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update lecturer: '.$e->getMessage());
+            Log::error('Failed to update lecturer: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to updated Lecturer.!')
                 ->error()
@@ -202,9 +205,10 @@ new class extends Component
     public function deleteSelected()
     {
         Lecturer::whereIn('id', $this->selected)->get()
-            ->each(fn ($l) => $l->user()->delete());
+            ->each(fn($l) => $l->user()->delete());
 
-        $this->selected = []; $this->selectAll = false;
+        $this->selected = [];
+        $this->selectAll = false;
         $this->resetPage();
 
         LivewireAlert::text('Lecturers deleted successfully.!')
@@ -217,8 +221,8 @@ new class extends Component
     /* ------------- Utilities ------------- */
     private function resetForm()
     {
-        foreach (['first_name','last_name','email','phone_number','kra_pin',
-                     'id_number','next_of_kin','alternative_contact','date_of_birth','search'] as $prop) {
+        foreach (['first_name', 'last_name', 'email', 'phone_number', 'kra_pin',
+                     'id_number', 'next_of_kin', 'alternative_contact', 'date_of_birth', 'search'] as $prop) {
             $this->$prop = null;
         }
         $this->editId = null;
@@ -229,7 +233,7 @@ new class extends Component
     {
         if ($this->selectAll) {
             $currentPageLecturerIds = Lecturer::with('user')
-                ->when(!empty($this->search), fn ($q) => $q->where(function ($query) {
+                ->when(!empty($this->search), fn($q) => $q->where(function ($query) {
                     $query->where('first_name', 'like', "%{$this->search}%")
                         ->orWhere('last_name', 'like', "%{$this->search}%")
                         ->orWhere('email', 'like', "%{$this->search}%")
@@ -248,6 +252,13 @@ new class extends Component
             $this->selected = [];
         }
     }
+
+    public function exportExcel()
+    {
+        return Excel::download(new LecturerExport(), 'lecturers.xlsx');
+    }
+
+
 }; ?>
 
 @push('styles')
@@ -274,9 +285,10 @@ new class extends Component
                             <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
                     </div>
-                    <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+                    <div
+                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                         @if(count($selected))
-                            <a href="javascript:void(0)"  class="delete-multiple bg-danger-subtle btn me-2 text-danger"
+                            <a href="javascript:void(0)" class="delete-multiple bg-danger-subtle btn me-2 text-danger"
                                wire:click.prevent="deleteSelected">
                                 <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                             </a>
@@ -348,19 +360,22 @@ new class extends Component
                                         <label for="alternative_contact">Next of Kin Contact</label>
                                         <input type="text" class="form-control"
                                                wire:model.live="alternative_contact">
-                                        @error('alternative_contact')<small class="text-danger">{{ $message }}</small>@enderror
+                                        @error('alternative_contact')<small
+                                            class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="DOB">DOB</label>
                                         <input type="date" class="form-control"
                                                wire:model.live="date_of_birth">
-                                        @error('date_of_birth')<small class="text-danger">{{ $message }}</small>@enderror
+                                        @error('date_of_birth')<small
+                                            class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="DOB">Date of Employment</label>
                                         <input type="date" class="form-control"
                                                wire:model.live="date_of_employment">
-                                        @error('date_of_employment')<small class="text-danger">{{ $message }}</small>@enderror
+                                        @error('date_of_employment')<small
+                                            class="text-danger">{{ $message }}</small>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -368,7 +383,8 @@ new class extends Component
                                 <button class="btn btn-success" type="submit">
                                     {{ $editId ? 'Save' : 'Add' }}
                                 </button>
-                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard</button>
+                                <button class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">Discard
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -378,6 +394,36 @@ new class extends Component
             <!-- Table -->
             <div class="card card-body">
                 <div class="table-responsive">
+
+                    <!-- Top Bar Inside the Card -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                        <!-- Title -->
+                        <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
+                            <iconify-icon icon="mdi:teach" class="me-2" style="font-size: 20px;"></iconify-icon>
+                            Lecturers List
+                        </h6>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <!-- Export Excel Button -->
+                            <button wire:click="exportExcel"
+                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-excel-outline" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                Excel
+                            </button>
+
+                            <!-- Export PDF Button -->
+                            <button wire:click="exportPdf"
+                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-pdf-box" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
@@ -407,17 +453,21 @@ new class extends Component
                                 <td>{{ $lec->id_number ?? '—' }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="javascript:void(0)"  wire:click="editLecturer({{ $lec->id }})" class="text-primary">
+                                        <a href="javascript:void(0)" wire:click="editLecturer({{ $lec->id }})"
+                                           class="text-primary">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
-                                        <a href="javascript:void(0)"  wire:click="deleteLecturer({{ $lec->id }})" class="text-dark ms-2">
+                                        <a href="javascript:void(0)" wire:click="deleteLecturer({{ $lec->id }})"
+                                           class="text-dark ms-2">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="text-center">No lecturers found.</td></tr>
+                            <tr>
+                                <td colspan="7" class="text-center">No lecturers found.</td>
+                            </tr>
                         @endforelse
                         </tbody>
                     </table>

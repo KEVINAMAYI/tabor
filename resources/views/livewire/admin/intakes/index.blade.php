@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\IntakeExport;
 use App\Models\Intake;
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
@@ -7,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 new class extends Component {
 
@@ -29,7 +31,8 @@ new class extends Component {
         ];
     }
 
-    #[On('search')] public function search()
+    #[On('search')]
+    public function search()
     {
         $this->resetPage();
         $this->selected = [];
@@ -204,6 +207,12 @@ new class extends Component {
         }
     }
 
+
+    public function exportExcel()
+    {
+        return Excel::download(new IntakeExport(), 'intakes.xlsx');
+    }
+
 }; ?>
 
 @push('styles')
@@ -290,6 +299,37 @@ new class extends Component {
             <!-- ─── Intakes table ─────────────────────────────── -->
             <div class="card card-body">
                 <div class="table-responsive">
+
+                    <!-- Top Bar Inside the Card -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                        <!-- Title -->
+                        <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
+                            <iconify-icon icon="mdi:calendar-check-outline" class="me-2"
+                                          style="font-size: 20px;"></iconify-icon>
+                            Intakes List
+                        </h6>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <!-- Export Excel Button -->
+                            <button wire:click="exportExcel"
+                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-excel-outline" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                Excel
+                            </button>
+
+                            <!-- Export PDF Button -->
+                            <button wire:click="exportPdf"
+                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-pdf-box" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
