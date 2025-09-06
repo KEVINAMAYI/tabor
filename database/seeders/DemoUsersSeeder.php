@@ -13,6 +13,7 @@ class DemoUsersSeeder extends Seeder
         if (!User::where('email', 'super@demo.com')->exists()) {
             User::factory()->superAdmin()->create([
                 'name' => 'Super Admin',
+                'first_name' => 'Super',
                 'email' => 'super@demo.com',
                 'password' => bcrypt('password'),
                 'active' => true,
@@ -21,6 +22,7 @@ class DemoUsersSeeder extends Seeder
             // Admin
             User::factory()->admin()->create([
                 'name' => 'Admin User',
+                'first_name' => 'Admin',
                 'email' => 'admin@demo.com',
                 'password' => bcrypt('password'),
                 'active' => true,
@@ -29,6 +31,7 @@ class DemoUsersSeeder extends Seeder
             // Finance Manager
             User::factory()->financeManager()->create([
                 'name' => 'Finance Manager',
+                'first_name' => 'Finance',
                 'email' => 'finance@demo.com',
                 'password' => bcrypt('password'),
                 'active' => true,
@@ -37,6 +40,7 @@ class DemoUsersSeeder extends Seeder
             // One known Student
             User::factory()->student()->create([
                 'name' => 'Student User',
+                'first_name' => 'Student',
                 'email' => 'student@demo.com',
                 'password' => bcrypt('password'),
                 'active' => true,

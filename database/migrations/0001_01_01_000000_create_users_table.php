@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('next_of_kin')->nullable();
             $table->string('next_of_kin_contact')->nullable();
             $table->date('date_of_employment')->nullable();
+            $table->boolean('active')->default(true);
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

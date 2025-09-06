@@ -5,7 +5,7 @@
 
     <div>
 
-        <div class="brand-logo mb-3 mt-3 d-flex justify-content-center align-items-center" style="height: 100px;">
+        <div class="brand-logo mb-4 mt-3 d-flex justify-content-center align-items-center" style="height: 100px;">
             <a href="/" target="_blank" rel="noopener noreferrer">
                 <img height="120" width="120" src="assets/images/logos/tabor_logo.png" alt="Logo"/>
             </a>
@@ -18,24 +18,26 @@
         <nav class="sidebar-nav scroll-sidebar" data-simplebar>
             <ul class="sidebar-menu" id="sidebarnav">
 
-                <li class="sidebar-item {{ route('admin.dashboard') ? 'active' : '' }}">
-                    <a class="sidebar-link" href="{{ route('admin.dashboard') }}" id="get-url" aria-expanded="false">
-                        <iconify-icon icon="solar:widget-add-line-duotone" class=""></iconify-icon>
+                <li class="sidebar-item">
+                    <a class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
+                       href="{{ route('admin.dashboard') }}" aria-expanded="false">
+                        <iconify-icon icon="solar:widget-add-line-duotone"></iconify-icon>
                         <span class="hide-menu">Dashboard</span>
                     </a>
                 </li>
 
-                {{-- Students Menu --}}
                 @can('view-students')
-                    <li class="sidebar-item {{ request()->routeIs('students.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('students.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('students.*') ? 'true' : 'false' }}">
-                            <iconify-icon icon="solar:shield-user-line-duotone"></iconify-icon>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('students.*') ? 'active' : '' }}"
+                           href="#studentsMenu"
+                           data-bs-toggle="collapse"
+                           aria-expanded="{{ request()->routeIs('students.*') ? 'true' : 'false' }}"
+                           aria-controls="studentsMenu">
+                            <iconify-icon icon="ph:student-light"></iconify-icon>
                             <span class="hide-menu">Students</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('students.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('students.index') ? 'in' : '' }}">
+                        <ul class="collapse first-level {{ request()->routeIs('students.*') ? 'show' : '' }}"
+                            id="studentsMenu">
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.index') ? 'active' : '' }}"
                                    href="{{ route('students.index') }}">
@@ -61,170 +63,94 @@
                     </li>
                 @endcan
 
-                {{-- Lecturers Menu --}}
                 @can('view-lecturers')
-                    <li class="sidebar-item {{ request()->routeIs('lecturers.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('lecturers.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('lecturers.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('lecturers.index') ? 'active' : '' }}"
+                           href="{{ route('lecturers.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:user-plus-rounded-line-duotone"></iconify-icon>
                             <span class="hide-menu">Lecturers</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('lecturers.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('lecturers.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('lecturers.index') ? 'active' : '' }}"
-                                   href="{{ route('lecturers.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">List Lecturers</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-
-                {{-- Courses Menu --}}
                 @can('view-courses')
-                    <li class="sidebar-item {{ request()->routeIs('courses.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('courses.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('courses.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('courses.index') ? 'active' : '' }}"
+                           href="{{ route('courses.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:clipboard-text-line-duotone"></iconify-icon>
                             <span class="hide-menu">Courses</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('courses.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('courses.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('courses.index') ? 'active' : '' }}"
-                                   href="{{ route('courses.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">List Courses</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-
-                {{-- Courses Intakes --}}
                 @can('view-intakes')
-                    <li class="sidebar-item {{ request()->routeIs('intakes.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('intakes.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('intakes.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('intakes.index') ? 'active' : '' }}"
+                           href="{{ route('intakes.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:download-line-duotone" width="24" height="24"></iconify-icon>
                             <span class="hide-menu">Intakes</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('intakes.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('intakes.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('intakes.index') ? 'active' : '' }}"
-                                   href="{{ route('intakes.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">List Intakes</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-                {{-- Classes/Year Menu --}}
                 @can('view-class-groups')
-                    <li class="sidebar-item {{ request()->routeIs('class_groups.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('class_groups.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('class_groups.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('class_groups.index') ? 'active' : '' }}"
+                           href="{{ route('class_groups.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:clipboard-text-line-duotone"></iconify-icon>
                             <span class="hide-menu">Class/Year Groups</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('class_groups.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('class_groups.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('class_groups.index') ? 'active' : '' }}"
-                                   href="{{ route('class_groups.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">List Classes/Year</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-
-                {{-- Attendance Tracking --}}
                 @can('view-attendance')
-                    <li class="sidebar-item {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('attendance.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('attendance.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"
+                           href="{{ route('attendance.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:repeat-one-minimalistic-bold-duotone"></iconify-icon>
                             <span class="hide-menu">Attendance Tracking</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('attendance.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('attendance.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"
-                                   href="{{ route('attendance.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">View Attendance</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-                {{-- Financials (Payments) --}}
                 @can('view-payments')
-                    <li class="sidebar-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('payments.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('payments.index') ? 'active' : '' }}"
+                           href="{{ route('payments.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:wallet-line-duotone"></iconify-icon>
                             <span class="hide-menu">Finance</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('payments.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('payments.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('payments.index') ? 'active' : '' }}"
-                                   href="{{ route('payments.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">All Transactions</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-                {{-- Library --}}
                 @can('manage-reports')
-                    <li class="sidebar-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow {{ request()->routeIs('reports.*') ? 'active' : '' }}"
-                           href="javascript:void(0)"
-                           aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('reports.index') ? 'active' : '' }}"
+                           href="{{ route('reports.index') }}"
+                           aria-expanded="false">
                             <iconify-icon icon="solar:book-line-duotone"></iconify-icon>
                             <span class="hide-menu">Reports</span>
                         </a>
-                        <ul aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}"
-                            class="collapse first-level {{ request()->routeIs('reports.*') ? 'in' : '' }}">
-                            <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('reports.index') ? 'active' : '' }}"
-                                   href="{{ route('reports.index') }}">
-                                    <span class="icon-small"></span>
-                                    <span class="hide-menu">View Reports</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 @endcan
 
-
                 <li class="sidebar-item">
-                    <a class="sidebar-link has-arrow" href="javascript:void(0)" aria-expanded="false">
-                        <iconify-icon icon="solar:settings-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Settings</span>
+                    <a class="sidebar-link {{ request()->routeIs('roles.*') ? 'active' : '' }}"
+                       href="#settingsMenu"
+                       data-bs-toggle="collapse"
+                       aria-expanded="{{ request()->routeIs('roles.*') ? 'true' : 'false' }}"
+                       aria-controls="settingsMenu">
+                        <iconify-icon icon="tabler:shield"></iconify-icon>
+                        <span class="hide-menu">Access & Security</span>
                     </a>
-                    <ul aria-expanded="false" class="collapse first-level">
+                    <ul class="collapse first-level {{ request()->routeIs('roles.*') ? 'show' : '' }}"
+                        id="settingsMenu">
                         @can('view-users')
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('roles.users') ? 'active' : '' }}"
@@ -243,12 +169,6 @@
                                 </a>
                             </li>
                         @endcan
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="#">
-                                <span class="icon-small"></span>
-                                <span class="hide-menu">General Settings</span>
-                            </a>
-                        </li>
                     </ul>
                 </li>
 
@@ -267,3 +187,20 @@
 
     </div>
 </aside>
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdownToggles = document.querySelectorAll('.sidebar-link[data-bs-toggle="collapse"]');
+
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function (event) {
+                    document.querySelectorAll('.sidebar-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+@endpush
