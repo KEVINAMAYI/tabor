@@ -11,7 +11,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
-new #[Layout('components.layouts.auth')] class extends Component {
+new #[Layout('components.layouts.auth')]
+class extends Component {
     #[Validate('required|string|email')]
     public string $email = '';
 
@@ -24,51 +25,41 @@ new #[Layout('components.layouts.auth')] class extends Component {
      * Handle an incoming authentication request.
      */
     public function login(): void
-{
-    // Validate input fields
-    $this->validate();
+    {
+        // Validate input fields
+        $this->validate();
 
-    // Prevent brute-force attacks
-    $this->ensureIsNotRateLimited();
+        // Prevent brute-force attacks
+        $this->ensureIsNotRateLimited();
 
-    // Try authenticating the user with active = true
-    if (! Auth::attempt(
-        ['email' => $this->email, 'password' => $this->password, 'active' => true],
-        $this->remember
-    )) {
-        // Check if the user exists but is not active
-        $user = Auth::getProvider()->retrieveByCredentials(['email' => $this->email]);
-        if ($user && ! $user->active) {
+        // Try authenticating the user with active = true
+        if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+
+            // Increment the failed login attempt count
+            RateLimiter::hit($this->throttleKey());
+
             throw ValidationException::withMessages([
-                'email' => __('auth.not_active'),
+                'email' => __('auth.failed'),
             ]);
         }
 
-        // Increment the failed login attempt count
-        RateLimiter::hit($this->throttleKey());
+        // Clear rate limiter on success
+        RateLimiter::clear($this->throttleKey());
 
-        throw ValidationException::withMessages([
-            'email' => __('auth.failed'),
-        ]);
+        // Regenerate session for security (prevents session fixation)
+        Session::regenerate();
+
+        // Redirect based on role
+        $redirectRoute = auth()->user()->hasRole('student') ? 'student.dashboard' : 'admin.dashboard';
+        $this->redirectIntended(route($redirectRoute, absolute: false));
     }
-
-    // Clear rate limiter on success
-    RateLimiter::clear($this->throttleKey());
-
-    // Regenerate session for security (prevents session fixation)
-    Session::regenerate();
-
-    // Redirect based on role
-    $redirectRoute = auth()->user()->hasRole('student') ? 'student.dashboard' : 'admin.dashboard';
-    $this->redirectIntended(route($redirectRoute, absolute: false));
-}
 
     /**
      * Ensure the authentication request is not rate limited.
      */
     protected function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 
@@ -89,15 +80,16 @@ new #[Layout('components.layouts.auth')] class extends Component {
      */
     protected function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+        return Str::transliterate(Str::lower($this->email) . '|' . request()->ip());
     }
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+    <x-auth-header :title="__('Log in to your account')"
+                   :description="__('Enter your email and password below to log in')"/>
 
     <!-- Session Status -->
-    <x-auth-session-status class="text-center" :status="session('status')" />
+    <x-auth-session-status class="text-center" :status="session('status')"/>
 
     <form wire:submit="login" class="flex flex-col gap-6">
         <!-- Email Address -->
@@ -131,7 +123,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </div>
 
         <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" :label="__('Remember me')" />
+        <flux:checkbox wire:model="remember" :label="__('Remember me')"/>
 
         <div class="flex items-center justify-end">
             <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>

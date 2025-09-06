@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 // Group all students routes under the 'student' prefix
-Route::middleware(['auth'])->prefix('student')->group(function () {
+Route::middleware(['auth','active','password_changed'])->prefix('student')->group(function () {
 
     // Route to manage dashboard
     Volt::route('dashboard', 'student.dashboard')->name('student.dashboard');
