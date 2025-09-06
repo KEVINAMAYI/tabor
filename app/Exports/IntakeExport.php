@@ -2,8 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\Course;
-use App\Models\Intake;
+use App\Services\IntakeReportService;
+use App\Services\ReportGeneratorService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -16,10 +16,21 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class IntakeExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected IntakeReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(IntakeReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
+
+
     public function view(): View
     {
 
-        $intakes = Intake::all();
+        $intakes = $this->reportService->getIntakes();
 
         return view('exports.intakes.index', [
             'intakes' => $intakes,

@@ -1,10 +1,8 @@
 <?php
 
 namespace App\Exports;
-
-use App\Models\Course;
-use App\Models\Intake;
-use App\Models\Payment;
+use App\Services\PaymentsReportService;
+use App\Services\ReportGeneratorService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -17,10 +15,20 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PaymentExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected PaymentsReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(PaymentsReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
+
     public function view(): View
     {
 
-        $payments = Payment::with(['enrollment.student', 'enrollment.course'])->latest()->get();
+        $payments = $this->reportService->getPayments();
 
         return view('exports.payments.index', [
             'payments' => $payments,

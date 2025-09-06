@@ -210,7 +210,14 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new IntakeExport(), 'intakes.xlsx');
+        return Excel::download(app(IntakeExport::class), 'intakes.xlsx');
+    }
+
+
+    public function exportPdf()
+    {
+        $url = route('intakes.export.pdf');
+        return redirect()->to($url);
     }
 
 }; ?>

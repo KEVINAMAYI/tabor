@@ -213,8 +213,16 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new CourseExport(), 'courses.xlsx');
+        return Excel::download(app(CourseExport::class), 'courses.xlsx');
     }
+
+
+    public function exportPdf()
+    {
+        $url = route('courses.export.pdf');
+        return redirect()->to($url);
+    }
+
 
 }; ?>
 

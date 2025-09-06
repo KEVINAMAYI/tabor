@@ -67,7 +67,13 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new EnrollmentExport(), 'enrollments.xlsx');
+        return Excel::download(app(EnrollmentExport::class), 'enrollments.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $url = route('enrollments.export.pdf');
+        return redirect()->to($url);
     }
 
 }; ?>

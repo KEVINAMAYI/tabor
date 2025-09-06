@@ -255,7 +255,13 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new LecturerExport(), 'lecturers.xlsx');
+        return Excel::download(app(LecturerExport::class), 'lecturers.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $url = route('lecturers.export.pdf');
+        return redirect()->to($url);
     }
 
 

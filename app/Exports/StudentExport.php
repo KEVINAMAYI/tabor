@@ -2,10 +2,9 @@
 
 namespace App\Exports;
 
-use App\Models\Attendance;
-use App\Models\Student;
+use App\Services\ReportGeneratorService;
+use App\Services\StudentReportService;
 use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -18,17 +17,19 @@ class StudentExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
 
+    protected StudentReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(StudentReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
     public function view(): View
     {
 
-
-        $students = Student::with('user')
-            ->whereHas('user', function ($query) {
-                $query->where('active', true);
-            })
-            ->orderBy('admission_number', 'asc')
-            ->get();
-
+        $students = $this->reportService->getStudents();
 
         return view('exports.students.index', [
             'students' => $students,

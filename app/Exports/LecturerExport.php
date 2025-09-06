@@ -2,11 +2,9 @@
 
 namespace App\Exports;
 
-use App\Models\Enrollment;
-use App\Models\Lecturer;
-use App\Models\Student;
+use App\Services\LecturerReportService;
+use App\Services\ReportGeneratorService;
 use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -18,13 +16,23 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class LecturerExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected LecturerReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(LecturerReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
+
     public function view(): View
     {
 
-        $lecturers = Lecturer::with('user')->latest()->get();
+        $lecturers = $this->reportService->getLecturers();
 
         return view('exports.lecturers.index', [
-            'lecturers' => $lecturers ,
+            'lecturers' => $lecturers,
             'title' => 'Lecturers Report',
             'date' => now()->format('d M Y, H:i'),
             'isExcel' => true

@@ -2,7 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\Course;
+use App\Services\CourseReportService;
+use App\Services\ReportGeneratorService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -15,10 +16,19 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class CourseExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected CourseReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(CourseReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
     public function view(): View
     {
 
-        $courses = Course::all();
+        $courses = $this->reportService->getCourses();
 
         return view('exports.courses.index', [
             'courses' => $courses,

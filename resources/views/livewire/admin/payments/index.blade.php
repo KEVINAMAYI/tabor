@@ -233,8 +233,14 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new PaymentExport(), 'payments.xlsx');
+        return Excel::download(app(PaymentExport::class), 'payments.xlsx');
+    }
 
+
+    public function exportPdf()
+    {
+        $url = route('payments.export.pdf');
+        return redirect()->to($url);
     }
 
 }; ?>

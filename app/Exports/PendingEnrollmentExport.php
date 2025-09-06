@@ -2,10 +2,9 @@
 
 namespace App\Exports;
 
-use App\Models\Enrollment;
-use App\Models\Student;
+use App\Services\ReportGeneratorService;
+use App\Services\StudentReportService;
 use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -17,12 +16,19 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PendingEnrollmentExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected StudentReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(StudentReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
     public function view(): View
     {
 
-        $pending_enrollments = Enrollment::whereIn('status', ['pending', 'rejected'])
-            ->with(['student.user', 'course', 'intake'])
-            ->get();
+        $pending_enrollments = $this->reportService->getPendingEnrollments();
 
         return view('exports.students.pending-enrollments', [
             'enrollments' => $pending_enrollments,

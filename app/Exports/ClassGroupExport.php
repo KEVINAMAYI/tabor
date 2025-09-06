@@ -2,9 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\ClassGroup;
-use App\Models\Course;
-use App\Models\Intake;
+use App\Services\ClassGroupsReportService;
+use App\Services\ReportGeneratorService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -17,11 +16,20 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ClassGroupExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 {
 
+    protected ClassGroupsReportService $reportService;
+    protected ReportGeneratorService $reportGenerator;
+
+    public function __construct(ClassGroupsReportService $reportService, ReportGeneratorService $reportGenerator)
+    {
+        $this->reportService = $reportService;
+        $this->reportGenerator = $reportGenerator;
+    }
+
 
     public function view(): View
     {
 
-        $classGroups = ClassGroup::with('intake')->latest()->get();
+        $classGroups = $this->reportService->getClassGroups();
 
         return view('exports.class-groups.index', [
             'classGroups' => $classGroups,

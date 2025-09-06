@@ -190,7 +190,14 @@ new class extends Component {
 
     public function exportExcel()
     {
-        return Excel::download(new ClassGroupExport(), 'class-groups.xlsx');
+        return Excel::download(app(ClassGroupExport::class), 'class-groups.xlsx');
+    }
+
+
+    public function exportPdf()
+    {
+        $url = route('class-groups.export.pdf');
+        return redirect()->to($url);
     }
 
 

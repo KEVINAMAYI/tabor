@@ -2,6 +2,9 @@
 <head>
     <meta charset="utf-8">
     <title>Attendance Report</title>
+
+    <base href="{{ URL::to('/') }}">
+
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -89,15 +92,16 @@
 </head>
 <body>
 <div class="header">
+
+    @php
+        $logoPath = public_path('assets/images/logos/tabor_logo.png');
+        $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+    @endphp
+
     @if(empty($isExcel))
-        @if($logoDataUri)
-            <img src="assets/images/logos/tabor_logo.png" alt="Logo"/>
-        @else
-            <div class="header-org-name">
-                TTI
-            </div>
-        @endif
+        <img src="{{ $logoBase64 }}" alt="Logo" width="120">
     @endif
+
 
     <div class="header-content">
         <h1>{{ $title }}</h1>
