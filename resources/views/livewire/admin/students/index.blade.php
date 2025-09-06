@@ -93,6 +93,7 @@ new class extends Component {
 
             $user = User::create([
                 'name' => $this->first_name . ' ' . $this->last_name,
+                'first_name' => $this->first_name,
                 'email' => $this->email,
                 'password' => Hash::make('password'),
             ]);
@@ -131,6 +132,9 @@ new class extends Component {
             LivewireAlert::text('Student added successfully.!')->success()->toast()->position('top-end')->show();
         } catch (\Exception $e) {
             DB::rollBack();
+
+            dd($e->getMessage());
+
             Log::error('Error adding student: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to add student.!')->error()->toast()->position('top-end')->show();
@@ -169,6 +173,7 @@ new class extends Component {
 
             $student->user->update([
                 'name' => $this->first_name . ' ' . $this->last_name,
+                'first_name' => $this->first_name,
                 'email' => $this->email,
             ]);
 
@@ -269,13 +274,14 @@ new class extends Component {
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
+
             <div class="card card-body">
                 <div class="row">
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                class="form-control product-search ps-5" placeholder="Search Students..."
-                                wire:model="search" />
+                                   class="form-control product-search ps-5" placeholder="Search Students..."
+                                   wire:model="search"/>
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -295,7 +301,7 @@ new class extends Component {
                         @endif
                         @can('add-students')
                             <a href="javascript:void(0)" wire:click="$dispatch('show-student-modal')"
-                                class="btn btn-primary d-flex align-items-center">
+                               class="btn btn-primary d-flex align-items-center">
                                 <i class="ti ti-users text-white me-1 fs-5"></i> Add Student
                             </a>
                         @endcan
@@ -311,7 +317,7 @@ new class extends Component {
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Add Student</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                    aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateStudent' : 'addStudent' }}">
                             <div class="modal-body">
@@ -374,10 +380,10 @@ new class extends Component {
                                         <label for="highest_level_of_education" class="form-label">Highest Level of
                                             Education</label>
                                         <input type="text" wire:model.live="highest_level_of_education"
-                                            id="highest_level_of_education" class="form-control"
-                                            placeholder="Enter your highest level of education" />
+                                               id="highest_level_of_education" class="form-control"
+                                               placeholder="Enter your highest level of education"/>
                                         @error('highest_level_of_education')
-                                            <small class="text-error text-danger">{{ $message }}</small>
+                                        <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -400,10 +406,10 @@ new class extends Component {
                                         <label for="passport_size_url" class="form-label">Upload Passport Size
                                             Photo</label>
                                         <input type="file" wire:model.live="passport_size_url"
-                                            id="passport_size_url" class="form-control"
-                                            placeholder="Upload your passport size photo" />
+                                               id="passport_size_url" class="form-control"
+                                               placeholder="Upload your passport size photo"/>
                                         @error('passport_size_url')
-                                            <small class="text-error text-danger">{{ $message }}</small>
+                                        <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                 </div>
@@ -412,7 +418,7 @@ new class extends Component {
                             <div class="modal-footer">
                                 <div class="d-flex gap-1 m-0">
                                     <button type="button" class="btn btn-danger bg-error-subtle"
-                                        data-bs-dismiss="modal">Discard
+                                            data-bs-dismiss="modal">Discard
                                     </button>
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
@@ -425,89 +431,125 @@ new class extends Component {
             </div>
 
             <div class="card card-body">
+
+                <!-- Table Responsive -->
                 <div class="table-responsive">
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                            <tr>
-                                <th>
-                                    <div class="form-check text-center">
-                                        <input wire:click="$dispatch('select-all')" type="checkbox"
-                                            class="form-check-input" wire:model="selectAll" />
-                                    </div>
-                                </th>
-                                <th>#</th>
-                                <th>Admission Number</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone Number</th>
-                                <th>Action</th>
-                            </tr>
+                        <tr>
+                            <th class="text-center align-middle" style="width: 40px;">
+                                <input
+                                    wire:click="$dispatch('select-all')"
+                                    type="checkbox"
+                                    class="form-check-input m-0"
+                                    wire:model="selectAll"
+                                />
+                            </th>
+                            <th>#</th>
+                            <th>Admission Number</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
 
-                            @forelse ($students as $student)
-                                <tr class="search-items">
-                                    <td>
-                                        <div class="form-check text-center">
-                                            <input type="checkbox" class="form-check-input" wire:model="selected"
-                                                value="{{ (string) $student->id }}" />
-                                        </div>
-                                    </td>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}</td>
-                                    <td>{{ $student->first_name }} {{ $student->last_name }}</td>
-                                    <td>{{ $student->email }}</td>
-                                    <td>{{ $student->phone }}</td>
-                                    <td>
-                                        <div class="action-btn dropdown">
-                                            <a href="#" class="text-primary dropdown-toggle" id="studentActions"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="ti ti-dots-vertical fs-5"></i>
+                        @forelse ($students as $student)
+                            <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
+                                <!-- Checkbox -->
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input"
+                                           wire:model="selected" value="{{ (string) $student->id }}"/>
+                                </td>
+
+                                <!-- Iteration -->
+                                <td class="fw-bold text-primary" style="color: #0e334f;">
+                                    {{ $loop->iteration }}
+                                </td>
+
+                                <!-- Admission Number -->
+                                <td class="text-uppercase fw-semibold" style="color: #f69122;">
+                                    {{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}
+                                </td>
+
+                                <!-- Full Name -->
+                                <td class="fw-semibold" style="color: #0e334f;">
+                                    {{ $student->first_name }} {{ $student->last_name }}
+                                </td>
+
+                                <!-- Email -->
+                                <td>
+                        <span class="badge bg-light text-dark px-2 py-1 rounded-pill">
+                            {{ $student->email }}
+                        </span>
+                                </td>
+
+                                <!-- Phone -->
+                                <td><span class="text-muted">{{ $student->phone }}</span></td>
+
+                                <!-- Actions Dropdown -->
+                                <td>
+                                    <div class="ms-auto">
+                                        <div class="dropdown dropstart">
+                                            <a href="javascript:void(0)" class="link"
+                                               id="student-actions-{{ $student->id }}" data-bs-toggle="dropdown"
+                                               aria-expanded="false">
+                                                <i class="ti ti-dots-vertical fs-6" style="color: #0e334f;"></i>
                                             </a>
-                                            <ul class="dropdown-menu" aria-labelledby="studentActions">
+                                            <ul class="dropdown-menu"
+                                                aria-labelledby="student-actions-{{ $student->id }}">
                                                 <li>
-                                                    <a href="{{ route('students.view', $student->id) }}"
-                                                        class="dropdown-item">
-                                                        <i class="ti ti-eye fs-5 me-2"></i> View
+                                                    <a class="dropdown-item d-flex align-items-center gap-2"
+                                                       href="{{ route('students.view', $student->id) }}">
+                                                        <iconify-icon icon="mdi:eye-outline"
+                                                                      class="text-primary w-4 h-4"></iconify-icon>
+                                                        <span>View</span>
                                                     </a>
                                                 </li>
                                                 @can('edit-students')
                                                     <li>
-                                                        <a href="javascript:void(0)"
-                                                            wire:click="editStudent({{ $student->id }})"
-                                                            class="dropdown-item">
-                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="javascript:void(0)"
+                                                           wire:click="editStudent({{ $student->id }})">
+                                                            <iconify-icon icon="mdi:pencil-outline"
+                                                                          class="text-warning w-4 h-4"></iconify-icon>
+                                                            <span>Edit</span>
                                                         </a>
                                                     </li>
                                                 @endcan
                                                 @can('delete-students')
                                                     <li>
-                                                        <a href="javascript:void(0)"
-                                                            wire:click="deleteStudent({{ $student->id }})"
-                                                            class="dropdown-item">
-                                                            <i class="ti ti-trash fs-5 me-2"></i> Delete
+                                                        <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                           href="javascript:void(0)"
+                                                           wire:click="deleteStudent({{ $student->id }})">
+                                                            <iconify-icon icon="mdi:delete-outline"
+                                                                          class="text-danger w-4 h-4"></iconify-icon>
+                                                            <span>Delete</span>
                                                         </a>
                                                     </li>
                                                 @endcan
                                             </ul>
                                         </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No students found.</td>
-                                </tr>
-                            @endforelse
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center">No students found.</td>
+                            </tr>
+                        @endforelse
+
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Add the pagination links here --}}
+                <!-- Pagination -->
                 <div class="d-flex justify-content-center mt-4">
                     {{ $students->links() }}
                 </div>
-
             </div>
+
         </div>
     </div>
 </div>

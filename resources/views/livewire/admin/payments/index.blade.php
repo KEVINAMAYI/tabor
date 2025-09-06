@@ -433,7 +433,7 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">No payments found.</td>
+                                <td colspan="11" class="text-center">No payments found.</td>
                             </tr>
                         @endforelse
                         </tbody>
