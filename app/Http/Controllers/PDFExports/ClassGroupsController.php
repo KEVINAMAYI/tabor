@@ -21,7 +21,6 @@ class ClassGroupsController extends Controller
     public function exportClassGroupsPdf()
     {
 
-
         $classGroups = $this->reportService->getClassGroups();
 
         $pdf = $this->reportGenerator->generate(
