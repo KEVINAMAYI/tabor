@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 // Group all admin routes under the 'admin' prefix
-Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'active','password_changed'])->prefix('admin')->group(function () {
 
     // Route to manage dashboard
     Volt::route('dashboard', 'admin.dashboard')->name('admin.dashboard');

@@ -341,17 +341,18 @@ new class extends Component {
                                     </td>
                                     <td>
                                         <div class="action-btn dropdown">
-                                            <a href="#" class="text-primary dropdown-toggle"
-                                                id="userActions{{ $user->id }}" data-bs-toggle="dropdown"
-                                                aria-expanded="false">
+                                            <a href="#" class="text-primary"
+                                               id="userActions{{ $user->id }}"
+                                               data-bs-toggle="dropdown"
+                                               aria-expanded="false">
                                                 <i class="ti ti-dots-vertical fs-5"></i>
                                             </a>
                                             <ul class="dropdown-menu" aria-labelledby="userActions{{ $user->id }}">
                                                 @can('edit-users')
                                                     <li>
                                                         <a href="javascript:void(0)"
-                                                            wire:click="editUser({{ $user->id }})"
-                                                            class="dropdown-item">
+                                                           wire:click="editUser({{ $user->id }})"
+                                                           class="dropdown-item">
                                                             <i class="ti ti-pencil fs-5 me-2"></i> Edit
                                                         </a>
                                                     </li>
@@ -359,8 +360,8 @@ new class extends Component {
                                                 @can('delete-users')
                                                     <li>
                                                         <a href="javascript:void(0)"
-                                                            wire:click="deleteUser({{ $user->id }})"
-                                                            class="dropdown-item">
+                                                           wire:click="deleteUser({{ $user->id }})"
+                                                           class="dropdown-item">
                                                             <i class="ti ti-trash fs-5 me-2"></i> Delete
                                                         </a>
                                                     </li>

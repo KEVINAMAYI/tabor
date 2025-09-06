@@ -249,7 +249,7 @@ new class extends Component {
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center">No Enrollments found.</td>
+                                    <td colspan="9" class="text-center">No Enrollments found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

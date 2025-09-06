@@ -183,13 +183,13 @@ new class extends Component {
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <div class="d-flex align-items-center justify-content-center round-110">
                                     <div
-                                        class="border-4 border-white d-flex align-items-center justify-content-center rounded-circle overflow-hidden round-100">
+                                        class="border-4 border-white d-flex mt-4 align-items-center justify-content-center rounded-circle overflow-hidden round-100">
                                         <img src="../assets/images/profile/user-1.jpg" alt="matdash-img"
                                             class="w-100 h-100">
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-center">
+                            <div class="mb-2 text-center">
                                 <h5 class="mb-0">{{ $this->student->first_name . ' ' . $this->student->last_name }}
                                 </h5>
                             </div>
