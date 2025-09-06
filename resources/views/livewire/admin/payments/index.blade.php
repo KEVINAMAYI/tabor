@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\PaymentExport;
 use App\Models\Payment;
 use App\Models\Enrollment;
 use Livewire\Attributes\On;
@@ -8,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 new class extends Component {
 
@@ -201,32 +203,40 @@ new class extends Component {
     }
 
     #[On('select-all')]
-     public function selectAll()
-     {
-         if ($this->selectAll) {
-             $currentPagePaymentIds = Payment::with(['enrollment.student', 'enrollment.course']) // Ensure the same query logic
-             ->when(!empty($this->search), function ($q) {
-                 $q->where(function ($query) {
-                     $query->whereHas('enrollment.student', function ($query) {
-                         $query->where('first_name', 'like', "%{$this->search}%")
-                             ->orWhere('last_name', 'like', "%{$this->search}%")
-                             ->orWhere('email', 'like', "%{$this->search}%");
-                     })
-                         ->orWhere('method', 'like', "%{$this->search}%")
-                         ->orWhere('reference', 'like', "%{$this->search}%");
-                 });
-             })
-                 ->latest()
-                 ->paginate(10)
-                 ->pluck('id')
-                 ->map(fn($id) => (string)$id)
-                 ->toArray();
+    public function selectAll()
+    {
+        if ($this->selectAll) {
+            $currentPagePaymentIds = Payment::with(['enrollment.student', 'enrollment.course']) // Ensure the same query logic
+            ->when(!empty($this->search), function ($q) {
+                $q->where(function ($query) {
+                    $query->whereHas('enrollment.student', function ($query) {
+                        $query->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                            ->orWhere('email', 'like', "%{$this->search}%");
+                    })
+                        ->orWhere('method', 'like', "%{$this->search}%")
+                        ->orWhere('reference', 'like', "%{$this->search}%");
+                });
+            })
+                ->latest()
+                ->paginate(10)
+                ->pluck('id')
+                ->map(fn($id) => (string)$id)
+                ->toArray();
 
-             $this->selected = $currentPagePaymentIds;
-         } else {
-             $this->selected = [];
-         }
-     }
+            $this->selected = $currentPagePaymentIds;
+        } else {
+            $this->selected = [];
+        }
+    }
+
+
+    public function exportExcel()
+    {
+        return Excel::download(new PaymentExport(), 'payments.xlsx');
+
+    }
+
 }; ?>
 
 @push('styles')
@@ -365,6 +375,38 @@ new class extends Component {
             <!-- Payments Table -->
             <div class="card card-body">
                 <div class="table-responsive">
+
+                    <!-- Top Bar Inside the Card -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                        <!-- Title -->
+                        <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
+                            <iconify-icon icon="mdi:wallet-outline" class="me-2"
+                                          style="font-size: 20px;"></iconify-icon>
+
+                            Payments List
+                        </h6>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <!-- Export Excel Button -->
+                            <button wire:click="exportExcel"
+                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-excel-outline" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                Excel
+                            </button>
+
+                            <!-- Export PDF Button -->
+                            <button wire:click="exportPdf"
+                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                <iconify-icon icon="mdi:file-pdf-box" class="me-1"
+                                              style="font-size: 18px;"></iconify-icon>
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
@@ -399,7 +441,8 @@ new class extends Component {
                                 </td>
                                 <td>{{ $loop->iteration }}</td> <!-- Assuming `course` is a property of $payment -->
                                 <td>
-                                    <span class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
+                                    <span
+                                        class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
@@ -413,9 +456,9 @@ new class extends Component {
                                         <span class="badge bg-warning-subtle text-warning">Pending</span>
                                     @endif
                                 </td>
-                                <td><span >{{ ucfirst($payment->payment_method) }}</span></td>
+                                <td><span>{{ ucfirst($payment->payment_method) }}</span></td>
                                 <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
-                                <td><span >{{ ucfirst($payment->payer) }}</span></td>
+                                <td><span>{{ ucfirst($payment->payer) }}</span></td>
                                 <td>
                                     <div class="action-btn">
                                         <!-- Edit Payment Button -->
