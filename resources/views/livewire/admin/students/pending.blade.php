@@ -127,33 +127,6 @@ new class extends Component {
         $this->remarks = null;
     }
 
-    /* #[On('select-all')]
-    public function selectAll()
-    {
-        if ($this->selectAll) {
-            $currentPageStudentIds = Student::with(['user'])
-                ->when(
-                    !empty($this->search),
-                    fn($q) => $q->where(function ($query) {
-                        $query
-                            ->where('first_name', 'like', "%{$this->search}%")
-                            ->orWhere('last_name', 'like', "%{$this->search}%")
-                            ->orWhere('email', 'like', "%{$this->search}%")
-                            ->orWhere('phone', 'like', "%{$this->search}%");
-                    }),
-                )
-                ->latest()
-                ->paginate(10)
-                ->pluck('id')
-                ->map(fn($id) => (string) $id)
-                ->toArray();
-
-            $this->selected = $currentPageStudentIds;
-        } else {
-            $this->selected = [];
-        }
-    } */
-
 
     public function exportExcel()
     {
@@ -173,6 +146,32 @@ new class extends Component {
     <style>
         .pagination {
             margin-left: 10px;
+        }
+
+        .text-orange {
+            color: #f69121 !important;
+        }
+
+        .text-blue {
+            color: #446076 !important;
+        }
+
+        .badge-pending {
+            background-color: #f69121;
+            color: white;
+        }
+
+        .badge-rejected {
+            background-color: #dc3545; /* Bootstrap red (or customize) */
+        }
+
+        .dropdown-menu a.dropdown-item:hover {
+            background-color: #446076;
+            color: white;
+        }
+
+        .table td {
+            vertical-align: middle;
         }
     </style>
 @endpush
@@ -231,12 +230,6 @@ new class extends Component {
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
-                            <th>
-                                <div class="form-check text-center">
-                                    <input wire:click="$dispatch('select-all')" type="checkbox"
-                                           class="form-check-input" wire:model="selectAll"/>
-                                </div>
-                            </th>
                             <th>#</th>
                             <th>Name</th>
                             <th>Course</th>
@@ -248,40 +241,31 @@ new class extends Component {
                         </tr>
                         </thead>
                         <tbody>
-
                         @forelse ($enrollments as $enrollment)
                             <tr class="search-items">
-                                <td>
-                                    <div class="form-check text-center">
-                                        <input type="checkbox" class="form-check-input" wire:model="selected"
-                                               value="{{ (string) $enrollment->id }}"/>
-                                    </div>
+                                <td class="text-blue fw-bold">{{ $loop->iteration }}</td>
+                                <td class="text-blue">
+                                    {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
                                 </td>
-                                <td>{{ $loop->iteration }}</td>
-                                {{-- <td>{{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
-                                </td> --}}
-                                <td>{{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
-                                </td>
-                                <td>{{ $enrollment->course->title }}</td>
-                                <td>{{ $enrollment->intake->name }}</td>
+                                <td class="text-orange">{{ $enrollment->course->title }}</td>
+                                <td class="text-blue">{{ $enrollment->intake->name }}</td>
                                 <td>{{ $enrollment->student->phone }}</td>
                                 <td>
-                                        <span
-                                            class="badge
-                                            @if ($enrollment->status == 'pending') bg-warning
-                                            @elseif($enrollment->status == 'rejected') bg-danger @endif">
-                                            {{ ucfirst($enrollment->status) }}
-                                        </span>
+            <span class="badge
+                @if ($enrollment->status == 'pending') badge-pending
+                @elseif($enrollment->status == 'rejected') badge-rejected
+                @else bg-success @endif">
+                {{ ucfirst($enrollment->status) }}
+            </span>
                                 </td>
-                                <td>{{ $enrollment->remarks }}</td>
+                                <td class="text-muted">{{ $enrollment->remarks }}</td>
                                 <td>
                                     <div class="action-btn dropdown">
-                                        <a href="#" class="text-primary dropdown-toggle" id="studentActions"
+                                        <a href="#" class="text-blue" id="studentActions"
                                            data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="ti ti-dots-vertical fs-5"></i>
                                         </a>
                                         <ul class="dropdown-menu" aria-labelledby="studentActions">
-
                                             @can('edit-students')
                                                 <li>
                                                     <a href="javascript:void(0)"
@@ -297,9 +281,10 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">No Enrollments found.</td>
+                                <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
                             </tr>
                         @endforelse
+
                         </tbody>
                     </table>
                 </div>

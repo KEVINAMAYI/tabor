@@ -209,6 +209,39 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        .search-table td {
+            vertical-align: middle;
+            font-size: 0.92rem;
+        }
+
+        .search-table .fw-semibold {
+            font-weight: 600;
+        }
+
+        .search-table .action-btn a {
+            color: #446076;
+            transition: color 0.2s;
+        }
+
+        .search-table .action-btn a:hover {
+            color: #f69121 !important;
+        }
+
+        .search-table .form-check-input {
+            cursor: pointer;
+            border-color: #446076;
+        }
+
+        .search-table .form-check-input:checked {
+            background-color: #f69121;
+            border-color: #f69121;
+        }
+
+        .search-table tbody tr:hover {
+            background-color: #fff6ee;
+        }
+
     </style>
 @endpush
 
@@ -326,10 +359,10 @@ new class extends Component {
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
-                            <th>
+                            <th style="width: 42px;">
                                 <div class="form-check text-center">
-                                    <input wire:click="$dispatch('select-all')" type="checkbox" class="form-check-input"
-                                           wire:model="selectAll"/>
+                                    <input type="checkbox" class="form-check-input"
+                                           wire:click="$dispatch('select-all')" wire:model="selectAll">
                                 </div>
                             </th>
                             <th>Name</th>
@@ -340,22 +373,20 @@ new class extends Component {
                         <tbody>
                         @forelse ($classGroups as $group)
                             <tr class="search-items">
-                                <td>
-                                    <div class="form-check text-center">
-                                        <input type="checkbox" class="form-check-input"
-                                               wire:model="selected" value="{{ (string) $group->id }}"/>
-                                    </div>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input"
+                                           wire:model="selected" value="{{ (string) $group->id }}">
                                 </td>
-                                <td>{{ $group->name }}</td>
-                                <td>{{ $group->intake->name ?? 'N/A' }}</td>
+                                <td class="fw-semibold text-primary">{{ $group->name }}</td>
+                                <td class="text-muted">{{ $group->intake->name ?? 'N/A' }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <a href="javascript:void(0)" wire:click="editClassGroup({{ $group->id }})"
-                                           class="text-primary">
+                                           class="text-info" title="View">
                                             <i class="ti ti-eye fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteClassGroup({{ $group->id }})"
-                                           class="text-dark ms-2">
+                                           class="text-danger ms-2" title="Delete">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
@@ -363,11 +394,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center">No class groups found.</td>
+                                <td colspan="4" class="text-center text-muted">No class groups found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
 
                     {{-- Add the pagination links here --}}
                     <div class="d-flex justify-content-center mt-4">

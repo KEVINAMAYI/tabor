@@ -227,6 +227,43 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        .search-table td {
+            vertical-align: middle;
+            font-size: 0.92rem;
+        }
+
+        .search-table td .text-muted {
+            color: #6c757d !important;
+        }
+
+        .search-table .fw-semibold {
+            font-weight: 600 !important;
+        }
+
+        .search-table .action-btn a {
+            color: #f69121;
+            transition: color 0.2s ease;
+        }
+
+        .search-table .action-btn a:hover {
+            color: #f69121 !important;
+        }
+
+        .search-table .form-check-input {
+            cursor: pointer;
+            border-color: #f69121;
+        }
+
+        .search-table .form-check-input:checked {
+            background-color: #f69121;
+            border-color: #f69121;
+        }
+
+        .search-table tbody tr:hover {
+            background-color: #fff6ee;
+        }
+
     </style>
 @endpush
 
@@ -340,7 +377,7 @@ new class extends Component {
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
                         <tr>
-                            <th>
+                            <th style="width: 42px;">
                                 <input type="checkbox" class="form-check-input text-center"
                                        wire:click="$dispatch('select-all')" wire:model="selectAll">
                             </th>
@@ -353,27 +390,27 @@ new class extends Component {
                         <tbody>
                         @forelse($intakes as $intake)
                             <tr class="search-items">
-                                <td>
-                                    <div class="form-check text-center">
-                                        <input type="checkbox" class="form-check-input"
-                                               wire:model="selected" value="{{ (string)$intake->id }}">
-                                    </div>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input"
+                                           wire:model="selected" value="{{ (string) $intake->id }}">
                                 </td>
-                                <td>{{ $intake->name }}</td>
-                                <td>{{ $intake->starts_at->format('j M Y') }}</td>
-                                <td>{{ optional($intake->ends_at)->format('j M Y') ?? '—' }}</td>
+                                <td style="color:#f69121" class="fw-semibold">{{ $intake->name }}</td>
+                                <td class="text-muted">{{ $intake->starts_at->format('j M Y') }}</td>
+                                <td class="text-muted">
+                                    {{ optional($intake->ends_at)?->format('j M Y') ?? '—' }}
+                                </td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="{{ route('intakes.view',$intake->id) }}"
-                                           class="text-primary">
+                                        <a href="{{ route('intakes.view', $intake->id) }}"
+                                           class="text-info" title="View">
                                             <i class="ti ti-eye fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="editIntake({{ $intake->id }})"
-                                           class="text-primary">
+                                           class="text-primary ms-2" title="Edit">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteIntake({{ $intake->id }})"
-                                           class="text-dark ms-2">
+                                           class="text-danger ms-2" title="Delete">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
@@ -381,11 +418,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No intakes found.</td>
+                                <td colspan="5" class="text-center text-muted">No intakes found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
                 </div>
 
                 {{-- Add the pagination links here --}}

@@ -165,6 +165,13 @@ new class extends Component {
                 'brochure_url' => $brochurePath,
             ]);
 
+            if (!empty($this->lecturer_ids)) {
+                $course->lecturers()->sync($this->lecturer_ids);
+            } else {
+                $course->lecturers()->detach(); // Optional: remove all if no lecturer_ids provided
+            }
+
+
             $this->resetForm();
             $this->resetPage();
             $this->dispatch('hide-course-modal');
@@ -258,6 +265,47 @@ new class extends Component {
             min-height: 38px; /* match Bootstrap input height */
             border: 1px solid #ced4da;
             border-radius: 0.375rem;
+        }
+
+        /* Force color for title */
+        table.search-table td.course-title {
+            color: #446076 !important;
+            font-weight: 600;
+        }
+
+        /* Force color for fee */
+        table.search-table td.course-fee {
+            color: #f69121 !important;
+            font-weight: 600;
+        }
+
+        /* Hover icon colors */
+        table.search-table .action-btn a:hover {
+            color: #f69121 !important;
+        }
+
+        table.search-table .form-check-input {
+            border-color: #446076 !important;
+        }
+
+        table.search-table .form-check-input:checked {
+            background-color: #f69121 !important;
+            border-color: #f69121 !important;
+        }
+
+        /* Description ellipsis */
+        table.search-table .text-ellipsis {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+            display: inline-block;
+            color: #6c757d;
+        }
+
+        /* Row hover */
+        table.search-table tbody tr:hover {
+            background-color: #fff6ee !important;
         }
     </style>
 @endpush
@@ -507,26 +555,31 @@ new class extends Component {
                                                value="{{ (string) $course->id }}"/>
                                     </div>
                                 </td>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $course->title }}</td>
-                                <td>{{ $course->code }}</td>
-                                <td>{{ \Illuminate\Support\Str::limit($course->description, 60) }}</td>
-                                <td>KES {{ number_format($course->price, 2) }}</td>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td class="course-title">{{ $course->title }}</td>
+                                <td class="text-muted">{{ $course->code }}</td>
+                                <td>
+                    <span class="text-ellipsis" title="{{ $course->description }}">
+                        {{ \Illuminate\Support\Str::limit($course->description, 60) }}
+                    </span>
+                                </td>
+                                <td class="course-fee">KES {{ number_format($course->price, 2) }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <a href="{{ route('courses.view', $course->id) }}" class="text-info">
+                                        <a href="{{ route('courses.view', $course->id) }}" class="text-info"
+                                           title="View">
                                             <i class="ti ti-eye fs-5"></i>
                                         </a>
                                         @can('edit-courses')
                                             <a href="javascript:void(0)" wire:click="editCourse({{ $course->id }})"
-                                               class="text-primary ms-2 ">
-                                                <i class="ti ti-pencil  fs-5"></i>
+                                               class="text-primary" title="Edit">
+                                                <i class="ti ti-pencil fs-5"></i>
                                             </a>
                                         @endcan
                                         @can('delete-courses')
                                             <a href="javascript:void(0)"
                                                wire:click="deleteCourse({{ $course->id }})"
-                                               class="text-dark ms-2">
+                                               class="text-danger" title="Delete">
                                                 <i class="ti ti-trash fs-5"></i>
                                             </a>
                                         @endcan
@@ -535,11 +588,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No courses found.</td>
+                                <td colspan="7" class="text-center text-muted">No courses found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
                 </div>
 
                 {{-- Add the pagination links here --}}

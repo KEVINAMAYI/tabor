@@ -250,6 +250,25 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        .action-btn a {
+            color: #446076;
+            transition: color 0.2s ease;
+        }
+
+        .action-btn a:hover {
+            color: #f69121;
+        }
+
+        .search-table tbody tr:hover {
+            background-color: #fff6ee;
+        }
+
+        .form-check-input:checked {
+            background-color: #f69121;
+            border-color: #f69121;
+        }
+
     </style>
 @endpush
 
@@ -418,10 +437,8 @@ new class extends Component {
                         <tr>
                             <th>
                                 <div class="form-check text-center">
-                                    <input wire:click="$dispatch('select-all')"
-                                           type="checkbox"
-                                           class="form-check-input"
-                                           wire:model="selectAll"/>
+                                    <input wire:click="$dispatch('select-all')" type="checkbox"
+                                           class="form-check-input" wire:model="selectAll"/>
                                 </div>
                             </th>
                             <th>#</th>
@@ -438,14 +455,14 @@ new class extends Component {
                         </thead>
                         <tbody>
                         @forelse ($payments as $payment)
-                            <tr>
+                            <tr class="search-items">
                                 <td class="text-center">
                                     <div class="form-check text-center">
                                         <input type="checkbox" class="form-check-input" wire:model="selected"
                                                value="{{ (string) $payment->id }}"/>
                                     </div>
                                 </td>
-                                <td>{{ $loop->iteration }}</td> <!-- Assuming `course` is a property of $payment -->
+                                <td class="text-muted">{{ $loop->iteration }}</td>
                                 <td>
                                     <span
                                         class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
@@ -453,28 +470,36 @@ new class extends Component {
                                 <td>
                                     <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
                                 </td>
-                                <td><span class="">{{ $payment->enrollment?->student->first_name }}</span></td>
-                                <td>{{ number_format($payment->amount, 2) }}</td>
+                                <td style="color: #446076; font-weight: 500;">
+                                    {{ $payment->enrollment?->student->first_name }}
+                                </td>
+                                <td style="color: #f69121; font-weight: 600;">
+                                    {{ number_format($payment->amount, 2) }}
+                                </td>
                                 <td>
-                                    @if($payment->status == 'completed')
-                                        <span class="badge bg-success-subtle text-success">Mapped</span>
-                                    @elseif($payment->status == 'pending')
-                                        <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                    @if($payment->status === 'completed')
+                                        <span
+                                            style="background-color: #e6f4ea; color: #28a745; padding: 4px 8px; border-radius: 4px;">
+                            Mapped
+                        </span>
+                                    @elseif($payment->status === 'pending')
+                                        <span
+                                            style="background-color: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px;">
+                            Pending
+                        </span>
                                     @endif
                                 </td>
-                                <td><span>{{ ucfirst($payment->payment_method) }}</span></td>
-                                <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
-                                <td><span>{{ ucfirst($payment->payer) }}</span></td>
+                                <td><strong>{{ ucfirst($payment->payment_method) }}</strong></td>
+                                <td><strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong></td>
+                                <td>{{ ucfirst($payment->payer) }}</td>
                                 <td>
                                     <div class="action-btn">
-                                        <!-- Edit Payment Button -->
                                         <a href="javascript:void(0)" wire:click="editPayment({{ $payment->id }})"
-                                           class="text-primary">
+                                           style="color: #446076;" title="Edit">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
-                                        <!-- Delete Payment Button -->
                                         <a href="javascript:void(0)" wire:click="deletePayment({{ $payment->id }})"
-                                           class="text-dark ms-2">
+                                           style="color: #f69121; margin-left: 10px;" title="Delete">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
@@ -482,11 +507,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center">No payments found.</td>
+                                <td colspan="11" class="text-center text-muted">No payments found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
 
                     {{-- Add the pagination links here --}}
                     <div class="d-flex justify-content-center mt-4">

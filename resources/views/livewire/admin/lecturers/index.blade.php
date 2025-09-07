@@ -272,6 +272,44 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .lecturer-info .name {
+            font-weight: 600;
+            color: #446076;
+            font-size: 0.95rem;
+        }
+
+        .lecturer-info .email {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .lecturer-info .phone {
+            font-size: 0.85rem;
+            color: #f69121;
+        }
+
+        .action-btn a {
+            display: inline-block;
+            margin-right: 8px;
+            transition: color 0.2s;
+        }
+
+        .action-btn a:hover {
+            color: #f69121 !important;
+        }
+
+        .search-table tbody tr:hover {
+            background-color: #fdf3e7;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
     </style>
 @endpush
 
@@ -437,9 +475,7 @@ new class extends Component {
                                 <input type="checkbox" class="form-check-input"
                                        wire:model="selectAll" wire:click="$dispatch('select-all')">
                             </th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
+                            <th>Lecturer Info</th>
                             <th>KRA PIN</th>
                             <th>ID No.</th>
                             <th>Action</th>
@@ -452,19 +488,23 @@ new class extends Component {
                                     <input type="checkbox" class="form-check-input"
                                            wire:model="selected" value="{{ (string) $lec->id }}">
                                 </td>
-                                <td>{{ $lec->first_name }} {{ $lec->last_name }}</td>
-                                <td>{{ $lec->email }}</td>
-                                <td>{{ $lec->phone }}</td>
+                                <td>
+                                    <div class="lecturer-info">
+                                        <div class="name">{{ $lec->first_name }} {{ $lec->last_name }}</div>
+                                        <div class="email">{{ $lec->email }}</div>
+                                        <div class="phone">{{ $lec->phone }}</div>
+                                    </div>
+                                </td>
                                 <td>{{ $lec->kra_pin ?? '—' }}</td>
                                 <td>{{ $lec->id_number ?? '—' }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <a href="javascript:void(0)" wire:click="editLecturer({{ $lec->id }})"
-                                           class="text-primary">
+                                           class="text-blue" title="Edit">
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteLecturer({{ $lec->id }})"
-                                           class="text-dark ms-2">
+                                           class="text-danger" title="Delete">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>
                                     </div>
@@ -472,11 +512,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No lecturers found.</td>
+                                <td colspan="7" class="text-center text-muted">No lecturers found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
                 </div>
 
                 {{-- Add the pagination links here --}}

@@ -83,6 +83,48 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        .text-orange {
+            color: #f69121 !important;
+        }
+
+        .text-blue {
+            color: #446076 !important;
+        }
+
+        .search-table th {
+            background-color: #f8f9fa;
+            color: #446076;
+            font-weight: 600;
+        }
+
+        .search-table td {
+            vertical-align: middle;
+            color: #444;
+        }
+
+        .search-table tbody tr:hover {
+            background-color: #fdf3e7;
+        }
+
+        .dropdown-toggle::after {
+            display: none !important; /* removes the caret */
+        }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #446076;
+            color: white;
+        }
+
+        .action-btn .dropdown-toggle {
+            padding: 6px;
+            display: inline-block;
+        }
+
+        .text-muted-small {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
     </style>
 @endpush
 <div class="row">
@@ -154,28 +196,32 @@ new class extends Component {
 
                         @forelse ($enrollments as $enrollment)
                             <tr class="search-items">
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
+                                <td class="text-blue fw-semibold">{{ $loop->iteration }}</td>
+                                <td class="text-muted-small">
+                                    {{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
                                 </td>
-                                <td>{{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+                                <td class="text-blue">
+                                    {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
                                 </td>
-                                <td>{{ $enrollment->course->title }}</td>
+                                <td class="text-orange">{{ $enrollment->course->title }}</td>
                                 <td>{{ $enrollment->intake->name }}</td>
-                                <td>{{ number_format($enrollment->payments->sum('amount'), 2) }}</td>
-                                <td>{{ number_format($enrollment->course->price - $enrollment->payments->sum('amount'), 2) }}</td>
+                                <td class="text-success fw-bold">
+                                    {{ number_format($enrollment->payments->sum('amount'), 2) }}
+                                </td>
+                                <td class="text-danger fw-bold">
+                                    {{ number_format($enrollment->course->price - $enrollment->payments->sum('amount'), 2) }}
+                                </td>
                                 <td>{{ $enrollment->created_at->format('d-m-Y') }}</td>
                                 <td>
                                     <div class="action-btn dropdown">
-                                        <a href="#" class="text-primary dropdown-toggle" id="studentActions"
+                                        <a href="#" class="text-blue" id="studentActions"
                                            data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="ti ti-dots-vertical fs-5"></i>
                                         </a>
                                         <ul class="dropdown-menu" aria-labelledby="studentActions">
-
                                             @can('edit-students')
                                                 <li>
-                                                    <a href="javascript:void(0)"
-                                                       {{-- wire:click="editStatus({{ $enrollment->id }})" --}}
+                                                    <a href="{{ route('students.view', $enrollment->student->id) }}"
                                                        class="dropdown-item">
                                                         <i class="ti ti-eye fs-5 me-2"></i> View
                                                     </a>
@@ -187,11 +233,12 @@ new class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">No Enrollments found.</td>
+                                <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
                             </tr>
                         @endforelse
                         </tbody>
                     </table>
+
                 </div>
 
                 {{-- Add the pagination links here --}}
