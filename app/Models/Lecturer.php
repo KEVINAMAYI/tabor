@@ -65,15 +65,9 @@ class Lecturer extends Model
     // Courses (programmes) touched by those modules
     public function courses()
     {
-        return $this->hasManyThrough(
-            Course::class,
-            Module::class,
-            'id',           // PK on modules
-            'id',           // PK on courses
-            'id',           // PK on lecturers
-            'course_id'     // FK on modules
-        )->distinct();
+        return $this->belongsToMany(Course::class, 'course_lecturer');
     }
+
 
     // Intakes they’re teaching in
     public function intakes()

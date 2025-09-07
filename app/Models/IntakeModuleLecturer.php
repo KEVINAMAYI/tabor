@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class IntakeModuleLecturer extends Pivot
 {
 
+    protected $table = 'intake_module_lecturers'; // 👈 specify pivot table
+
     protected $fillable = [
         'intake_module_id',
         'lecturer_id',

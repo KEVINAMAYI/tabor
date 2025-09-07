@@ -57,7 +57,7 @@ class Course extends Model
             'id',                 // PK on courses
             'intake_id'           // FK on intake_modules
         )
-            ->whereHas('module.course', fn ($q) => $q->where('courses.id', $this->id))
+            ->whereHas('module.course', fn($q) => $q->where('courses.id', $this->id))
             ->distinct();
     }
 
@@ -74,14 +74,10 @@ class Course extends Model
         )->distinct();
     }
 
-    // Optional: lecturers teaching any of its modules in any intake
+    // App\Models\Course.php
     public function lecturers()
     {
-        return $this->belongsToMany(
-            Lecturer::class,
-            'intake_module_lecturers',      // pivot table
-            'course_id',                    // Needs extra column OR a sub‑query
-            'lecturer_id'
-        )->distinct();
+        return $this->belongsToMany(Lecturer::class, 'course_lecturer');
     }
+
 }

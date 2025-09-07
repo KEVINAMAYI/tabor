@@ -12,6 +12,8 @@
 
 <link rel="stylesheet" href="../assets/libs/owl.carousel/dist/assets/owl.carousel.min.css" />
 
+<link rel="stylesheet" href="assets/libs/select2/dist/css/select2.min.css">
+
 <title>Tabor Training Institute</title>
 
 

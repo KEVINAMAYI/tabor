@@ -2,7 +2,9 @@
 
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\IntakeModuleLecturer;
 use App\Models\Material;
+use App\Models\Module;
 use App\Models\Student;
 use App\Models\Intake;
 use App\Models\IntakeModule;
@@ -256,6 +258,26 @@ new class extends Component {
         $intake = Intake::findOrFail($this->intakeId);
         $intake->modules()->syncWithoutDetaching($this->selected);
 
+        // For each selected module, assign default lecturer (if set)
+        foreach ($this->selected as $moduleId) {
+            $intakeModule = IntakeModule::where('intake_id', $this->intakeId)
+                ->where('module_id', $moduleId)
+                ->first();
+
+            if ($intakeModule) {
+                $module = Module::find($moduleId);
+
+                if ($module && $module->default_lecturer_id) {
+                    IntakeModuleLecturer::firstOrCreate(
+                        [
+                            'intake_module_id' => $intakeModule->id,
+                            'lecturer_id' => $module->default_lecturer_id,
+                        ]
+                    );
+                }
+            }
+        }
+
         $this->reset('selected', 'selectAll');
         $this->dispatch('hide-course-modal');
 
@@ -504,7 +526,8 @@ new class extends Component {
                                                                             </div>
 
                                                                             <h6 class="fw-semibold text-dark">
-                                                                                Lecturer - Kevin Amayi Musungu
+                                                                                Lecturer
+                                                                                - {{ !empty($module->defaultLecturer) ? ucfirst($module->defaultLecturer->first_name).' '.ucfirst($module->defaultLecturer->last_name) : 'None' }}
                                                                             </h6>
 
                                                                             <div

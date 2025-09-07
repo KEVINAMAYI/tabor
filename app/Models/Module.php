@@ -14,7 +14,12 @@ class Module extends Model
         'course_id',
         'title',         // e.g. “Programming I”
         'description',
+        'default_lecturer_id',
         'price',         // per‑module fee, if you charge separately
+    ];
+
+    protected $casts = [
+        'default_lecturer_id' => 'integer',
     ];
 
     /* -----------------------------------------------------------------
@@ -61,6 +66,12 @@ class Module extends Model
             // add one if you haven't already
             'lecturer_id'
         )->withTimestamps()->distinct();
+    }
+
+
+    public function defaultLecturer()
+    {
+        return $this->belongsTo(Lecturer::class, 'default_lecturer_id');
     }
 
     // Materials uploaded for this module in any intake

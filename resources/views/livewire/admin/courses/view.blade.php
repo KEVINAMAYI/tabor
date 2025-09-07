@@ -18,10 +18,13 @@ new class extends Component {
     public $selected = [];
     public $selectAll = false;
     public $search = '';
+    public $course_lecturers = [];
+    public $default_lecturer_id;
 
     protected $rules = [
         'title' => 'required|string|max:255',
         'code' => 'required|string|max:255',
+        'default_lecturer_id' => 'required',
         'description' => 'nullable|string',
         'course_id' => 'required|exists:courses,id',
     ];
@@ -30,6 +33,7 @@ new class extends Component {
     {
         $this->course_id = $course_id;
         $this->course = Course::where('id', $course_id)->with('enrolments')->first();
+        $this->course_lecturers = $this->course->lecturers;
     }
 
     #[On('search')]
@@ -64,10 +68,12 @@ new class extends Component {
     {
         $this->validate();
         try {
+
             Module::create([
                 'title' => $this->title,
                 'code' => $this->code,
                 'description' => $this->description,
+                'default_lecturer_id' => $this->default_lecturer_id,
                 'course_id' => $this->course_id,
             ]);
 
@@ -100,6 +106,7 @@ new class extends Component {
         $this->code = $module->code;
         $this->description = $module->description;
         $this->course_id = $module->course_id;
+        $this->default_lecturer_id = $module->default_lecturer_id;
 
         $this->dispatch('show-module-modal');
     }
@@ -109,12 +116,14 @@ new class extends Component {
         $this->validate();
 
         try {
+
             $module = Module::findOrFail($this->editId);
 
             $module->update([
                 'title' => $this->title,
                 'code' => $this->code,
                 'description' => $this->description,
+                'default_lecturer_id' => $this->default_lecturer_id,
                 'course_id' => $this->course_id,
             ]);
 
@@ -231,8 +240,9 @@ new class extends Component {
 
         <div class="card overflow-hidden">
             <div class="card-body p-0">
-                <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
-                     alt="matdash-img" class="img-fluid" style="height: 400px; width: 100%; object-fit: cover;">
+                <img
+                    src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                    alt="matdash-img" class="img-fluid" style="height: 400px; width: 100%; object-fit: cover;">
                 <div class="row align-items-center">
                     <div class="col-lg-4 order-lg-1 order-2">
                         <div class="d-flex align-items-center justify-content-around m-4">
@@ -331,6 +341,7 @@ new class extends Component {
                                             </th>
                                             <th>Title</th>
                                             <th>Code</th>
+                                            <th>Lecturer</th>
                                             <th>Description</th>
                                             <th>Action</th>
                                         </tr>
@@ -346,6 +357,7 @@ new class extends Component {
                                                 </td>
                                                 <td>{{ $module->title }}</td>
                                                 <td>{{ strtoupper($module->code) }}</td>
+                                                <td>{{ !empty($module->defaultLecturer) ? ucfirst($module->defaultLecturer->first_name).' '.ucfirst($module->defaultLecturer->last_name) : 'None' }}</td>
                                                 <td>{{ Str::limit($module->description, 60) }}</td>
                                                 <td>
                                                     <a href="javascript:void(0)"
@@ -394,19 +406,42 @@ new class extends Component {
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <input type="text" wire:model="title" class="form-control"
-                                       placeholder="Module Title"/>
+                                <label for="title" class="form-label">Module Title</label>
+                                <input id="title" type="text" wire:model="title" class="form-control"
+                                       placeholder="Enter module title"/>
+                                @error('title') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <input type="text" wire:model="code" class="form-control"
-                                       placeholder="Module Code"/>
+                                <label for="code" class="form-label">Module Code</label>
+                                <input id="code" type="text" wire:model="code" class="form-control"
+                                       placeholder="Enter module code"/>
+                                @error('code') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
+
+                            <div class="mb-3 col-md-12">
+                                <label for="default_lecturer" class="form-label">Default Lecturer</label>
+                                <select id="default_lecturer" wire:model="default_lecturer_id" class="form-control">
+                                    <option value="">-- Select Default Lecturer --</option>
+                                    @foreach($course_lecturers as $lecturer)
+                                        <option value="{{ $lecturer->id }}">
+                                            {{ $lecturer->first_name }} {{ $lecturer->last_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('default_lecturer_id') <small
+                                    class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+
                             <div class="col-md-12 mb-3">
-                                <textarea wire:model="description" class="form-control" placeholder="Module Description"
-                                          rows="4"></textarea>
+                                <label for="description" class="form-label">Module Description</label>
+                                <textarea id="description" wire:model="description" class="form-control"
+                                          placeholder="Enter module description" rows="4"></textarea>
+                                @error('description') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
                         </div>
                     </div>
+
                     <div class="modal-footer">
                         <div class="d-flex gap-6 m-0">
                             <button type="submit" class="btn btn-success">

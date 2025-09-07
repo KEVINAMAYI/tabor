@@ -2,6 +2,7 @@
 
 use App\Exports\CourseExport;
 use App\Models\Course;
+use App\Models\Lecturer;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
@@ -25,6 +26,10 @@ new class extends Component {
 
     public $search = '';
 
+    public $lecturers = [];
+
+    public $lecturer_ids = [];
+
     public function rules()
     {
         return [
@@ -47,6 +52,9 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
+
+        $this->lecturers = Lecturer::all();
+
     }
 
     #[On('search')]
@@ -78,13 +86,14 @@ new class extends Component {
 
     public function addCourse()
     {
+
         $this->validate();
 
         try {
             $imagePath = $this->image ? $this->image->store('courses', 'public') : null;
             $brochurePath = $this->brochure ? $this->brochure->store('brochures', 'public') : null;
 
-            Course::create([
+            $course = Course::create([
                 'title' => $this->title,
                 'code' => $this->code,
                 'description' => $this->description,
@@ -97,6 +106,10 @@ new class extends Component {
                 'image_url' => $imagePath,
                 'brochure_url' => $brochurePath,
             ]);
+
+            if (!empty($this->lecturer_ids)) {
+                $course->lecturers()->attach($this->lecturer_ids);
+            }
 
             $this->dispatch('hide-course-modal');
             $this->resetForm();
@@ -162,6 +175,13 @@ new class extends Component {
 
             LivewireAlert::text('Failed to update Course.!')->error()->toast()->position('top-end')->show();
         }
+    }
+
+
+    #[On('setLecturers')]
+    public function setLecturers($lecturers)
+    {
+        $this->lecturer_ids = $lecturers ?? [];
     }
 
     public function deleteCourse($id)
@@ -231,6 +251,13 @@ new class extends Component {
     <style>
         .pagination {
             margin-left: 10px;
+        }
+
+        /* For multiple select */
+        .select2-container .select2-selection--multiple {
+            min-height: 38px; /* match Bootstrap input height */
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
         }
     </style>
 @endpush
@@ -303,6 +330,21 @@ new class extends Component {
                                         <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
+
+                                    <p class="form-label">Course Lecturers</p>
+                                    <div class="mb-3 col-md-12" wire:ignore>
+                                        <select style="padding-top:10px; padding-bottom:10px;"
+                                                class="form-control select2" required multiple
+                                                data-placeholder="Select lecturers"
+                                                wire:model="lecturers">
+                                            @foreach($lecturers as $lecturer)
+                                                <option
+                                                    value="{{ $lecturer->id }}">{{ $lecturer->first_name.''.$lecturer->last_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('lecturers ') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
                                     <!-- Course Fee -->
                                     <div class="col-md-12 mb-3">
                                         <label for="course-fee" class="form-label">Fee</label>
@@ -513,7 +555,36 @@ new class extends Component {
 </div>
 
 @push('scripts')
+
+    <script src="assets/libs/select2/dist/js/select2.full.min.js"></script>
+
     <script>
+        function initializeMultiSelect(context = document) {
+            $(context).find('select.select2[multiple]').each(function () {
+                const $el = $(this);
+                const parentModal = $el.closest('.modal');
+
+                $el.select2({
+                    width: '100%',
+                    dropdownParent: parentModal.length ? parentModal : $(document.body),
+                    placeholder: $el.data('placeholder') || 'Select options',
+                    allowClear: $el.data('allow-clear') === "true",
+                    minimumResultsForSearch: 0 // always show search box
+                });
+
+                // 🔑 Sync values to Livewire on change
+                // 🔑 Sync values to Livewire on change
+                $el.on('change', function () {
+                    let selected = $(this).val();
+                    Livewire.dispatch('setLecturers', {lecturers: selected});
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeMultiSelect();
+        });
+
         window.addEventListener('show-course-modal', () => {
             new bootstrap.Modal(document.getElementById('addCourseModal')).show();
         });
@@ -530,3 +601,5 @@ new class extends Component {
         });
     </script>
 @endpush
+
+
