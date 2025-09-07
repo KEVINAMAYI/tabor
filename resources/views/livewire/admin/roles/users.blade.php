@@ -256,6 +256,57 @@ new class extends Component {
         .pagination {
             margin-left: 10px;
         }
+
+        /* Base table hover and checkbox style */
+        .custom-user-table tbody tr:hover {
+            background-color: #fff6ee;
+        }
+
+        .custom-user-table .form-check-input:checked {
+            background-color: #f69121;
+            border-color: #f69121;
+        }
+
+        /* Action icon styling */
+        .action-btn .action-icon {
+            color: #446076;
+            transition: color 0.2s ease;
+        }
+
+        .action-btn .action-icon:hover {
+            color: #f69121;
+        }
+
+        /* Dropdown items */
+        .dropdown-menu .dropdown-item {
+            color: #446076;
+            transition: background 0.2s ease;
+        }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #fff6ee;
+            color: #f69121;
+        }
+
+        /* Status badge styles */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status-badge.active {
+            background-color: #e6f4ea;
+            color: #28a745;
+        }
+
+        .status-badge.inactive {
+            background-color: #fce8e6;
+            color: #dc3545;
+        }
     </style>
 @endpush
 <div class="row">
@@ -297,87 +348,71 @@ new class extends Component {
 
             <div class="card card-body">
                 <div class="table-responsive">
-                    <table class="table search-table align-middle text-nowrap">
+                    <table class="table search-table align-middle text-nowrap custom-user-table">
                         <thead class="header-item">
-                            <tr>
-                                <th>
-                                    <div class="form-check text-center">
-                                        <input wire:click="$dispatch('select-all')" type="checkbox"
-                                            class="form-check-input" wire:model="selectAll" />
-                                    </div>
-                                </th>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone Number</th>
-                                <th>ID Number</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>ID Number</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
-
-                            @forelse ($users as $user)
-                                {{-- @if ($user->roles->isNotEmpty() && $user->roles[0]->name != 'super-admin') --}}
-                                <tr class="search-items">
-                                    <td>
-                                        <div class="form-check text-center">
-                                            <input type="checkbox" class="form-check-input" wire:model="selected"
-                                                value="{{ (string) $user->id }}" />
-                                        </div>
-                                    </td>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $user->name }} </td>
-                                    <td>{{ $user->email }}</td>
-                                    <td>{{ $user->phone_number }}</td>
-                                    <td>{{ $user->id_number }}</td>
-                                    <td>{{ ucfirst(str_replace('-', ' ', $user->roles[0]->name)) }}</td>
-                                    <td>
-                                        <span
-                                            class="badge rounded-pill {{ $user->active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">
-                                            {{ $user->active ? 'Active' : 'Inactive' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="action-btn dropdown">
-                                            <a href="#" class="text-primary"
-                                               id="userActions{{ $user->id }}"
-                                               data-bs-toggle="dropdown"
-                                               aria-expanded="false">
-                                                <i class="ti ti-dots-vertical fs-5"></i>
-                                            </a>
-                                            <ul class="dropdown-menu" aria-labelledby="userActions{{ $user->id }}">
-                                                @can('edit-users')
-                                                    <li>
-                                                        <a href="javascript:void(0)"
-                                                           wire:click="editUser({{ $user->id }})"
-                                                           class="dropdown-item">
-                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
-                                                        </a>
-                                                    </li>
-                                                @endcan
-                                                @can('delete-users')
-                                                    <li>
-                                                        <a href="javascript:void(0)"
-                                                           wire:click="deleteUser({{ $user->id }})"
-                                                           class="dropdown-item">
-                                                            <i class="ti ti-trash fs-5 me-2"></i> Delete
-                                                        </a>
-                                                    </li>
-                                                @endcan
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {{-- @endif --}}
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No users found.</td>
-                                </tr>
-                            @endforelse
+                        @forelse ($users as $user)
+                            <tr class="search-items">
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td style="color: #446076; font-weight: 500;">{{ $user->name }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->phone_number }}</td>
+                                <td>{{ $user->id_number }}</td>
+                                <td>{{ ucfirst(str_replace('-', ' ', $user->roles[0]->name)) }}</td>
+                                <td>
+                                    @if ($user->active)
+                                        <span class="status-badge active">Active</span>
+                                    @else
+                                        <span class="status-badge inactive">Inactive</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="action-btn dropdown">
+                                        <a href="#" class="action-icon"
+                                           id="userActions{{ $user->id }}"
+                                           data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ti ti-dots-vertical fs-5"></i>
+                                        </a>
+                                        <ul class="dropdown-menu" aria-labelledby="userActions{{ $user->id }}">
+                                            @can('edit-users')
+                                                <li>
+                                                    <a href="javascript:void(0)" wire:click="editUser({{ $user->id }})"
+                                                       class="dropdown-item">
+                                                        <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                    </a>
+                                                </li>
+                                            @endcan
+                                            @can('delete-users')
+                                                <li>
+                                                    <a href="javascript:void(0)" wire:click="deleteUser({{ $user->id }})"
+                                                       class="dropdown-item">
+                                                        <i class="ti ti-trash fs-5 me-2"></i> Delete
+                                                    </a>
+                                                </li>
+                                            @endcan
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No users found.</td>
+                            </tr>
+                        @endforelse
                         </tbody>
                     </table>
+
                 </div>
 
                 {{-- Add the pagination links here --}}
