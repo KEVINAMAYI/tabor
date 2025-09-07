@@ -168,6 +168,32 @@ new class extends Component {
     }
 }; ?>
 
+@push('styles')
+    <style>
+        .custom-table-header {
+            background-color: #1f415b;
+            color: #f79423;
+        }
+
+        .custom-table-body {
+            color: #1f415b;
+        }
+
+        .custom-table-body .action-btn .text-primary {
+            color: #f79423 !important;
+        }
+
+        .custom-table-body .action-btn .text-dark {
+            color: #1f415b !important;
+        }
+
+        .custom-table-body .action-btn .text-error {
+            color: #1f415b !important;
+        }
+    </style>
+@endpush
+
+
 <div class="row">
     <div class="col-12">
         <div class="widget-content searchable-container list">
@@ -205,7 +231,7 @@ new class extends Component {
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateRole' : 'store' }}">
                             <div class="modal-body">
-                                <div class="mb-3">
+                                <div>
                                     <input type="text" wire:model.live="name" class="form-control"
                                            placeholder="Role Name"/>
                                     @error('name')
@@ -213,40 +239,47 @@ new class extends Component {
                                     @enderror
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small">Permissions</label>
-                                    <div class="row">
-
+                                    <label class="form-label small fs-4 my-2 fw-semibold"></label>
+                                    <div class="row gy-1">
                                         @foreach ($groupedPermissions as $module => $perms)
-                                            <div class="mb-2">
-                                                <div class="text-primary mt-3 mb-2 fw-bold">{{ ucfirst($module) }}</div>
-                                                <div class="row">
+                                            <div class="col-12 my-3">
+                                                <h6 class="text-primary fw-bold text-uppercase border-bottom pb-1 mb-1"
+                                                    style="font-size: 0.85rem;">
+                                                    {{ ucfirst($module) }}
+                                                </h6>
+                                                <div class="row gx-2 gy-1">
                                                     @foreach ($perms as $perm)
-                                                        <div class="col-md-3 mb-1">
-                                                            <label class="form-check">
-                                                                <input type="checkbox" value="{{ $perm->name }}"
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="form-check form-check-inline">
+                                                                <input type="checkbox"
+                                                                       value="{{ $perm->name }}"
                                                                        wire:model.live="selectedPermissions"
+                                                                       id="perm-{{ Str::slug($perm->name) }}"
                                                                        class="form-check-input"/>
-                                                                {{ ucwords(str_replace('-', ' ', $perm->name)) }}
-                                                            </label>
+                                                                <label class="form-check-label"
+                                                                       for="perm-{{ Str::slug($perm->name) }}"
+                                                                       style="font-size: 0.8rem;">
+                                                                    {{ ucwords(str_replace(['-', '_'], ' ', $perm->name)) }}
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     @endforeach
                                                 </div>
                                             </div>
                                         @endforeach
                                     </div>
-
                                     @error('selectedPermissions')
-                                    <small class="text-error">{{ $message }}</small>
+                                    <small class="text-danger">{{ $message }}</small>
                                     @enderror
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <div class="d-flex gap-6 m-0">
+                                    <button type="button" class="btn btn-outline-danger text-error"
+                                            data-bs-dismiss="modal">Discard
+                                    </button>
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
-                                    </button>
-                                    <button type="button" class="btn bg-error-subtle text-error"
-                                            data-bs-dismiss="modal">Discard
                                     </button>
                                 </div>
                             </div>
@@ -258,17 +291,16 @@ new class extends Component {
             <div class="card card-body">
                 <div class="table-responsive">
                     <table class="table search-table align-middle text-nowrap">
-                        <thead class="header-item">
+                        <thead class="header-item custom-table-header">
                         <tr>
                             <th>Name</th>
                             <th>Action</th>
                         </tr>
                         </thead>
-                        <tbody>
-
+                        <tbody class="custom-table-body">
                         @forelse ($roles as $role)
                             <tr class="search-items">
-                                <td>{{ ucfirst($role->name) }}</td>
+                                <td style="color:#1f415b; font-weight:bold;">{{ ucwords(str_replace('-', ' ', $role->name)) }}</td>
                                 <td>
                                     <div class="action-btn">
                                         <a href="javascript:void(0)" wire:click="editRole({{ $role->id }})"
