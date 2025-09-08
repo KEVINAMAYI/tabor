@@ -37,7 +37,7 @@ new class extends Component {
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'admission_number' => 'nullable|string|max:255|unique:students,admission_number,' . $this->editId,
-            'email' => 'required|email|max:255|unique:users,email,' . $this->editId,
+            'email' => 'required|email',
             'phone_number' => 'required|string',
             'date_of_birth' => 'required|date',
             'address' => 'nullable|string|max:500',
