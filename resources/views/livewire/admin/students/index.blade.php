@@ -19,8 +19,9 @@ new class extends Component {
     use WithFileUploads, WithPagination;
 
     public $selectAll = false;
+    public $perPage = 10;
 
-    public $first_name, $last_name, $admission_number, $email, $phone_number, $date_of_birth, $course_id, $intake_id, $active;
+    public $first_name, $last_name, $admission_number, $email, $phone_number, $date_of_birth, $active;
 
     public $editId = null;
 
@@ -45,9 +46,7 @@ new class extends Component {
             'highest_level_of_education' => 'nullable|string|max:255',
             'id_url' => 'nullable|file|mimes:pdf,jpeg,png,jpg,gif|max:2048',
             'kcse_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:2048',
-            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
-            'course_id' => 'nullable|exists:courses,id',
-            'intake_id' => 'nullable|exists:intakes,id',
+            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048'
         ];
     }
 
@@ -81,16 +80,11 @@ new class extends Component {
                         ->orWhere('admission_number', 'like', "%{$this->search}%");
                 }),
             )
-            ->orderBy('admission_number', 'asc')
-            ->paginate(10);
-
-        $courses = Course::all();
-        $intakes = Intake::all();
+            ->orderBy('first_name', 'asc')
+            ->paginate($this->perPage ?? 10);
 
         return [
-            'students' => $students, // Pass the Paginator instance
-            'courses' => $courses,
-            'intakes' => $intakes,
+            'students' => $students
         ];
     }
 
@@ -135,15 +129,6 @@ new class extends Component {
 
             $user->assignRole('student');
 
-            if ($this->course_id) {
-                $student->enrollments()->create([
-                    'course_id' => $this->course_id,
-                    'status' => 'approved',
-                    'intake_id' => $this->intake_id,
-                    'enrolled_at' => now(),
-                ]);
-            }
-
             DB::commit();
 
             $this->resetForm();
@@ -176,6 +161,7 @@ new class extends Component {
         $this->country = $student->country;
         $this->highest_level_of_education = $student->highest_level_of_education;
         $this->active = $student->user ? $student->user->active : false;
+        $this->admission_number = $student->admission_number;
 
         $this->id_url = $student->id_url;
         $this->kcse_certificate = $student->kcse_certificate;
@@ -207,6 +193,7 @@ new class extends Component {
                 'last_name' => $this->last_name,
                 'email' => $this->email,
                 'phone' => $this->phone_number,
+                'admission_number' => $this->admission_number,
                 'dob' => $this->date_of_birth,
                 'address' => $this->address,
                 'country' => $this->country,
@@ -381,6 +368,14 @@ new class extends Component {
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
+                                        <label for="admission_number" class="form-label">Admission Number</label>
+                                        <input type="text" wire:model.live="admission_number" id="admission_number"
+                                            class="form-control" placeholder="leave empty for auto allocation eg 00112" />
+                                        @error('admission_number')
+                                            <small class="text-error text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-4 mb-3">
                                         <label for="phone_number" class="form-label">Phone Number</label>
                                         <input type="text" wire:model.live="phone_number" id="phone_number"
                                             class="form-control" placeholder="Enter your phone number" />
@@ -458,30 +453,6 @@ new class extends Component {
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <label for="course_id" class="form-label">Course</label>
-                                        <select wire:model.live="course_id" id="course_id" class="form-select">
-                                            <option value="">Select a course</option>
-                                            @foreach ($courses as $course)
-                                                <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('course_id')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="intake_id" class="form-label">Intake</label>
-                                        <select wire:model.live="intake_id" id="intake_id" class="form-select">
-                                            <option value="">Select an intake</option>
-                                            @foreach ($intakes as $intake)
-                                                <option value="{{ $intake->id }}">{{ $intake->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('intake_id')
-                                            <small class="text-error text-danger">{{ $message }}</small>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-4 mb-3">
                                         <label for="active" class="form-label">Status</label>
                                         <select wire:model.live="active" id="active" class="form-select">
                                             <option value="1">Active</option>
@@ -520,6 +491,16 @@ new class extends Component {
 
                     <!-- Top Bar Inside the Card -->
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                        <div class="d-flex align-items-center">
+                            <label for="perPage" class="form-label me-2">Show</label>
+                            <select wire:model.live="perPage" id="perPage" class="form-select form-select-sm">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="ms-2">entries</span>
+                        </div>
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:account-group" class="me-2"
