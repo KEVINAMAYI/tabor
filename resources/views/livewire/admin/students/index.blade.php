@@ -610,8 +610,6 @@ new class extends Component {
                                                 Inactive
                                             </span>
                                         @endif
-                                    <!-- Phone -->
-                                    <td><span class="text-muted">{{ $student->phone }}</span></td>
 
                                     <!-- Actions Dropdown -->
                                     <td>
