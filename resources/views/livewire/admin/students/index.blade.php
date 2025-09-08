@@ -105,7 +105,11 @@ new class extends Component {
             ]);
 
             // Create the student
-            $admissionnumber = Student::generateAdmissionNumber();
+            if (!$this->admission_number) {
+                $admissionnumber = Student::generateAdmissionNumber();
+            } else {
+                $admissionnumber = $this->admission_number;
+            }
             // Generate the next admission number
 
             $this->admission_number = $admissionnumber;
