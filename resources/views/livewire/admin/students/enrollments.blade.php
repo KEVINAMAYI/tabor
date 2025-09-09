@@ -20,6 +20,7 @@ new class extends Component {
     public $selectAll = false;
 
     public $status;
+    public $perPage = 10;
 
     public $editId = null;
 
@@ -42,22 +43,23 @@ new class extends Component {
 
     public function with()
     {
-        $active_enrollments = Enrollment::where('status', 'approved')
-            ->with(['student.user', 'course', 'intake', 'payments' => function ($query) {
-                $query->where('reference', 'like', "%{$this->search}%");
-            }])
-            ->when(
-                !empty($this->search),
-                fn($q) => $q->whereHas('student', function ($query) {
-                    $query
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%")
-                        ->orWhere('phone', 'like', "%{$this->search}%")
-                        ->orWhere('admission_number', 'like', "%{$this->search}%");
-                }),
-            )
-            ->paginate(10);
+        $active_enrollments = Enrollment::where('enrollments.status', 'approved')
+    ->join('students', 'enrollments.student_id', '=', 'students.id')
+    ->leftJoin('payments', 'enrollments.id', '=', 'payments.enrollment_id') // Optional, if you want search by payment reference
+    ->with(['student.user', 'course', 'intake', 'payments'])
+    ->when(!empty($this->search), function ($query) {
+        $query->where(function ($q) {
+            $q->where('students.first_name', 'like', "%{$this->search}%")
+              ->orWhere('students.last_name', 'like', "%{$this->search}%")
+              ->orWhere('students.email', 'like', "%{$this->search}%")
+              ->orWhere('students.phone', 'like', "%{$this->search}%")
+              ->orWhere('students.admission_number', 'like', "%{$this->search}%")
+              ->orWhere('payments.reference', 'like', "%{$this->search}%"); // Payment reference search
+        });
+    })
+    ->orderBy('students.first_name', 'asc')
+    ->select('enrollments.*') // Avoid ambiguous column issues
+    ->paginate($this->perPage ?? 10);
 
         return [
             'enrollments' => $active_enrollments, // Pass the Paginator instance
@@ -108,7 +110,8 @@ new class extends Component {
         }
 
         .dropdown-toggle::after {
-            display: none !important; /* removes the caret */
+            display: none !important;
+            /* removes the caret */
         }
 
         .dropdown-menu .dropdown-item:hover {
@@ -135,8 +138,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                   class="form-control product-search ps-5" placeholder="Search Students..."
-                                   wire:model="search"/>
+                                class="form-control product-search ps-5" placeholder="Search Students..."
+                                wire:model="search" />
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -150,10 +153,22 @@ new class extends Component {
 
                     <!-- Top Bar Inside the Card -->
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+
+                        <div class="d-flex align-items-center">
+                            <label for="perPage" class="form-label me-2">Show</label>
+                            <select wire:model.live="perPage" id="perPage" class="form-select form-select-sm">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="all">500</option>
+                            </select>
+                            <span class="ms-2">entries</span>
+                        </div>
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:school-outline" class="me-2"
-                                          style="font-size: 20px;"></iconify-icon>
+                                style="font-size: 20px;"></iconify-icon>
                             Enrollment List
                         </h6>
 
@@ -162,17 +177,17 @@ new class extends Component {
 
                             <!-- Export Excel Button -->
                             <button wire:click="exportExcel"
-                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-excel-outline" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 Excel
                             </button>
 
                             <!-- Export PDF Button -->
                             <button wire:click="exportPdf"
-                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-pdf-box" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 PDF
                             </button>
                         </div>
@@ -180,62 +195,62 @@ new class extends Component {
 
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                        <tr>
-                            <th>#</th>
-                            <th>Enrollment ID</th>
-                            <th>Name</th>
-                            <th>Course</th>
-                            <th>Intake</th>
-                            <th>Paid Amount</th>
-                            <th>Balance</th>
-                            <th>Approved On</th>
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th>#</th>
+                                <th>Enrollment ID</th>
+                                <th>Name</th>
+                                <th>Course</th>
+                                <th>Intake</th>
+                                <th>Paid Amount</th>
+                                <th>Balance</th>
+                                <th>Approved On</th>
+                                <th>Action</th>
+                            </tr>
                         </thead>
                         <tbody>
 
-                        @forelse ($enrollments as $enrollment)
-                            <tr class="search-items">
-                                <td class="text-blue fw-semibold">{{ $loop->iteration }}</td>
-                                <td class="text-muted-small">
-                                    {{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
-                                </td>
-                                <td class="text-blue">
-                                    {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
-                                </td>
-                                <td class="text-orange">{{ $enrollment->course->title }}</td>
-                                <td>{{ $enrollment->intake->name }}</td>
-                                <td class="text-success fw-bold">
-                                    {{ number_format($enrollment->payments->sum('amount'), 2) }}
-                                </td>
-                                <td class="text-danger fw-bold">
-                                    {{ number_format($enrollment->course->price - $enrollment->payments->sum('amount'), 2) }}
-                                </td>
-                                <td>{{ $enrollment->created_at->format('d-m-Y') }}</td>
-                                <td>
-                                    <div class="action-btn dropdown">
-                                        <a href="#" class="text-blue" id="studentActions"
-                                           data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="ti ti-dots-vertical fs-5"></i>
-                                        </a>
-                                        <ul class="dropdown-menu" aria-labelledby="studentActions">
-                                            @can('edit-students')
-                                                <li>
-                                                    <a href="{{ route('students.view', $enrollment->student->id) }}"
-                                                       class="dropdown-item">
-                                                        <i class="ti ti-eye fs-5 me-2"></i> View
-                                                    </a>
-                                                </li>
-                                            @endcan
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
-                            </tr>
-                        @endforelse
+                            @forelse ($enrollments as $enrollment)
+                                <tr class="search-items">
+                                    <td class="text-blue fw-semibold">{{ $loop->iteration }}</td>
+                                    <td class="text-muted-small">
+                                        {{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
+                                    </td>
+                                    <td class="text-blue">
+                                        {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+                                    </td>
+                                    <td class="text-orange">{{ $enrollment->course->title }}</td>
+                                    <td>{{ $enrollment->intake->name }}</td>
+                                    <td class="text-success fw-bold">
+                                        {{ number_format($enrollment->payments->sum('amount'), 2) }}
+                                    </td>
+                                    <td class="text-danger fw-bold">
+                                        {{ number_format($enrollment->course->price - $enrollment->payments->sum('amount'), 2) }}
+                                    </td>
+                                    <td>{{ $enrollment->created_at->format('d-m-Y') }}</td>
+                                    <td>
+                                        <div class="action-btn dropdown">
+                                            <a href="#" class="text-blue" id="studentActions"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="ti ti-dots-vertical fs-5"></i>
+                                            </a>
+                                            <ul class="dropdown-menu" aria-labelledby="studentActions">
+                                                @can('edit-students')
+                                                    <li>
+                                                        <a href="{{ route('students.view', $enrollment->student->id) }}"
+                                                            class="dropdown-item">
+                                                            <i class="ti ti-eye fs-5 me-2"></i> View
+                                                        </a>
+                                                    </li>
+                                                @endcan
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
 
@@ -250,13 +265,13 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="enrollmentModal" tabindex="-1" role="dialog"
-                 aria-labelledby="enrollmentModalTitle" aria-hidden="true" wire:ignore.self>
+                aria-labelledby="enrollmentModalTitle" aria-hidden="true" wire:ignore.self>
                 <div class="modal-dialog modal modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Update Status</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                                aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ 'updateStatus' }}">
                             <div class="modal-body">
@@ -275,7 +290,7 @@ new class extends Component {
                             <div class="modal-footer">
                                 <div class="d-flex gap-1 m-0">
                                     <button type="button" class="btn btn-danger bg-error-subtle"
-                                            data-bs-dismiss="modal">Discard
+                                        data-bs-dismiss="modal">Discard
                                     </button>
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
