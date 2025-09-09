@@ -143,7 +143,7 @@ new class extends Component {
             $this->reset(['amount', 'payment_method', 'enrollment_id', 'reference', 'paid_at', 'payer']);
 
             // ✅ Reset only after success
-             $this->activeTab = 'pills-payments';
+            $this->activeTab = 'pills-payments';
             // ✅ Close modal only after successful save
             $this->dispatch('hide-payment-modal');
         } catch (\Exception $e) {
@@ -285,8 +285,8 @@ new class extends Component {
         </div>
         <div class="tab-content" id="pills-tabContent">
             <!-- Courses Tab -->
-            <div class="tab-pane fade {{ $activeTab === 'pills-courses' ? 'show active' : '' }}" id="pills-courses" role="tabpanel"
-                aria-labelledby="pills-courses-tab" tabindex="0">
+            <div class="tab-pane fade {{ $activeTab === 'pills-courses' ? 'show active' : '' }}" id="pills-courses"
+                role="tabpanel" aria-labelledby="pills-courses-tab" tabindex="0">
                 <div class="row mb-4">
                     <div class="col-md-4 col-xl-3">
                     </div>
@@ -314,7 +314,7 @@ new class extends Component {
                                 <div class="mt-2 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
                                         <!-- Course Title -->
-                                        <h3 class="fs-7 mt-3 fw-bolder">{{ $course->title }}</h3>
+                                        <h5 class="mt-3 fw-bolder">{{ $course->title }}</h5>
 
                                         <!-- Enrollment Status Badge -->
                                         <div class="d-flex justify-content-between">
@@ -338,7 +338,7 @@ new class extends Component {
                                                 <!-- Pencil Icon Button -->
                                                 <button style="border:0px;"
                                                     wire:click="openEditModal({{ $enrollment->id }})"
-                                                    class="btn btn-sm btn-outline-warning" title="Edit Status">
+                                                    class="btn btn-sm btn-outline-secondary" title="Edit Status">
                                                     <iconify-icon style="font-weight:bold;" icon="mdi:pencil"
                                                         width="16" height="16"></iconify-icon>
                                                 </button>
@@ -377,19 +377,23 @@ new class extends Component {
                                                 <span class="text-dark fs-3">Certification:
                                                     {{ $course->certification ?? 'N/A' }}</span>
                                             </li>
-                                            @if ($enrollment->status == 'approved')
-                                                <li class="d-flex align-items-start gap-2">
-                                                    <iconify-icon icon="mdi:currency-usd"
-                                                        class="text-info fs-4 mt-1"></iconify-icon>
-                                                    @if ($course->price - $enrollment->payments->sum('amount') > 0)
-                                                        <span class="text-danger fs-3">Fee Balance:
-                                                            {{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
-                                                    @else
-                                                        <span class="text-dark fs-3">Fee Balance:
-                                                            {{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
-                                                    @endif
-                                                </li>
-                                            @endif
+                                            <li class="d-flex align-items-start gap-2 mt-2">
+                                                <iconify-icon icon="mdi:currency-usd"
+                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                <span class="text-success fs-3">Paid Amount:
+                                                    {{ number_format($enrollment->payments->sum('amount'), 2) }}</span>
+                                            </li>
+                                            <li class="d-flex align-items-start gap-2 mt-2">
+                                                <iconify-icon icon="mdi:currency-usd"
+                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                @if ($course->price - $enrollment->payments->sum('amount') > 0)
+                                                    <span class="text-danger fs-3">Balance:
+                                                        {{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
+                                                @else
+                                                    <span class="text-dark fs-3">Balance:
+                                                        {{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
+                                                @endif
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -399,8 +403,8 @@ new class extends Component {
                 </div>
             </div>
             <!-- Attendance Tab -->
-            <div class="tab-pane fade {{ $activeTab === 'pills-attendance' ? 'show active' : '' }}" id="pills-attendance" role="tabpanel" aria-labelledby="pills-attendance-tab"
-                tabindex="0">
+            <div class="tab-pane fade {{ $activeTab === 'pills-attendance' ? 'show active' : '' }}"
+                id="pills-attendance" role="tabpanel" aria-labelledby="pills-attendance-tab" tabindex="0">
                 <div class="row">
                     <div class="col-12">
                         <div class="widget-content searchable-container list">
@@ -494,8 +498,8 @@ new class extends Component {
                 </div>
             </div>
             <!-- Payments Tab -->
-            <div class="tab-pane fade {{ $activeTab === 'pills-payments' ? 'show active' : '' }}" id="pills-payments" role="tabpanel" aria-labelledby="pills-payments-tab"
-                tabindex="0">
+            <div class="tab-pane fade {{ $activeTab === 'pills-payments' ? 'show active' : '' }}" id="pills-payments"
+                role="tabpanel" aria-labelledby="pills-payments-tab" tabindex="0">
                 <div class="row">
                     <div class="col-12">
                         <div class="widget-content searchable-container list">
@@ -585,10 +589,15 @@ new class extends Component {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span class="badge rounded-pill
-                                                        {{ $enrollment->status == 'completed' ? 'bg-success' :
-                                                        ($enrollment->status == 'rejected'|| $enrollment->status == 'withdrawn' ? 'bg-danger' :
-                                                        ($enrollment->status == 'pending' ? 'bg-warning' : 'bg-primary')) }}">{{ $enrollment->status=='approved' ? 'active' : $enrollment->status }}</span>
+                                                        <span
+                                                            class="badge rounded-pill
+                                                        {{ $enrollment->status == 'completed'
+                                                            ? 'bg-success'
+                                                            : ($enrollment->status == 'rejected' || $enrollment->status == 'withdrawn'
+                                                                ? 'bg-danger'
+                                                                : ($enrollment->status == 'pending'
+                                                                    ? 'bg-warning'
+                                                                    : 'bg-primary')) }}">{{ $enrollment->status == 'approved' ? 'active' : $enrollment->status }}</span>
 
                                                     </td>
                                                     <td>
@@ -609,7 +618,8 @@ new class extends Component {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span class="text-danger">{{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
+                                                        <span
+                                                            class="{{ $course->price - $enrollment->payments->sum('amount') > 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -624,98 +634,97 @@ new class extends Component {
             </div>
         </div>
 
-          <!-- Modal -->
-                            <div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog"
-                                aria-labelledby="addPaymentModalTitle" aria-hidden="true" wire:ignore.self>
-                                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header d-flex align-items-center">
-                                            <h5 class="modal-title">Add Payment</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
-                                        <form wire:submit.prevent="{{ 'addPayment' }}">
-                                            <div class="modal-body">
-                                                <div class="row">
-                                                    <!-- Enrollment Selector -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="enrollment_id" class="form-label">Student</label>
-                                                        <select wire:model="enrollment_id" class="form-control">
-                                                            <option value="">Select Enrollment</option>
-                                                            @foreach ($student->enrollments()->where('status', 'approved')->get() as $enrollment)
-                                                                @php
-                                                                    $student = $enrollment->student;
-                                                                    $course = $enrollment->course;
-                                                                    $intake = $enrollment->intake;
-                                                                @endphp
-                                                                <option value="{{ $enrollment->id }}">
-                                                                    {{ $course->title }} {{ $course->level ?? '' }} -
-                                                                    Intake: {{ $intake->name ?? 'N/A' }}
-                                                                </option>
-                                                            @endforeach
+        <!-- Modal -->
+        <div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog"
+            aria-labelledby="addPaymentModalTitle" aria-hidden="true" wire:ignore.self>
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header d-flex align-items-center">
+                        <h5 class="modal-title">Add Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <form wire:submit.prevent="{{ 'addPayment' }}">
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Enrollment Selector -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="enrollment_id" class="form-label">Student</label>
+                                    <select wire:model="enrollment_id" class="form-control">
+                                        <option value="">Select Enrollment</option>
+                                        @foreach ($student->enrollments()->where('status', 'approved')->get() as $enrollment)
+                                            @php
+                                                $student = $enrollment->student;
+                                                $course = $enrollment->course;
+                                                $intake = $enrollment->intake;
+                                            @endphp
+                                            <option value="{{ $enrollment->id }}">
+                                                {{ $course->title }} {{ $course->level ?? '' }} -
+                                                Intake: {{ $intake->name ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
 
-                                                        </select>
-                                                        @error('enrollment_id')
-                                                            <small class="text-danger">{{ $message }}</small>
-                                                        @enderror
-                                                    </div>
-                                                    <!-- Amount Input -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="amount" class="form-label">Amount</label>
-                                                        <input type="number" wire:model="amount"
-                                                            class="form-control" placeholder="Amount" />
-                                                        @error('amount')
-                                                            <small class="text-danger">{{ $message }}</small>
-                                                        @enderror
-                                                    </div>
-                                                    <!-- Payment Method Selector -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="method" class="form-label">Payment
-                                                            Method</label>
-                                                        <select wire:model="payment_method" class="form-control">
-                                                            <option value="">Select Payment Method</option>
-                                                            <option value="cash">Cash</option>
-                                                            <option value="mpesa">M-Pesa</option>
-                                                            <option value="card">Card</option>
-                                                            <option value="bank">Bank</option>
-                                                        </select>
-                                                        @error('method')
-                                                            <small class="text-danger">{{ $message }}</small>
-                                                        @enderror
-                                                    </div>
-                                                    <!-- Reference Input -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="reference" class="form-label">Reference</label>
-                                                        <input type="text" wire:model="reference"
-                                                            class="form-control" placeholder="Reference" />
-                                                    </div>
-                                                    <!-- Paid Date Input -->
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="paid_at" class="form-label">Paid On</label>
-                                                        <input type="date" wire:model="paid_at"
-                                                            class="form-control" />
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="payer" class="form-label">Paid By</label>
-                                                        <input type="text" wire:model="payer" class="form-control"
-                                                            placeholder="Paid By" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <div class="d-flex gap-1 m-0">
-                                                    <button type="submit" class="btn btn-success">
-                                                        {{ 'Add' }}
-                                                    </button>
-                                                    <button type="button" class="btn bg-danger-subtle text-danger"
-                                                        data-bs-dismiss="modal">Discard
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
+                                    </select>
+                                    @error('enrollment_id')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+                                <!-- Amount Input -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label">Amount</label>
+                                    <input type="number" wire:model="amount" class="form-control"
+                                        placeholder="Amount" />
+                                    @error('amount')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+                                <!-- Payment Method Selector -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="method" class="form-label">Payment
+                                        Method</label>
+                                    <select wire:model="payment_method" class="form-control">
+                                        <option value="">Select Payment Method</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="mpesa">M-Pesa</option>
+                                        <option value="card">Card</option>
+                                        <option value="bank">Bank</option>
+                                    </select>
+                                    @error('method')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+                                <!-- Reference Input -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="reference" class="form-label">Reference</label>
+                                    <input type="text" wire:model="reference" class="form-control"
+                                        placeholder="Reference" />
+                                </div>
+                                <!-- Paid Date Input -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="paid_at" class="form-label">Paid On</label>
+                                    <input type="date" wire:model="paid_at" class="form-control" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="payer" class="form-label">Paid By</label>
+                                    <input type="text" wire:model="payer" class="form-control"
+                                        placeholder="Paid By" />
                                 </div>
                             </div>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="d-flex gap-1 m-0">
+                                <button type="submit" class="btn btn-success">
+                                    {{ 'Add' }}
+                                </button>
+                                <button type="button" class="btn bg-danger-subtle text-danger"
+                                    data-bs-dismiss="modal">Discard
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
 

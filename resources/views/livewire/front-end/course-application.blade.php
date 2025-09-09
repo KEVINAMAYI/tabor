@@ -697,7 +697,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
         <div class="container-fluid">
             <div class="row justify-content-center">
                 <div class="col-lg-8">
-                    <h2 class="fs-15 fw-bolder mb-0 text-center mb-5 mb-md-12">
+                    <h2 class="fs-15 fw-bolder mb-0 text-center mb-md-12">
                         Frequently asked questions
                     </h2>
                     <div class="accordion faq-accordion" id="accordionExample1">
