@@ -25,6 +25,7 @@ new class extends Component {
     public $availableStatuses = ['pending', 'approved', 'rejected', 'completed', 'withdrawn'];
     public $enrollmentId;
     public $enrollmentStatus;
+    public $enrollmentPayments = [];
 
     public function enrollmentRules()
     {
@@ -129,7 +130,7 @@ new class extends Component {
 
             $enrollment->payments()->create([
                 'amount' => $this->amount,
-                'method' => $this->payment_method,
+                'payment_method' => $this->payment_method,
                 'reference' => $this->reference,
                 'paid_at' => $this->paid_at,
                 'payer' => $this->payer,
@@ -152,6 +153,12 @@ new class extends Component {
 
             LivewireAlert::text('Failed to add payment!')->error()->toast()->position('top-end')->show();
         }
+    }
+
+    public function showEnrollmentPayments($payments)
+    {
+        $this->enrollmentPayments = collect($payments);
+        $this->dispatch('show-enrollment-payments-modal');
     }
 }; ?>
 @push('styles')
@@ -610,10 +617,9 @@ new class extends Component {
                                                     </td>
                                                     <td>
                                                         <div class="action-btn">
-                                                            <a href="#" class="btn btn-secondary btn-sm"
-                                                                data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                                                <i class="fa fa-eye" aria-hidden="true"></i>
-                                                                View
+                                                            <a wire:click.prevent='showEnrollmentPayments(@json($enrollment->payments))'
+                                                                class="btn btn-secondary btn-sm">
+                                                                <i class="fa fa-eye" aria-hidden="true"></i> View
                                                             </a>
                                                         </div>
                                                     </td>
@@ -686,6 +692,7 @@ new class extends Component {
                                         <option value="">Select Payment Method</option>
                                         <option value="cash">Cash</option>
                                         <option value="mpesa">M-Pesa</option>
+                                        <option value="discount">Discount</option>
                                         <option value="card">Card</option>
                                         <option value="bank">Bank</option>
                                     </select>
@@ -830,26 +837,19 @@ new class extends Component {
                             @php
                                 $totalPayments = 0;
                             @endphp
-                            @foreach ($student->enrollments as $enrollment)
-                                @foreach ($enrollment->payments as $payment)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $payment->reference ?? 'N/A' }}</td>
-                                        <td>{{ $payment->transaction_id ?? 'N/A' }}</td>
-                                        <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
-                                        <td>{{ ucfirst($payment->payment_method) ?? 'N/A' }}</td>
-                                        <td>{{ number_format($payment->amount, 2) }}</td>
-                                        <td>{{ $payment->payer ?? 'N/A' }}</td>
-                                        {{-- <td>
-                                        <a href="#" class="btn btn-warning btn-sm">
-                                            <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                        </a>
-                                    </td> --}}
-                                    </tr>
-                                    @php
-                                        $totalPayments += $payment->amount;
-                                    @endphp
-                                @endforeach
+                            @foreach ($enrollmentPayments as $payment)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $payment['reference'] ?? 'N/A' }}</td>
+                                    <td>{{ $payment['transaction_id'] ?? 'N/A' }}</td>
+                                    <td>
+                                        {{ isset($payment['paid_at']) ? \Carbon\Carbon::parse($payment['paid_at'])->format('d/m/y h:i A') : 'N/A' }}
+                                    </td>
+                                    <td>{{ ucfirst($payment['payment_method'] ?? 'N/A') }}</td>
+                                    <td>{{ number_format($payment['amount'] ?? 0, 2) }}</td>
+                                    <td>{{ $payment['payer'] ?? 'N/A' }}</td>
+                                </tr>
+                                @php $totalPayments += $payment['amount'] ?? 0; @endphp
                             @endforeach
                             <!-- Add more rows as needed -->
                         </tbody>
@@ -933,6 +933,13 @@ new class extends Component {
             // Add 'active show' to the payments tab and content
             paymentsTabButton.classList.add('active');
             paymentsTabContent.classList.add('show', 'active');
+        });
+
+        window.addEventListener('show-enrollment-payments-modal', () => {
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
+        });
+        window.addEventListener('hide-enrollment-payments-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('paymentModal'))?.hide();
         });
     </script>
 @endpush

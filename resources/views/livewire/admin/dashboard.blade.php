@@ -29,7 +29,7 @@ new class extends Component {
 
         $this->courses = Course::count();
         $this->lecturers = Lecturer::count();
-        $this->total_revenue = Payment::sum('amount');
+        $this->total_revenue = Payment::where('payment_method', '!=', 'discount')->sum('amount');
 
         // Group by status
         $this->statusData = Enrollment::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->toArray();
@@ -289,8 +289,8 @@ new class extends Component {
             <div class="stat-card">
                 <div class="stat-text">
                     <h6 class="text-muted mb-1">Total Revenue</h6>
-                    <h3 class="fw-bold text-warning">KES {{ $total_revenue }}</h3>
-                    <small class="text-muted">From Fees & Payments</small>
+                    <h4 class="text-small text-warning">KES {{ number_format($total_revenue, 2) }}</h4>
+                    <small class="text-muted">Fees & Other Payments</small>
                 </div>
                 <div class="stat-icon icon-orange">
                     <span class="iconify" data-icon="mdi:cash-multiple"></span>
