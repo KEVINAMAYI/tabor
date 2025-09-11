@@ -27,7 +27,7 @@ new class extends Component {
     public $enrollmentStatus;
     public $enrollmentPayments = [];
 
-    public function enrollmentRules()
+    public function rules()
     {
         return [
             'selectedCourseId' => 'required|exists:courses,id',
