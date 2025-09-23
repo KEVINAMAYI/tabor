@@ -82,40 +82,6 @@ class MpesaApi extends Controller
         return $response;
     }
 
-    /* public function registerUrl()
-    {
-
-        $body = [
-            'ShortCode' => env('MPESA_SHORTCODE'),
-            'ResponseType' => 'Completed',
-            'ConfirmationURL' => 'https://tabor.ac.ke/api/finance/confirmation',
-            'ValidationURL' => 'https://tabor.ac.ke/api/finance/validation'
-        ];
-
-        $url = "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl";
-
-        $result = $this->makeHttp($url, $body);
-
-        return $result;
-    } */
-    /* public function c2b(Request $request)
-    {
-        $url = 'https://api.safaricom.co.ke/mpesa/c2b/v1/simulate';
-
-        $data = $request->all();
-
-        $body = [
-            'ShortCode' => $data['ShortCode'],
-            'CommandID' => 'CustomerPayBillOnline',
-            'Amount' => $data['Amount'],
-            'Msisdn' => $data['Msisdn'],
-            'BillRefNumber' => 'Test Payment',
-        ];
-        $response = $this->makeHttp($url, $body);
-
-        return $response;
-    } */
-
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
     public function initiateStk(Request $request)
     {

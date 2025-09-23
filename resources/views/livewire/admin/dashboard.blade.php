@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
 
 new class extends Component {
-
     public $students;
     public $courses;
     public $lecturers;
@@ -26,32 +25,20 @@ new class extends Component {
 
     public function mount()
     {
-        $this->students = Enrollment::where('status', 'approved')
-            ->groupBy('student_id')
-            ->count();
+        $this->students = Enrollment::with('student')->where('enrollments.status', 'approved')->count();
 
         $this->courses = Course::count();
         $this->lecturers = Lecturer::count();
-        $this->total_revenue = Payment::sum('amount');
+        $this->total_revenue = Payment::where('payment_method', '!=', 'discount')->sum('amount');
 
         // Group by status
-        $this->statusData = Enrollment::selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status')
-            ->toArray();
+        $this->statusData = Enrollment::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->toArray();
 
         // Group by course
-        $this->courseData = Enrollment::join('courses', 'enrollments.course_id', '=', 'courses.id')
-            ->selectRaw('courses.title as course_name, COUNT(*) as total')
-            ->groupBy('courses.title')
-            ->pluck('total', 'course_name')
-            ->toArray();
+        $this->courseData = Enrollment::join('courses', 'enrollments.course_id', '=', 'courses.id')->selectRaw('courses.title as course_name, COUNT(*) as total')->groupBy('courses.title')->pluck('total', 'course_name')->toArray();
 
         // Monthly enrollments (e.g., Jan–Dec)
-        $monthlyEnrollments = Student::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('COUNT(*) as total')
-        )
+        $monthlyEnrollments = Student::select(DB::raw('MONTH(created_at) as month'), DB::raw('COUNT(*) as total'))
             ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
             ->groupBy('month')
             ->orderBy('month')
@@ -59,35 +46,42 @@ new class extends Component {
             ->pluck('total', 'month');
 
         // Fill missing months with 0
-        $this->monthlyEnrollments = collect(range(1, 12))->map(function ($month) use ($monthlyEnrollments) {
-            return $monthlyEnrollments->get($month, 0);
-        })->toArray();
+        $this->monthlyEnrollments = collect(range(1, 12))
+            ->map(function ($month) use ($monthlyEnrollments) {
+                return $monthlyEnrollments->get($month, 0);
+            })
+            ->toArray();
 
         // Generate month labels (Jan, Feb, etc.)
-        $this->months = collect(range(1, 12))->map(function ($m) {
-            return \Carbon\Carbon::create()->month($m)->format('M');
-        })->toArray();
-
+        $this->months = collect(range(1, 12))
+            ->map(function ($m) {
+                return \Carbon\Carbon::create()->month($m)->format('M');
+            })
+            ->toArray();
 
         $this->recentEnrollments = Enrollment::with(['student', 'course'])
             ->latest()
             ->take(5) // Or any number
             ->get();
 
-        $months = collect(range(0, 11))->map(function ($i) {
-            return now()->subMonths($i)->startOfMonth();
-        })->reverse();
+        $months = collect(range(0, 11))
+            ->map(function ($i) {
+                return now()->subMonths($i)->startOfMonth();
+            })
+            ->reverse();
 
         $this->monthlyPayments = $months->map(function ($month) {
             $start = $month->copy()->startOfMonth();
             $end = $month->copy()->endOfMonth();
 
             $payments = Payment::whereBetween('paid_at', [$start, $end])
-                ->selectRaw("
+                ->selectRaw(
+                    "
                 SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as completed,
                 SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'failed' THEN amount ELSE 0 END) as failed
-            ")
+            ",
+                )
                 ->first();
 
             $total = $payments->completed + $payments->pending + $payments->failed;
@@ -101,19 +95,15 @@ new class extends Component {
             ];
         });
 
-
         $this->recentPayments = Payment::with(['enrollment.student'])
             ->latest()
             ->take(5)
             ->get();
-
     }
-
 }; ?>
 
 @push('styles')
     <style>
-
         .department-overview-title {
             font-size: 18px;
             font-weight: bold;
@@ -125,16 +115,22 @@ new class extends Component {
             border-radius: 12px;
         }
 
-        .department-overview-title, .map-title, .quick-actions-title {
+        .department-overview-title,
+        .map-title,
+        .quick-actions-title {
             font-weight: bold;
             font-size: 18px;
-            color: #000; /* black */
+            color: #000;
+            /* black */
         }
 
-        .recent-activity-title, .map-title, .quick-actions-title {
+        .recent-activity-title,
+        .map-title,
+        .quick-actions-title {
             font-weight: bold;
             font-size: 14px;
-            color: #000; /* black */
+            color: #000;
+            /* black */
         }
 
         .card-action {
@@ -145,7 +141,8 @@ new class extends Component {
             text-decoration: none;
             color: #000;
             background: #fff;
-            border: 2px dotted #333; /* dotted border on small cards */
+            border: 2px dotted #333;
+            /* dotted border on small cards */
             border-radius: 8px;
             padding: 15px;
             transition: all 0.2s ease-in-out;
@@ -233,7 +230,6 @@ new class extends Component {
             background: rgba(251, 146, 60, 0.1);
             color: #fb923c;
         }
-
     </style>
 @endpush
 
@@ -277,7 +273,7 @@ new class extends Component {
             <div class="stat-card">
                 <div class="stat-text">
                     <h6 class="text-muted mb-1">Total Lecturers</h6>
-                    <h3 class="fw-bold text-danger">{{ $lecturers  }}</h3>
+                    <h3 class="fw-bold text-danger">{{ $lecturers }}</h3>
                     <small class="text-muted">Full-time & Part-time</small>
                 </div>
                 <div class="stat-icon icon-red">
@@ -293,8 +289,8 @@ new class extends Component {
             <div class="stat-card">
                 <div class="stat-text">
                     <h6 class="text-muted mb-1">Total Revenue</h6>
-                    <h3 class="fw-bold text-warning">KES {{ $total_revenue }}</h3>
-                    <small class="text-muted">From Fees & Payments</small>
+                    <h4 class="text-small text-warning">KES {{ number_format($total_revenue, 2) }}</h4>
+                    <small class="text-muted">Fees & Other Payments</small>
                 </div>
                 <div class="stat-icon icon-orange">
                     <span class="iconify" data-icon="mdi:cash-multiple"></span>
@@ -324,7 +320,7 @@ new class extends Component {
                     <div class="col-6">
                         <a href="{{ route('students.index') }}" class="card-action">
                             <span class="iconify mb-2" data-icon="mdi:account-plus-outline"
-                                  style="font-size: 28px;"></span>
+                                style="font-size: 28px;"></span>
                             <span>Add Student</span>
                         </a>
                     </div>
@@ -333,7 +329,7 @@ new class extends Component {
                     <div class="col-6">
                         <a href="{{ route('courses.index') }}" class="card-action">
                             <span class="iconify mb-2" data-icon="mdi:book-plus-outline"
-                                  style="font-size: 28px;"></span>
+                                style="font-size: 28px;"></span>
                             <span>Add Course</span>
                         </a>
                     </div>
@@ -342,7 +338,7 @@ new class extends Component {
                     <div class="col-6">
                         <a href="{{ route('lecturers.index') }}" class="card-action">
                             <span class="iconify mb-2" data-icon="mdi:account-tie-outline"
-                                  style="font-size: 28px;"></span>
+                                style="font-size: 28px;"></span>
                             <span>Add Lecturer</span>
                         </a>
                     </div>
@@ -359,7 +355,7 @@ new class extends Component {
                     <div class="col-6">
                         <a href="{{ route('roles.users') }}" class="card-action">
                             <span class="iconify mb-2" data-icon="mdi:account-plus-outline"
-                                  style="font-size: 28px;"></span>
+                                style="font-size: 28px;"></span>
                             <span>Add User</span>
                         </a>
                     </div>
@@ -368,7 +364,7 @@ new class extends Component {
                     <div class="col-6">
                         <a href="{{ route('roles.index') }}" class="card-action">
                             <span class="iconify mb-2" data-icon="mdi:shield-account-outline"
-                                  style="font-size: 28px;"></span>
+                                style="font-size: 28px;"></span>
                             <span>Add Role</span>
                         </a>
                     </div>
@@ -403,27 +399,28 @@ new class extends Component {
         <div class="card shadow-sm flex-fill">
             <div class="card-header fw-semibold">Monthly Revenue Breakdown</div>
             <div class="card-body">
-                @foreach($monthlyPayments as $payment)
+                @foreach ($monthlyPayments as $payment)
                     <div class="mb-3">
                         <div class="d-flex justify-content-between small fw-semibold">
                             <span>{{ $payment['month'] }}</span>
                             <span>
-                                <span
-                                    class="text-success">KES{{ number_format($payment['completed'], 2) }} Completed</span> /
-                                <span class="text-warning">KES{{ number_format($payment['pending'], 2) }} Pending</span> /
+                                <span class="text-success">KES{{ number_format($payment['completed'], 2) }}
+                                    Completed</span> /
+                                <span class="text-warning">KES{{ number_format($payment['pending'], 2) }}
+                                    Pending</span> /
                                 <span class="text-danger">KES{{ number_format($payment['failed'], 2) }} Failed</span>
-                             </span>
+                            </span>
                         </div>
 
                         <div class="progress" style="height: 6px;">
                             <div class="progress-bar bg-success"
-                                 style="width: {{ round(($payment['completed'] / $payment['total']) * 100, 2) }}%">
+                                style="width: {{ round(($payment['completed'] / $payment['total']) * 100, 2) }}%">
                             </div>
                             <div class="progress-bar bg-warning"
-                                 style="width: {{ round(($payment['pending'] / $payment['total']) * 100, 2) }}%">
+                                style="width: {{ round(($payment['pending'] / $payment['total']) * 100, 2) }}%">
                             </div>
                             <div class="progress-bar bg-danger"
-                                 style="width: {{ round(($payment['failed'] / $payment['total']) * 100, 2) }}%">
+                                style="width: {{ round(($payment['failed'] / $payment['total']) * 100, 2) }}%">
                             </div>
                         </div>
                     </div>
@@ -482,47 +479,47 @@ new class extends Component {
             <div class="card-body p-0">
                 <table class="table mb-0 align-middle">
                     <thead class="table-light">
-                    <tr>
-                        <th>Student</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Method</th>
-                        <th>Paid On</th>
-                        <th></th>
-                    </tr>
+                        <tr>
+                            <th>Student</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Method</th>
+                            <th>Paid On</th>
+                            <th></th>
+                        </tr>
                     </thead>
                     <tbody>
-                    @foreach($recentPayments as $payment)
-                        <tr>
-                            <td>{{ $payment->enrollment?->student->first_name ?? 'N/A' }}</td>
+                        @foreach ($recentPayments as $payment)
+                            <tr>
+                                <td>{{ $payment->enrollment?->student->first_name ?? 'N/A' }}</td>
 
-                            <td class="fw-semibold text-primary">
-                                KES {{ number_format($payment->amount, 2) }}
-                            </td>
+                                <td class="fw-semibold text-primary">
+                                    KES {{ number_format($payment->amount, 2) }}
+                                </td>
 
-                            <td>
-                                @if($payment->status === 'completed')
-                                    <span class="badge bg-success">Completed</span>
-                                @elseif($payment->status === 'pending')
-                                    <span class="badge bg-warning text-dark">Pending</span>
-                                @elseif($payment->status === 'failed')
-                                    <span class="badge bg-danger">Failed</span>
-                                @else
-                                    <span class="badge bg-secondary">Unknown</span>
-                                @endif
-                            </td>
+                                <td>
+                                    @if ($payment->status === 'completed')
+                                        <span class="badge bg-success">Completed</span>
+                                    @elseif($payment->status === 'pending')
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    @elseif($payment->status === 'failed')
+                                        <span class="badge bg-danger">Failed</span>
+                                    @else
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    @endif
+                                </td>
 
-                            <td>{{ ucfirst($payment->payment_method) }}</td>
+                                <td>{{ ucfirst($payment->payment_method) }}</td>
 
-                            <td>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M, Y') }}</td>
-                        </tr>
-                    @endforeach
+                                <td>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M, Y') }}</td>
+                            </tr>
+                        @endforeach
 
-                    @if($recentPayments->isEmpty())
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">No recent payments found.</td>
-                        </tr>
-                    @endif
+                        @if ($recentPayments->isEmpty())
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">No recent payments found.</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
@@ -538,7 +535,7 @@ new class extends Component {
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
 
             // Data from Livewire
             const statusData = @json(array_values($statusData));
@@ -550,8 +547,8 @@ new class extends Component {
             // Match specific colors to statuses
             const statusColorsMap = {
                 'Approved': '#39b69a', // green
-                'Pending': '#ffae1f',  // yellow
-                'Rejected': '#fa896b'  // red
+                'Pending': '#ffae1f', // yellow
+                'Rejected': '#fa896b' // red
             };
 
             const statusColors = statusLabels.map(status => statusColorsMap[status] || '#ccc');
@@ -581,7 +578,7 @@ new class extends Component {
                     labels: {
                         colors: "#a1aab2",
                         useSeriesColors: false,
-                        formatter: function (label) {
+                        formatter: function(label) {
                             return label.charAt(0).toUpperCase() + label.slice(1);
                         }
                     }
@@ -623,7 +620,7 @@ new class extends Component {
                     labels: {
                         colors: "#a1aab2",
                         useSeriesColors: false,
-                        formatter: function (label) {
+                        formatter: function(label) {
                             return label.charAt(0).toUpperCase() + label.slice(1);
                         }
                     }
@@ -641,12 +638,10 @@ new class extends Component {
             const enrollmentCategories = @json($months);
 
             var options_line = {
-                series: [
-                    {
-                        name: "Enrollments",
-                        data: enrollmentSeries,
-                    },
-                ],
+                series: [{
+                    name: "Enrollments",
+                    data: enrollmentSeries,
+                }, ],
                 chart: {
                     height: 350,
                     type: "line",

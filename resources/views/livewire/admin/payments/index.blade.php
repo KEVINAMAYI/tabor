@@ -26,7 +26,7 @@ new class extends Component {
     {
         return [
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,mpesa,card,bank',
+            'payment_method' => 'required',
             'reference' => 'nullable|string|max:255',
             'paid_at' => 'nullable|date',
             'enrollment_id' => 'required|exists:enrollments,id',
@@ -359,6 +359,7 @@ new class extends Component {
                                             <option value="">Select Payment Method</option>
                                             <option value="cash">Cash</option>
                                             <option value="mpesa">M-Pesa</option>
+                                            <option value="discount">Discount</option>
                                             <option value="card">Card</option>
                                             <option value="bank">Bank</option>
                                         </select>
