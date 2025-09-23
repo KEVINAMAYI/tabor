@@ -21,8 +21,20 @@ new class extends Component {
     {
         $student = auth()->user()->student;
 
+        if (!$student) {
+            // Initialize all props safely if no student record
+            $this->myCourses = 0;
+            $this->myPayments = 0;
+            $this->pendingAssessments = 0;
+            $this->gradedAssessments = 0;
+            $this->pendingAssignments = collect(); // empty collection for consistency
+            return;
+        }
+
         // 1. My Courses
-        $this->myCourses = Enrollment::where('student_id', $student->id)->where('status', 'approved')->count();
+        $this->myCourses = Enrollment::where('student_id', $student->id)
+            ->where('status', 'approved')
+            ->count();
 
         // 2. My Payments
         $this->myPayments = Payment::whereHas('enrollment', function ($q) use ($student) {
@@ -39,6 +51,7 @@ new class extends Component {
             $q->where('student_id', $student->id);
         })->where('status', 'graded')->count();
 
+        // 5. Pending Assignments with relationships
         $this->pendingAssignments = AssessmentSubmission::with([
             'assessment.intakeModule.module.course',
             'assessment.intakeModule.module.defaultLecturer',
@@ -46,9 +59,8 @@ new class extends Component {
             ->whereHas('enrollment', fn($q) => $q->where('student_id', $student->id))
             ->where('status', 'pending')
             ->get();
-
-
     }
+
 
 
 }; ?>
@@ -283,29 +295,39 @@ new class extends Component {
                     </h6>
 
                     @php
-                        $recentGraded = AssessmentSubmission::with('assessment')
-                            ->whereHas('enrollment', fn($q) => $q->where('student_id', auth()->user()->student->id))
-                            ->where('status', 'graded')
-                            ->latest()
-                            ->take(3)
-                            ->get();
+                        $student = auth()->user()->student;
+                        $recentGraded = collect();
+
+                        if ($student) {
+                            $recentGraded = \App\Models\AssessmentSubmission::with('assessment.intakeModule.module')
+                                ->whereHas('enrollment', fn($q) => $q->where('student_id', $student->id))
+                                ->where('status', 'graded')
+                                ->latest()
+                                ->take(3)
+                                ->get();
+                        }
                     @endphp
 
-                    @forelse($recentGraded as $submission)
-                        <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
-                            <div>
-                                <strong>{{ $submission->assessment->title }}</strong>
-                                <div class="text-muted small">
-                                    {{ $submission->assessment->intakeModule->module->title ?? 'N/A' }}
+                    @if($student)
+                        @forelse($recentGraded as $submission)
+                            <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
+                                <div>
+                                    <strong>{{ $submission->assessment->title }}</strong>
+                                    <div class="text-muted small">
+                                        {{ $submission->assessment->intakeModule->module->title ?? 'N/A' }}
+                                    </div>
                                 </div>
+                                <span class="fw-bold" style="color:#f8a952;">
+                {{ $submission->mark }}/{{ $submission->assessment->max_marks }}
+            </span>
                             </div>
-                            <span class="fw-bold" style="color:#f8a952;">
-                            {{ $submission->mark }}/{{ $submission->assessment->max_marks }}
-                        </span>
-                        </div>
-                    @empty
-                        <p class="text-muted text-center">No graded assessments yet</p>
-                    @endforelse
+                        @empty
+                            <p class="text-muted text-center">No graded assessments yet</p>
+                        @endforelse
+                    @else
+                        <p class="text-muted text-center">Student profile not found.</p>
+                    @endif
+
                 </div>
             </div>
         </div>

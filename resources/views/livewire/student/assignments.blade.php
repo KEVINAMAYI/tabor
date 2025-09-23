@@ -18,6 +18,12 @@ new class extends Component {
     {
         $student = auth()->user()->student;
 
+        if (!$student) {
+            // No student record → just set assignments to an empty collection
+            $this->assignments = collect();
+            return;
+        }
+
         $this->assignments = AssessmentSubmission::with([
             'assessment.intakeModule.module.course',
             'assessment.intakeModule.module.defaultLecturer',
@@ -39,6 +45,7 @@ new class extends Component {
                 return $submission;
             });
     }
+
 
     public function submitAssessment()
     {
