@@ -30,13 +30,14 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item {{ request()->routeIs('student.attendance.*') ? 'active' : '' }}">
-                    <a class="sidebar-link {{ request()->routeIs('student.attendance.*') ? 'active' : '' }}"
-                       href="{{ route('student.attendance.index') }}">
-                        <iconify-icon icon="mdi:calendar-check"></iconify-icon>
-                        <span class="hide-menu">My Attendance</span>
+                <li class="sidebar-item {{ request()->routeIs('student.assignments.*') ? 'active' : '' }}">
+                    <a class="sidebar-link {{ request()->routeIs('student.assignments.*') ? 'active' : '' }}"
+                       href="{{ route('student.assignments.index') }}">
+                        <iconify-icon icon="mdi:file-document-edit"></iconify-icon>
+                        <span class="hide-menu">My Assignments</span>
                     </a>
                 </li>
+
 
                 <li class="sidebar-item {{ request()->routeIs('student.payments.*') ? 'active' : '' }}">
                     <a class="sidebar-link {{ request()->routeIs('student.payments.index') ? 'active' : '' }}"
@@ -46,14 +47,6 @@
                     </a>
                 </li>
 
-
-                <li class="sidebar-item {{ request()->routeIs('student.profile.*') ? 'active' : '' }}">
-                    <a class="sidebar-link {{ request()->routeIs('student.profile') ? 'active' : '' }}"
-                       href="{{ route('student.profile') }}">
-                        <iconify-icon icon="solar:user-id-line-duotone"></iconify-icon>
-                        <span class="hide-menu">My Profile</span>
-                    </a>
-                </li>
 
 
                 <li class="sidebar-item">

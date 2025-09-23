@@ -26,6 +26,11 @@ class IntakeModule extends Pivot
         return $this->belongsTo(Intake::class);
     }
 
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'intake_id', 'intake_id');
+    }
+
     public function module()
     {
         return $this->belongsTo(Module::class);

@@ -704,10 +704,6 @@ new class extends Component {
                 options_line
             );
             chart_line_basic.render();
-
-
         });
-
-
     </script>
 @endpush

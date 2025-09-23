@@ -18,6 +18,7 @@ class AssessmentSubmission extends Model
         'enrollment_id',
         'file_path',
         'submitted_at',
+        'status',
         'mark',
         'feedback',
         'graded_at',

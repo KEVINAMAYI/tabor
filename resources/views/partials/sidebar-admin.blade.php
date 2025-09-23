@@ -107,16 +107,16 @@
                     </li>
                 @endcan
 
-                @can('view-attendance')
-                    <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"
-                           href="{{ route('attendance.index') }}"
-                           aria-expanded="false">
-                            <iconify-icon icon="solar:repeat-one-minimalistic-bold-duotone"></iconify-icon>
-                            <span class="hide-menu">Attendance Tracking</span>
-                        </a>
-                    </li>
-                @endcan
+{{--                @can('view-attendance')--}}
+{{--                    <li class="sidebar-item">--}}
+{{--                        <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"--}}
+{{--                           href="{{ route('attendance.index') }}"--}}
+{{--                           aria-expanded="false">--}}
+{{--                            <iconify-icon icon="solar:repeat-one-minimalistic-bold-duotone"></iconify-icon>--}}
+{{--                            <span class="hide-menu">Attendance Tracking</span>--}}
+{{--                        </a>--}}
+{{--                    </li>--}}
+{{--                @endcan--}}
 
                 @can('view-payments')
                     <li class="sidebar-item">

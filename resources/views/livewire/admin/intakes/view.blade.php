@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Assessment;
+use App\Models\AssessmentSubmission;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\IntakeModuleLecturer;
 use App\Models\Material;
 use App\Models\Module;
@@ -44,7 +46,10 @@ new class extends Component {
     public $assessment_file;
     public $materials = [];
     public $assessments = [];
-
+    public $selectedAssessment;
+    public $submissions = [];
+    public $marks = [];
+    public $feedback = [];
 
     /* ---------- mount ---------- */
     public function mount($intake_id)
@@ -137,6 +142,43 @@ new class extends Component {
     }
 
 
+    #[On('open-submissions')]
+    public function loadSubmissions($assessmentId)
+    {
+        $this->selectedAssessment = Assessment::with(['submissions.enrollment.student'])
+            ->findOrFail($assessmentId);
+
+        $this->submissions = $this->selectedAssessment->submissions;
+
+        // Pre-fill marks & feedback for editing
+        foreach ($this->submissions as $submission) {
+            $this->marks[$submission->id] = $submission->mark;
+            $this->feedback[$submission->id] = $submission->feedback;
+        }
+
+    }
+
+    public function gradeSubmission($submissionId)
+    {
+        $submission = AssessmentSubmission::findOrFail($submissionId);
+
+        $submission->update([
+            'mark' => $this->marks[$submissionId] ?? null,
+            'feedback' => $this->feedback[$submissionId] ?? null,
+            'status' => 'graded',
+            'graded_at' => now(),
+        ]);
+
+        LivewireAlert::title('Success!')
+            ->text('Submission graded successfully.')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
+        $this->loadSubmissions($submission->assessment_id);
+    }
+
     public function loadAssessments()
     {
 
@@ -205,15 +247,36 @@ new class extends Component {
             ? $this->assessment_file->store('assessments', 'public')
             : null;
 
-        Assessment::create([
+        // Get the IntakeModule
+        $intakeModule = IntakeModule::findOrFail($this->getIntakeModuleId());
+
+        $assessment = Assessment::create([
             'type' => $this->type,
             'title' => $this->title,
-            'intake_module_id' => $this->getIntakeModuleId(),
+            'intake_module_id' => $intakeModule->id,
             'due_on' => $this->due_on,
             'max_marks' => $this->max_marks,
             'file_path' => $path,
             'original_name' => $this->assessment_file?->getClientOriginalName(),
         ]);
+
+
+        // Get the related module and course
+        $module = $intakeModule->module;
+        $course = $module->course;
+
+        // Fetch enrollments to the course + intake
+        $enrollments = Enrollment::where('course_id', $course->id)
+            ->where('intake_id', $this->intakeId)
+            ->get();
+
+        foreach ($enrollments as $enrollment) {
+            AssessmentSubmission::create([
+                'assessment_id' => $assessment->id,
+                'enrollment_id' => $enrollment->id,
+                'status' => 'pending',
+            ]);
+        }
 
         $this->reset(['type', 'title', 'due_on', 'max_marks', 'assessment_file']);
         $this->dispatch('hide-assessment-modal');
@@ -341,6 +404,71 @@ new class extends Component {
 
 }; ?>
 
+@push('styles')
+    <style>
+        .submissions-table {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        .submissions-table thead {
+            background-color: #0c314d;
+            color: white;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .submissions-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .submissions-table tbody tr:hover {
+            background-color: #fdf2e9; /* subtle orange tint */
+        }
+
+        .submissions-table .btn-outline-primary {
+            border-color: #f69121;
+            color: #f69121;
+        }
+
+        .submissions-table .btn-outline-primary:hover {
+            background-color: #f69121;
+            color: white;
+        }
+
+        .submissions-table .btn-success {
+            background-color: #f69121;
+            border-color: #f69121;
+        }
+
+        .submissions-table .btn-success:hover {
+            background-color: #0c314d;
+            border-color: #0c314d;
+            color: white;
+        }
+
+        .submissions-table .badge {
+            font-size: 0.75rem;
+            padding: 0.4em 0.6em;
+            border-radius: 6px;
+        }
+
+        .submissions-table .badge.bg-success {
+            background-color: #0c314d !important; /* graded → navy */
+        }
+
+        .submissions-table .badge.bg-warning {
+            background-color: #f69121 !important; /* pending → orange */
+            color: white;
+        }
+
+        .submissions-table .badge.bg-secondary {
+            background-color: #6c757d !important;
+        }
+    </style>
+@endpush
 <div class="col-12">
     <div class="container-fluid">
         <div class="card card-body py-3">
@@ -741,7 +869,7 @@ new class extends Component {
                                 <li class="list-group-item border-0 p-0 mx-9">
                                     <a class="d-flex align-items-center gap-6 list-group-item-action text-dark px-3 py-8 mb-1 rounded-1"
                                        href="javascript:void(0)">
-                                        <i class="ti ti-file-text fs-5"></i>Pening Approval
+                                        <i class="ti ti-file-text fs-5"></i>Pending Approval
                                     </a>
                                 </li>
                                 <li class="list-group-item border-0 p-0 mx-9">
@@ -1135,10 +1263,6 @@ new class extends Component {
                                         <i class="ti ti-download fs-5"></i>
                                     </a>
                                 @endif
-                                <a href="#" wire:click.prevent="editMaterial({{ $material->id }})"
-                                   class="text-warning ms-2" title="Edit Metadata">
-                                    <i class="ti ti-pencil fs-5"></i>
-                                </a>
                                 <a href="#" wire:click.prevent="deleteMaterial({{ $material->id }})"
                                    class="text-danger ms-2" title="Delete">
                                     <i class="ti ti-trash fs-5"></i>
@@ -1211,13 +1335,25 @@ new class extends Component {
                             </td>
                             <td>{{ $assessment->created_at->format('d M Y') }}</td>
                             <td>
-                                <div class="action-btn">
-                                    <a wire:click.prevent="deleteAssessment({{ $assessment->id }})"
-                                       class="text-danger ms-2" title="Delete">
-                                        <i class="ti ti-trash fs-5"></i>
-                                    </a>
-                                </div>
+                                <!-- View Submissions -->
+                                <a style=" cursor: pointer;"
+                                   wire:click="$dispatch('open-submissions', { assessmentId: {{ $assessment->id }} })"
+                                   class="text-primary"
+                                   title="View Submissions"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#studentSubmissionsModal">
+                                    <i class="ti ti-list-check fs-5"></i>
+                                </a>
+
+                                <!-- Delete -->
+                                <a style=" cursor: pointer;"
+                                   wire:click="deleteAssessment({{ $assessment->id }})"
+                                   class="text-danger"
+                                   title="Delete">
+                                    <i class="ti ti-trash fs-5"></i>
+                                </a>
                             </td>
+
                         </tr>
                     @empty
                         <tr>
@@ -1378,10 +1514,103 @@ new class extends Component {
     </div>
 
 
+    <div class="modal fade"
+         id="studentSubmissionsModal"
+         tabindex="-1"
+         aria-labelledby="studentSubmissionsModalLabel"
+         aria-hidden="true"
+         wire:ignore.self>
+
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentSubmissionsModalLabel">
+                        Student Submissions – {{ $selectedAssessment->title ?? '' }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle submissions-table">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student</th>
+                                <th>Submitted At</th>
+                                <th>File</th>
+                                <th>Status</th>
+                                <th>Mark</th>
+                                <th>Feedback</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse ($submissions as $index => $submission)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td class="fw-semibold text-dark">
+                                        {{ $submission->enrollment->student->first_name.' '.$submission->enrollment->student->last_name }}
+                                    </td>
+                                    <td>{{ $submission->submitted_at?->format('d M Y, h:i A') ?? '—' }}</td>
+                                    <td>
+                                        @if($submission->file_path)
+                                            <a href="{{ asset('storage/' . $submission->file_path) }}"
+                                               target="_blank" class="btn btn-sm btn-outline-primary">
+                                                View File
+                                            </a>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                <span class="badge
+                    @if($submission->status === 'graded') bg-success
+                    @elseif($submission->status === 'pending') bg-warning
+                    @else bg-secondary @endif">
+                    {{ ucfirst($submission->status) }}
+                </span>
+                                    </td>
+                                    <td>
+                                        <input type="number"
+                                               class="form-control form-control-sm"
+                                               min="0" max="100"
+                                               wire:model.defer="marks.{{ $submission->id }}">
+                                    </td>
+                                    <td>
+                <textarea class="form-control form-control-sm" rows="1"
+                          wire:model.defer="feedback.{{ $submission->id }}"></textarea>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success"
+                                                wire:click="gradeSubmission({{ $submission->id }})">
+                                            Save
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        No submissions yet for this assessment.
+                                    </td>
+                                </tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
-
-</div>
 @push('scripts')
     <script>
 

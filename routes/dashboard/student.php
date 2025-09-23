@@ -22,4 +22,7 @@ Route::middleware(['auth','active','password_changed'])->prefix('student')->grou
     // Route to manage attendance
     Volt::route('attendance', 'student.attendance')->name('student.attendance.index');
 
+    // Route to manage assignments
+    Volt::route('assignments', 'student.assignments')->name('student.assignments.index');
+
 });

@@ -19,9 +19,11 @@ return new class extends Migration {
             $table->unsignedSmallInteger('mark')->nullable();
             $table->text('feedback')->nullable();
             $table->timestamp('graded_at')->nullable();
+            $table->string('status')->default('pending'); // <-- Add this
             $table->timestamps();
             $table->unique(['assessment_id', 'enrollment_id']);
         });
+
     }
 
     /**

@@ -143,6 +143,69 @@ new class extends Component {
             margin-right: 8px !important;
             font-size: 1.1rem !important;
         }
+
+        .btn-print {
+            background-color: #0e334e;
+            color: #fff;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-print:hover {
+            background-color: #f69121;
+            color: #fff;
+        }
+
+
+        /* Hidden printable receipt */
+        .receipt-print {
+            visibility: hidden;
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 100%;
+        }
+
+        /* Print styling */
+        @media print {
+            @page {
+                size: auto;
+                margin: 0; /* no extra margin */
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+            }
+
+            body * {
+                visibility: hidden !important;
+            }
+
+            .receipt-print, .receipt-print * {
+                visibility: visible !important;
+            }
+
+            .receipt-print {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 20mm !important; /* acts like page margin */
+                background: white !important;
+                box-sizing: border-box !important;
+                page-break-inside: avoid;
+                page-break-after: always;
+            }
+        }
+
     </style>
 @endpush
 
@@ -209,15 +272,15 @@ new class extends Component {
                             </span>
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link hstack gap-2 rounded-0 fs-12 py-6" id="pills-attendance-tab"
-                                data-bs-toggle="pill" data-bs-target="#pills-attendance" type="button" role="tab"
-                                aria-controls="pills-attendance" aria-selected="false">
-                            <i class="ti ti-calendar-check fs-5"></i>
-                            <!-- Calendar icon with checkmark for Attendance -->
-                            <span class="d-none d-md-block">Attendance</span>
-                        </button>
-                    </li>
+                    {{--                    <li class="nav-item" role="presentation">--}}
+                    {{--                        <button class="nav-link hstack gap-2 rounded-0 fs-12 py-6" id="pills-attendance-tab"--}}
+                    {{--                                data-bs-toggle="pill" data-bs-target="#pills-attendance" type="button" role="tab"--}}
+                    {{--                                aria-controls="pills-attendance" aria-selected="false">--}}
+                    {{--                            <i class="ti ti-calendar-check fs-5"></i>--}}
+                    {{--                            <!-- Calendar icon with checkmark for Attendance -->--}}
+                    {{--                            <span class="d-none d-md-block">Attendance</span>--}}
+                    {{--                        </button>--}}
+                    {{--                    </li>--}}
                     <li class="nav-item" role="presentation">
                         <button class="nav-link hstack gap-2 rounded-0 fs-12 py-6" id="pills-payments-tab"
                                 data-bs-toggle="pill" data-bs-target="#pills-payments" type="button" role="tab"
@@ -335,100 +398,100 @@ new class extends Component {
                     @endforeach
                 </div>
             </div>
-            <div class="tab-pane fade" id="pills-attendance" role="tabpanel" aria-labelledby="pills-attendance-tab"
-                 tabindex="0">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="widget-content searchable-container list">
-                            <div class="card card-body">
-                                <div class="row">
-                                    <div class="col-md-4 col-xl-3">
-                                        <form class="position-relative">
-                                            <input type="text" class="form-control product-search ps-5"
-                                                   id="input-search" placeholder="Search Payments..."/>
-                                            <i
-                                                class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
-                                        </form>
-                                    </div>
-                                    <div
-                                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
-                                        <div class="action-btn show-btn">
-                                            <a href="javascript:void(0)"
-                                               class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
-                                                <i class="ti ti-trash me-1 fs-5"></i> Delete All Row
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            {{--            <div class="tab-pane fade" id="pills-attendance" role="tabpanel" aria-labelledby="pills-attendance-tab"--}}
+            {{--                 tabindex="0">--}}
+            {{--                <div class="row">--}}
+            {{--                    <div class="col-12">--}}
+            {{--                        <div class="widget-content searchable-container list">--}}
+            {{--                            <div class="card card-body">--}}
+            {{--                                <div class="row">--}}
+            {{--                                    <div class="col-md-4 col-xl-3">--}}
+            {{--                                        <form class="position-relative">--}}
+            {{--                                            <input type="text" class="form-control product-search ps-5"--}}
+            {{--                                                   id="input-search" placeholder="Search Payments..."/>--}}
+            {{--                                            <i--}}
+            {{--                                                class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>--}}
+            {{--                                        </form>--}}
+            {{--                                    </div>--}}
+            {{--                                    <div--}}
+            {{--                                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">--}}
+            {{--                                        <div class="action-btn show-btn">--}}
+            {{--                                            <a href="javascript:void(0)"--}}
+            {{--                                               class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">--}}
+            {{--                                                <i class="ti ti-trash me-1 fs-5"></i> Delete All Row--}}
+            {{--                                            </a>--}}
+            {{--                                        </div>--}}
+            {{--                                    </div>--}}
+            {{--                                </div>--}}
+            {{--                            </div>--}}
 
-                            <div class="card card-body">
-                                <div class="table-responsive">
-                                    <table class="table search-table align-middle text-nowrap">
-                                        <thead class="header-item">
-                                        <th>
-                                            <div class="n-chk align-self-center text-center">
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input primary"
-                                                           id="contact-check-all"/>
-                                                    <label class="form-check-label"
-                                                           for="contact-check-all"></label>
-                                                    <span class="new-control-indicator"></span>
-                                                </div>
-                                            </div>
-                                        </th>
-                                        <th>Course</th>
-                                        <th>Attendance</th>
-                                        <th>Action</th>
-                                        </thead>
-                                        <tbody>
-                                        <tr class="search-items">
-                                            <td>
-                                                <div class="n-chk align-self-center text-center">
-                                                    <div class="form-check">
-                                                        <input type="checkbox"
-                                                               class="form-check-input contact-chkbox primary"
-                                                               id="checkbox1"/>
-                                                        <label class="form-check-label" for="checkbox1"></label>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ti ti-code fs-5 me-2"></i>
-                                                    <div class="ms-3">
-                                                        <div class="user-meta-info">
-                                                            <h6 class="user-name mb-0"
-                                                                data-name="Advanced Web Development">Advanced Web
-                                                                Development</h6>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                    <span class="badge bg-success-subtle text-success">
-                                                        85%
-                                                    </span>
-                                            </td>
-                                            <td>
-                                                <div class="action-btn">
-                                                    <a href="javascript:void(0)" class="text-primary edit">
-                                                        <i class="ti ti-eye fs-5"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0)" class="text-dark delete ms-2">
-                                                        <i class="ti ti-trash fs-5"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {{--                            <div class="card card-body">--}}
+            {{--                                <div class="table-responsive">--}}
+            {{--                                    <table class="table search-table align-middle text-nowrap">--}}
+            {{--                                        <thead class="header-item">--}}
+            {{--                                        <th>--}}
+            {{--                                            <div class="n-chk align-self-center text-center">--}}
+            {{--                                                <div class="form-check">--}}
+            {{--                                                    <input type="checkbox" class="form-check-input primary"--}}
+            {{--                                                           id="contact-check-all"/>--}}
+            {{--                                                    <label class="form-check-label"--}}
+            {{--                                                           for="contact-check-all"></label>--}}
+            {{--                                                    <span class="new-control-indicator"></span>--}}
+            {{--                                                </div>--}}
+            {{--                                            </div>--}}
+            {{--                                        </th>--}}
+            {{--                                        <th>Course</th>--}}
+            {{--                                        <th>Attendance</th>--}}
+            {{--                                        <th>Action</th>--}}
+            {{--                                        </thead>--}}
+            {{--                                        <tbody>--}}
+            {{--                                        <tr class="search-items">--}}
+            {{--                                            <td>--}}
+            {{--                                                <div class="n-chk align-self-center text-center">--}}
+            {{--                                                    <div class="form-check">--}}
+            {{--                                                        <input type="checkbox"--}}
+            {{--                                                               class="form-check-input contact-chkbox primary"--}}
+            {{--                                                               id="checkbox1"/>--}}
+            {{--                                                        <label class="form-check-label" for="checkbox1"></label>--}}
+            {{--                                                    </div>--}}
+            {{--                                                </div>--}}
+            {{--                                            </td>--}}
+            {{--                                            <td>--}}
+            {{--                                                <div class="d-flex align-items-center">--}}
+            {{--                                                    <i class="ti ti-code fs-5 me-2"></i>--}}
+            {{--                                                    <div class="ms-3">--}}
+            {{--                                                        <div class="user-meta-info">--}}
+            {{--                                                            <h6 class="user-name mb-0"--}}
+            {{--                                                                data-name="Advanced Web Development">Advanced Web--}}
+            {{--                                                                Development</h6>--}}
+            {{--                                                        </div>--}}
+            {{--                                                    </div>--}}
+            {{--                                                </div>--}}
+            {{--                                            </td>--}}
+            {{--                                            <td>--}}
+            {{--                                                    <span class="badge bg-success-subtle text-success">--}}
+            {{--                                                        85%--}}
+            {{--                                                    </span>--}}
+            {{--                                            </td>--}}
+            {{--                                            <td>--}}
+            {{--                                                <div class="action-btn">--}}
+            {{--                                                    <a href="javascript:void(0)" class="text-primary edit">--}}
+            {{--                                                        <i class="ti ti-eye fs-5"></i>--}}
+            {{--                                                    </a>--}}
+            {{--                                                    <a href="javascript:void(0)" class="text-dark delete ms-2">--}}
+            {{--                                                        <i class="ti ti-trash fs-5"></i>--}}
+            {{--                                                    </a>--}}
+            {{--                                                </div>--}}
+            {{--                                            </td>--}}
+            {{--                                        </tr>--}}
+            {{--                                        </tbody>--}}
+            {{--                                    </table>--}}
+            {{--                                </div>--}}
+            {{--                            </div>--}}
+            {{--                        </div>--}}
+            {{--                    </div>--}}
+            {{--                </div>--}}
+            {{--            </div>--}}
             <div class="tab-pane fade" id="pills-payments" role="tabpanel" aria-labelledby="pills-payments-tab"
                  tabindex="0">
                 <div class="row">
@@ -692,7 +755,7 @@ new class extends Component {
 
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel"
          aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="paymentModalLabel">Sub-Payments Breakdown</h5>
@@ -710,7 +773,7 @@ new class extends Component {
                             <th>Payment Method</th>
                             <th>Amount</th>
                             <th>Paid By</th>
-                            {{-- <th>Action</th> --}}
+                            <th>Action</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -727,11 +790,17 @@ new class extends Component {
                                     <td>{{ ucfirst($payment->payment_method) ?? 'N/A' }}</td>
                                     <td>{{ number_format($payment->amount, 2) }}</td>
                                     <td>{{ $payment->payer ?? 'N/A' }}</td>
-                                    {{-- <td>
-                                        <a href="#" class="btn btn-warning btn-sm">
-                                            <i class="fa fa-exchange" aria-hidden="true"></i> Reallocate
-                                        </a>
-                                    </td> --}}
+                                    <td>
+                                        <button class="btn-print" onclick="printReceipt(
+                    '{{ $payment->enrollment->course->title ?? 'N/A' }}',
+                    '{{ number_format($payment->amount, 2) }}',
+                    '{{ ucfirst($payment->payment_method) }}',
+                    '{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M Y') }}',
+                    '{{ $payment->reference }}'
+                )">
+                                            <i class="ti ti-printer"></i> Print
+                                        </button>
+                                    </td>
                                 </tr>
                                 @php
                                     $totalPayments += $payment->amount;
@@ -747,6 +816,7 @@ new class extends Component {
                         </tr>
                         </tfoot>
                     </table>
+
                 </div>
             </div>
         </div>
@@ -781,6 +851,39 @@ new class extends Component {
         </div>
     </div>
 
+    <!-- Hidden Printable Receipt -->
+    <div id="receipt" class="receipt-print">
+        <div
+            style="max-width: 600px; margin: auto; font-family: 'Segoe UI', sans-serif; padding: 40px; border: 1px solid #ddd; background-color: #fff;">
+
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="assets/images/logos/tabor_logo.png" alt="Company Logo" style="height: 60px;">
+                <h4 style="margin-top: 10px; color: #0e334e;">Payment Receipt</h4>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 2px solid #f69121;">
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Course Title:</strong> <span id="receipt-course"></span></p>
+                <p><strong>Amount Paid:</strong> <span style="color: #0e334e;">KES <span
+                            id="receipt-amount"></span></span></p>
+                <p><strong>Payment Method:</strong> <span id="receipt-method"></span></p>
+                <p><strong>Date Paid:</strong> <span id="receipt-date"></span></p>
+                <p><strong>Reference:</strong> <span id="receipt-reference"></span></p>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 2px dashed #ccc;">
+
+            <p style="text-align: center; font-size: 13px; color: #888; margin-top: 30px;">
+                Thank you for your payment. This receipt serves as proof of payment.
+            </p>
+
+            <p style="text-align: center; font-size: 12px; color: #bbb; margin-top: 10px;">
+                &copy; {{ date('Y') }} Tabor
+            </p>
+        </div>
+    </div>
 
 </div>
 
@@ -803,5 +906,21 @@ new class extends Component {
         window.addEventListener('hide-enrollment-status-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('enrollmentStatusModal'))?.hide();
         });
+
+
+        function printReceipt(course, amount, method, date, reference) {
+            // Fill receipt
+            document.getElementById('receipt-course').innerText = course;
+            document.getElementById('receipt-amount').innerText = amount;
+            document.getElementById('receipt-method').innerText = method;
+            document.getElementById('receipt-date').innerText = date;
+            document.getElementById('receipt-reference').innerText = reference;
+
+            // Delay print to allow DOM to update
+            setTimeout(() => {
+                window.print();
+            }, 500); // 300ms is usually enough
+        }
+
     </script>
 @endpush
