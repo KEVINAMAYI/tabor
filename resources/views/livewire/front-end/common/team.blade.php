@@ -146,6 +146,19 @@
                 </div>
             </div>
 
+            <!-- Agnes -->
+            <div class="col-md-4">
+                <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
+                    data-name="Agnes Clare Mwangi" data-title="Lead Trainer, German Language"
+                    data-img="../assets/images/frontend-pages/agnes.jpg"
+                    data-desc="Agnes a C1-certified German Language trainer, brings vast training experience and a passion for helping learners achieve fluency for academic and professional success abroad.">
+                    <img src="../assets/images/frontend-pages/agnes.jpg" class="card-img-top" alt="Agnes">
+                    <div class="card-body text-center">
+                        <h5 class="card-title mb-1">Agnes Clare Mwangi</h5>
+                        <p class="card-text small">Lead Trainer, German Language</p>
+                    </div>
+                </div>
+            </div>
             <!-- Marvin -->
             <div class="col-md-4">
                 <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
@@ -155,7 +168,7 @@
                     <img src="../assets/images/frontend-pages/Marvin_Kibiku.png" class="card-img-top" alt="Marvin">
                     <div class="card-body text-center">
                         <h5 class="card-title mb-1">Marvin Kibiku Munyua</h5>
-                        <p class="card-text small">Lead Trainer, German Language</p>
+                        <p class="card-text small">Trainer, German Language</p>
                     </div>
                 </div>
             </div>
