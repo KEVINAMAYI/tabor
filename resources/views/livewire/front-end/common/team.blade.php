@@ -162,7 +162,7 @@
             <!-- Marvin -->
             <div class="col-md-4">
                 <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
-                    data-name="Marvin Kibiku Munyua" data-title="Lead Trainer, German Language"
+                    data-name="Marvin Kibiku Munyua" data-title="Trainer, German Language"
                     data-img="../assets/images/frontend-pages/Marvin_Kibiku.png"
                     data-desc="Marvin is a dynamic German language expert with a passion for teaching. He empowers learners with practical communication skills and fosters a strong foundation in German language proficiency.">
                     <img src="../assets/images/frontend-pages/Marvin_Kibiku.png" class="card-img-top" alt="Marvin">
