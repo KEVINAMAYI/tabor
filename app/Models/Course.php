@@ -52,14 +52,15 @@ class Course extends Model
         return $this->hasManyThrough(
             Intake::class,
             IntakeModule::class,
-            'module_id',          // FK on intake_modules
-            'id',                 // PK on intakes
-            'id',                 // PK on courses
-            'intake_id'           // FK on intake_modules
-        )
-            ->whereHas('module.course', fn($q) => $q->where('courses.id', $this->id))
-            ->distinct();
+            'module_id',   // Foreign key on IntakeModule (pointing to Module)
+            'id',          // Primary key on Intake
+            'id',          // Local key on Course
+            'intake_id'    // Foreign key on IntakeModule (pointing to Intake)
+        )->whereHas('module', function ($query) {
+            $query->where('course_id', $this->id);
+        })->distinct();
     }
+
 
     // Students who have ever enrolled in this course
     public function students()

@@ -6,6 +6,7 @@ use App\Models\Intake;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\EnrollmentStatus;
 use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
 use App\Models\ClassGroup;
@@ -66,12 +67,30 @@ new class extends Component {
         if ($enrollment) {
             LivewireAlert::text('Enrollment already exists.!')->error()->toast()->position('top-end')->show();
         } else {
-            $this->student->enrollments()->create([
+
+            // Create the enrollment
+            $enrollment = $this->student->enrollments()->create([
                 'course_id' => $this->selectedCourseId,
                 'intake_id' => $this->selectedIntakeId,
                 'status' => $this->status,
                 'enrolled_at' => now(),
             ]);
+
+            // Ensure the course relationship is loaded
+            $enrollment->load('course');
+
+            // Send email notification
+            $user = $this->student->user ?? null;
+
+            if ($user) {
+                $notification = new EnrollmentStatus(
+                    $this->status,
+                    $enrollment->course->title ?? 'Unknown Program'
+                );
+
+                $user->notify($notification);
+            }
+
 
             //To review with Kevin
 
@@ -92,6 +111,7 @@ new class extends Component {
         $this->dispatch('show-enrollment-status-modal');
     }
 
+
     public function updateEnrollmentStatus()
     {
         try {
@@ -101,13 +121,24 @@ new class extends Component {
             $enrollment->status = $this->enrollmentStatus;
             $enrollment->save();
 
-            if ($this->enrollmentStatus == 'approved') {
-                $user = User::find($enrollment->student->user_id);
+            $user = $enrollment->student->user ?? null;
+
+            if ($this->enrollmentStatus === 'approved' && $user) {
                 $user->active = true;
                 $user->save();
             }
 
-            DB::commit();
+            DB::commit(); // 🟢 Commit before sending the email
+
+            // ✅ Now send email after transaction
+            if ($user) {
+                $notification = new EnrollmentStatus(
+                    $this->enrollmentStatus,
+                    $enrollment->course->title ?? 'Unknown Program'
+                );
+
+                $user->notify($notification);
+            }
 
             $this->dispatch('hide-enrollment-status-modal');
 
@@ -118,8 +149,11 @@ new class extends Component {
             Log::error('Failed to update enrollment status: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to update enrollment status.!')->error()->toast()->position('top-end')->show();
+
+            dd('Caught Exception: ' . $e->getMessage());
         }
     }
+
 
     public function addPayment()
     {

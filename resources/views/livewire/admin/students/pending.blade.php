@@ -4,6 +4,7 @@ use App\Exports\PendingEnrollmentExport;
 use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\User;
+use App\Notifications\EnrollmentStatus;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
@@ -89,12 +90,25 @@ new class extends Component {
 
             if ($this->status == 'approved') {
                 $enrollment->remarks = null;
+
                 $user = User::find($enrollment->student->user_id);
                 $user->active = true;
                 $user->save();
+
+            } else {
+                // Optionally handle if rejected (e.g., deactivate or log remarks)
+                $user = User::find($enrollment->student->user_id);
             }
 
-            //send email notification to student upon approval/rejection
+
+            // ✅ Send email notification to student upon approval or rejection
+            if ($user) {
+                $user->notify(new EnrollmentStatus(
+                    $this->status,
+                    $enrollment->program->name ?? 'Unknown Program'
+                ));
+            }
+
 
             DB::commit();
 
@@ -170,8 +184,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                class="form-control product-search ps-5" placeholder="Search Students..."
-                                wire:model="search" />
+                                   class="form-control product-search ps-5" placeholder="Search Students..."
+                                   wire:model="search"/>
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -200,7 +214,7 @@ new class extends Component {
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon class="me-2" icon="mdi:progress-clock"
-                                style="font-size: 20px; color: orange;"></iconify-icon>
+                                          style="font-size: 20px; color: orange;"></iconify-icon>
                             Pending Enrollment List
                         </h6>
 
@@ -209,17 +223,17 @@ new class extends Component {
 
                             <!-- Export Excel Button -->
                             <button wire:click="exportExcel"
-                                class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-excel-outline" class="me-1"
-                                    style="font-size: 18px;"></iconify-icon>
+                                              style="font-size: 18px;"></iconify-icon>
                                 Excel
                             </button>
 
                             <!-- Export PDF Button -->
                             <button wire:click="exportPdf"
-                                class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-pdf-box" class="me-1"
-                                    style="font-size: 18px;"></iconify-icon>
+                                              style="font-size: 18px;"></iconify-icon>
                                 PDF
                             </button>
                         </div>
@@ -228,28 +242,28 @@ new class extends Component {
 
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Course</th>
-                                <th>Intake</th>
-                                <th>Phone Number</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
-                                <th>Action</th>
-                            </tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Course</th>
+                            <th>Intake</th>
+                            <th>Phone Number</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            @forelse ($enrollments as $enrollment)
-                                <tr class="search-items">
-                                    <td class="text-blue fw-bold">{{ $loop->iteration }}</td>
-                                    <td class="text-blue">
-                                        {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
-                                    </td>
-                                    <td class="text-orange">{{ $enrollment->course->title }}</td>
-                                    <td class="text-blue">{{ $enrollment->intake->name }}</td>
-                                    <td>{{ $enrollment->student->phone }}</td>
-                                    <td>
+                        @forelse ($enrollments as $enrollment)
+                            <tr class="search-items">
+                                <td class="text-blue fw-bold">{{ $loop->iteration }}</td>
+                                <td class="text-blue">
+                                    {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+                                </td>
+                                <td class="text-orange">{{ $enrollment->course->title }}</td>
+                                <td class="text-blue">{{ $enrollment->intake->name }}</td>
+                                <td>{{ $enrollment->student->phone }}</td>
+                                <td>
                                         <span
                                             class="badge
                 @if ($enrollment->status == 'pending') badge-pending
@@ -257,33 +271,33 @@ new class extends Component {
                 @else bg-success @endif">
                                             {{ ucfirst($enrollment->status) }}
                                         </span>
-                                    </td>
-                                    <td class="text-muted">{{ $enrollment->remarks }}</td>
-                                    <td>
-                                        <div class="action-btn dropdown">
-                                            <a href="#" class="text-blue" id="studentActions"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="ti ti-dots-vertical fs-5"></i>
-                                            </a>
-                                            <ul class="dropdown-menu" aria-labelledby="studentActions">
-                                                @can('edit-students')
-                                                    <li>
-                                                        <a href="javascript:void(0)"
-                                                            wire:click="editStatus({{ $enrollment->id }})"
-                                                            class="dropdown-item">
-                                                            <i class="ti ti-pencil fs-5 me-2"></i> Edit
-                                                        </a>
-                                                    </li>
-                                                @endcan
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
-                                </tr>
-                            @endforelse
+                                </td>
+                                <td class="text-muted">{{ $enrollment->remarks }}</td>
+                                <td>
+                                    <div class="action-btn dropdown">
+                                        <a href="#" class="text-blue" id="studentActions"
+                                           data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ti ti-dots-vertical fs-5"></i>
+                                        </a>
+                                        <ul class="dropdown-menu" aria-labelledby="studentActions">
+                                            @can('edit-students')
+                                                <li>
+                                                    <a href="javascript:void(0)"
+                                                       wire:click="editStatus({{ $enrollment->id }})"
+                                                       class="dropdown-item">
+                                                        <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                    </a>
+                                                </li>
+                                            @endcan
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No Enrollments found.</td>
+                            </tr>
+                        @endforelse
 
                         </tbody>
                     </table>
@@ -298,13 +312,13 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="enrollmentModal" tabindex="-1" role="dialog"
-                aria-labelledby="enrollmentModalTitle" aria-hidden="true" wire:ignore.self>
+                 aria-labelledby="enrollmentModalTitle" aria-hidden="true" wire:ignore.self>
                 <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Update Status</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                    aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ 'updateStatus' }}">
                             <div class="modal-body">
@@ -319,7 +333,8 @@ new class extends Component {
                                     </div>
                                     <div class="mb-3">
                                         <label for="remarks" class="form-label">Remarks</label>
-                                        <textarea wire:model="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                                        <textarea wire:model="remarks" id="remarks" class="form-control"
+                                                  rows="3"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -327,7 +342,7 @@ new class extends Component {
                             <div class="modal-footer">
                                 <div class="d-flex gap-1 m-0">
                                     <button type="button" class="btn btn-danger bg-error-subtle"
-                                        data-bs-dismiss="modal">Discard
+                                            data-bs-dismiss="modal">Discard
                                     </button>
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}

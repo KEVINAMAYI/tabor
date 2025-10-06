@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\Intake;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\EnrollmentStatus;
 use Illuminate\Support\Facades\Hash;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,8 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
-new #[Layout('components.layouts.app.frontend')] class extends Component {
+new #[Layout('components.layouts.app.frontend')]
+class extends Component {
 
     use WithFileUploads;
 
@@ -28,14 +30,18 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
     public function mount(?int $course_id = null)
     {
-        // Load available courses and intakes
+        // Load all courses
         $this->courses = Course::all();
-        $this->intakes = Intake::all();
-
-        // Optionally, set default values if needed
         $this->selected_course_id = !empty($course_id) ? $course_id : $this->courses->first()->id;
+
+        $this->intakes = Intake::whereHas('intakeModules.module', function ($query) use ($course_id) {
+            $query->where('course_id', $course_id);
+        })->distinct()->get();
+
+
         $this->selected_intake_id = $this->intakes->first()->id ?? null;
     }
+
 
     public function addStudent()
     {
@@ -80,7 +86,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             $user->assignRole('student');
 
             // Enroll the student in the selected course
-            Enrollment::create([
+            $enrollment = Enrollment::create([
                 'student_id' => $student->id,
                 'course_id' => $this->selected_course_id,
                 'intake_id' => $this->selected_intake_id,
@@ -90,6 +96,18 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             ]);
 
             DB::commit();
+
+            // Ensure the course relationship is loaded
+            $enrollment->load('course');
+
+            if ($user) {
+                $notification = new EnrollmentStatus(
+                    $this->status,
+                    $enrollment->course->title ?? 'Unknown Program'
+                );
+
+                $user->notify($notification);
+            }
 
             $this->resetForm();
 
@@ -394,14 +412,16 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Select Course</label>
-                                            <select wire:model="selected_course_id" class="form-select">
+                                            <select wire:model="selected_course_id" class="form-select" disabled>
                                                 <option value="">Select Course</option>
                                                 @foreach($courses as $course)
-                                                    <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level ?? '' }}</option>
+                                                    <option value="{{ $course->id }}">{{ $course->title }}
+                                                        - {{ $course->level ?? '' }}</option>
                                                 @endforeach
                                             </select>
-                                            @error('selected_course_id') <span
-                                                class="text-danger">{{ $message }}</span> @enderror
+                                            @error('selected_course_id')
+                                            <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
                                     <div class="mt-4 text-end">
@@ -587,8 +607,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                     <div class="form-check my-3">
                                         <input class="form-check-input" type="checkbox" wire:model="terms" id="terms">
                                         <label class="form-check-label" for="terms">
-                                            By checking the box below and submitting my application, I confirm that I have read and understood this consent statement and voluntarily agree to the processing of my data and media as described.
-                                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>.
+                                            By checking the box below and submitting my application, I confirm that I
+                                            have read and understood this consent statement and voluntarily agree to the
+                                            processing of my data and media as described.
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and
+                                                Conditions</a>.
                                         </label>
                                         @error('terms')
                                         <span class="text-danger d-block mt-1">{{ $message }}</span>
@@ -622,7 +645,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                    href="{{ route('front-end.course-application') }}">
                                     Apply Now
                                 </a>
-                                <a class="btn btn-outline-primary d-block w-100" href="../assets/images/frontend-pages/course_guide.jpeg" target="_blank">
+                                <a class="btn btn-outline-primary d-block w-100"
+                                   href="../assets/images/frontend-pages/course_guide.jpeg" target="_blank">
                                     Download Course Guide
                                 </a>
                             </div>
@@ -652,8 +676,9 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                    href="{{ route('front-end.course-application') }}">
                                     Apply Now
                                 </a>
-                                <a class="btn btn-outline-success d-block w-100" target="_blank" href="https://api.whatsapp.com/send?phone=254798496129&text=Welcome to Tabor Training Institute, How may we help you?">
-                                    <iconify-icon  icon="mdi:whatsapp"></iconify-icon>
+                                <a class="btn btn-outline-success d-block w-100" target="_blank"
+                                   href="https://api.whatsapp.com/send?phone=254798496129&text=Welcome to Tabor Training Institute, How may we help you?">
+                                    <iconify-icon icon="mdi:whatsapp"></iconify-icon>
                                     <span class="mb-1">Whatsapp</span>
                                 </a>
                             </div>
@@ -662,19 +687,23 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="py-9">
                             <h4 class="text-uppercase fs-3 fw-bold">Share</h4>
                             <div class="d-flex gap-6">
-                                <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/"
+                                   class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Facebook">
                                     <img src="../assets/images/frontend-pages/icon-facebook-dark.svg" alt="facebook">
                                 </a>
-                                <a href="https://www.instagram.com/" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.instagram.com/"
+                                   class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Instagram">
                                     <img src="../assets/images/frontend-pages/icon-instagram-dark.svg" alt="instagram">
                                 </a>
-                                <a href="https://www.youtube.com/" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.youtube.com/"
+                                   class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="YouTube">
                                     <img src="../assets/images/frontend-pages/icon-youtube-dark.svg" alt="youtube">
                                 </a>
-                                <a href="https://www.linkedin.com/" class="border rounded-circle round-40 hstack justify-content-center"
+                                <a href="https://www.linkedin.com/"
+                                   class="border rounded-circle round-40 hstack justify-content-center"
                                    data-bs-toggle="tooltip" data-bs-title="Linckedin">
                                     <img src="../assets/images/frontend-pages/icon-linckedin-dark.svg" alt="linckedin">
                                 </a>
@@ -874,18 +903,37 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 <div class="modal-body">
                     <h3 class="fs-4 fw-bold mb-3">Data Privacy Consent Statement</h3>
                     <p class="fs-4 mb-4">
-                        By submitting this application, I hereby acknowledge and consent to the collection, use, and processing of my personal data by Tabor Training Institute (TTI) for the purposes of student registration, academic administration, institutional communication, and related educational services.
+                        By submitting this application, I hereby acknowledge and consent to the collection, use, and
+                        processing of my personal data by Tabor Training Institute (TTI) for the purposes of student
+                        registration, academic administration, institutional communication, and related educational
+                        services.
                     </p>
                     <p class="fs-4 mb-4">
                         I understand and agree that:
                     </p>
                     <ul class="fs-3 mb-4">
-                        <li>My personal information, including but not limited to my name, contact details, academic history, and identification documents, will be securely stored and processed in accordance with the Data Protection Act, 2019 (Kenya) and applicable privacy regulations.</li>
-                        <li>This data may be shared with relevant government bodies, accrediting agencies, examination councils, or third-party service providers only where necessary and with appropriate safeguards.</li>
-                        <li>During the course of my studies, photographs and videos may be taken of me during class activities, events, or institutional functions. These may be used in TTI’s official social media pages, website, newsletters, promotional materials, and other awareness or communication initiatives.</li>
-                        <li>Such media will be used respectfully and in a manner that promotes the positive image of the Institute and its programs.</li>
-                        <li>I have the right to access, correct, or request the deletion of my personal data, subject to applicable laws and institutional policies.</li>
-                        <li>Tabor Training Institute will not use my personal data for unrelated purposes without my explicit consent.</li>
+                        <li>My personal information, including but not limited to my name, contact details, academic
+                            history, and identification documents, will be securely stored and processed in accordance
+                            with the Data Protection Act, 2019 (Kenya) and applicable privacy regulations.
+                        </li>
+                        <li>This data may be shared with relevant government bodies, accrediting agencies, examination
+                            councils, or third-party service providers only where necessary and with appropriate
+                            safeguards.
+                        </li>
+                        <li>During the course of my studies, photographs and videos may be taken of me during class
+                            activities, events, or institutional functions. These may be used in TTI’s official social
+                            media pages, website, newsletters, promotional materials, and other awareness or
+                            communication initiatives.
+                        </li>
+                        <li>Such media will be used respectfully and in a manner that promotes the positive image of the
+                            Institute and its programs.
+                        </li>
+                        <li>I have the right to access, correct, or request the deletion of my personal data, subject to
+                            applicable laws and institutional policies.
+                        </li>
+                        <li>Tabor Training Institute will not use my personal data for unrelated purposes without my
+                            explicit consent.
+                        </li>
                     </ul>
                 </div>
                 <div class="modal-footer">

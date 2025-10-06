@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MpesaApi;
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;

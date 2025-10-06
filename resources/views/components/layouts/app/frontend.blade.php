@@ -243,14 +243,14 @@
                                 Courses
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{ route('front-end.course-application') }}"
-                                class="{{ request()->routeIs('front-end.course-application')
-                                    ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
-                                    : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">
-                                Apply
-                            </a>
-                        </li>
+{{--                        <li class="nav-item">--}}
+{{--                            <a href="{{ route('front-end.course-application') }}"--}}
+{{--                                class="{{ request()->routeIs('front-end.course-application')--}}
+{{--                                    ? 'btn btn-dark btn-sm py-2 px-4 mx-1'--}}
+{{--                                    : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">--}}
+{{--                                Apply--}}
+{{--                            </a>--}}
+{{--                        </li>--}}
                         {{-- <li class="nav-item">
                             <a href="{{ route('front-end.news') }}"
                                 class="{{ request()->routeIs('front-end.news')
@@ -334,12 +334,12 @@
                     </a>
                 </li>
 
-                <li class="mb-1">
-                    <a href="{{ route('front-end.course-application') }}"
-                        class="px-0 fs-4 d-block w-100 py-2 text-dark link-primary {{ request()->routeIs('front-end.course-application') ? 'active' : '' }}">
-                        Apply
-                    </a>
-                </li>
+{{--                <li class="mb-1">--}}
+{{--                    <a href="{{ route('front-end.course-application') }}"--}}
+{{--                        class="px-0 fs-4 d-block w-100 py-2 text-dark link-primary {{ request()->routeIs('front-end.course-application') ? 'active' : '' }}">--}}
+{{--                        Apply--}}
+{{--                    </a>--}}
+{{--                </li>--}}
 
                 <li class="mb-1">
                     <a href="{{ route('front-end.contact') }}"
