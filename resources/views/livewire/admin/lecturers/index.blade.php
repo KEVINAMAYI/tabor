@@ -35,7 +35,7 @@ new class extends Component {
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'required|email|max:255|unique:lecturers,email,' . $this->editId,
             'phone_number' => 'required|string',
             'kra_pin' => 'nullable|string|max:20|alpha_num',
             'id_number' => 'nullable|string|max:20',
@@ -86,7 +86,7 @@ new class extends Component {
                 'name' => $this->first_name . ' ' . $this->last_name,
                 'first_name' => $this->first_name,
                 'email' => $this->email,
-                'password' => Hash::make('password'),
+                'password' => Hash::make($this->phone_number), // Default password is phone number
             ]);
 
             Lecturer::create([
@@ -101,6 +101,8 @@ new class extends Component {
                 'dob' => $this->date_of_birth,
                 'user_id' => $user->id,
             ]);
+
+            $user->assignRole('lecturer');
 
             DB::commit();
 
@@ -153,12 +155,16 @@ new class extends Component {
             DB::beginTransaction();
 
             $lec = Lecturer::with('user')->findOrFail($this->editId);
+            // dd($lec);
 
-            $lec->user->update([
-                'name' => $this->first_name . ' ' . $this->last_name,
-                'email' => $this->email,
-            ]);
-
+            if ($lec->user) {
+                $lec->user->update([
+                    'name' => $this->first_name . ' ' . $this->last_name,
+                    'first_name' => $this->first_name,
+                    'last_name' => $this->last_name,
+                    'email' => $this->email
+                ]);
+            }
             $lec->update([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
@@ -198,7 +204,16 @@ new class extends Component {
     /* ------------- Delete ------------- */
     public function deleteLecturer($id)
     {
-        Lecturer::findOrFail($id)->user()->delete();
+        $lec = Lecturer::with('user')->findOrFail($id);
+        $lec->user()->delete();
+        $lec->delete();
+
+        LivewireAlert::text('Lecturer deleted successfully.!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show();
+
         $this->resetPage();
     }
 
@@ -504,6 +519,7 @@ new class extends Component {
                                             <i class="ti ti-pencil fs-5"></i>
                                         </a>
                                         <a href="javascript:void(0)" wire:click="deleteLecturer({{ $lec->id }})"
+                                            wire:confirm="Are you sure you want to delete this lecturer?"
                                            class="text-danger" title="Delete">
                                             <i class="ti ti-trash fs-5"></i>
                                         </a>

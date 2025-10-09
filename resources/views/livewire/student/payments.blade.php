@@ -3,7 +3,6 @@
 use Livewire\Volt\Component;
 
 new class extends Component {
-
     public $payments;
 
     public function mount()
@@ -21,9 +20,7 @@ new class extends Component {
         }
 
         $this->payments = $student->payments()->with('enrollment.course')->latest()->get();
-
     }
-
 }; ?>
 
 @push('styles')
@@ -108,7 +105,8 @@ new class extends Component {
             color: #fff;
         }
 
-        .styled-payment-table th, .styled-payment-table td {
+        .styled-payment-table th,
+        .styled-payment-table td {
             padding: 14px 18px;
             border-bottom: 1px solid #f0f0f0;
             vertical-align: middle;
@@ -152,7 +150,8 @@ new class extends Component {
                 visibility: hidden !important;
             }
 
-            .receipt-print, .receipt-print * {
+            .receipt-print,
+            .receipt-print * {
                 visibility: visible !important;
             }
 
@@ -162,7 +161,6 @@ new class extends Component {
                 left: 0;
             }
         }
-
     </style>
 @endpush
 <div class="row">
@@ -174,40 +172,41 @@ new class extends Component {
                 <!-- Payment Table -->
                 <table class="styled-payment-table">
                     <thead>
-                    <tr>
-                        <th>Course Title</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Paid On</th>
-                        <th>Reference</th>
-                        <th>Receipt</th>
-                    </tr>
+                        <tr>
+                            <th>Course Title</th>
+                            <th>Amount (KSH)</th>
+                            <th>Method</th>
+                            <th>Paid On</th>
+                            <th>Reference</th>
+                            <th>Receipt</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    @forelse ($payments as $payment)
-                        <tr>
-                            <td>{{ $payment->enrollment->course->title ?? 'N/A' }}</td>
-                            <td>${{ number_format($payment->amount, 2) }}</td>
-                            <td>{{ ucfirst($payment->payment_method) }}</td>
-                            <td>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M Y') }}</td>
-                            <td>{{ $payment->reference }}</td>
-                            <td>
-                                <button class="btn-print" onclick="printReceipt(
+                        @forelse ($payments as $payment)
+                            <tr>
+                                <td>{{ $payment->enrollment->course->title ?? 'N/A' }}</td>
+                                <td>{{ number_format($payment->amount, 2) }}</td>
+                                <td>{{ ucfirst($payment->payment_method) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M Y') }}</td>
+                                <td>{{ $payment->reference }}</td>
+                                <td>
+                                    <button class="btn-print"
+                                        onclick="printReceipt(
                     '{{ $payment->enrollment->course->title ?? 'N/A' }}',
                     '{{ number_format($payment->amount, 2) }}',
                     '{{ ucfirst($payment->payment_method) }}',
                     '{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M Y') }}',
                     '{{ $payment->reference }}'
                 )">
-                                    <i class="ti ti-printer"></i> Print
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center">No payments found.</td>
-                        </tr>
-                    @endforelse
+                                        <i class="ti ti-printer"></i> Print
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">No payments found.</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
 
@@ -226,7 +225,8 @@ new class extends Component {
 
                         <div style="margin-bottom: 20px;">
                             <p><strong>Course Title:</strong> <span id="receipt-course"></span></p>
-                            <p><strong>Amount Paid:</strong> <span style="color: #0e334e;">KES <span id="receipt-amount"></span></span></p>
+                            <p><strong>Amount Paid:</strong> <span style="color: #0e334e;">KES <span
+                                        id="receipt-amount"></span></span></p>
                             <p><strong>Payment Method:</strong> <span id="receipt-method"></span></p>
                             <p><strong>Date Paid:</strong> <span id="receipt-date"></span></p>
                             <p><strong>Reference:</strong> <span id="receipt-reference"></span></p>
@@ -265,8 +265,3 @@ new class extends Component {
         }
     </script>
 @endpush
-
-
-
-
-
