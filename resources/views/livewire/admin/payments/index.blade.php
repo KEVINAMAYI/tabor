@@ -435,12 +435,10 @@ new class extends Component {
                                             @endif
                                         </div>
 
-                                        @error('enrollment_id')
-                                        <small class="text-danger">{{ $message }}</small>
-                                        @enderror
+                                        </select>
+                                        @error('enrollment_id') <small
+                                            class="text-danger">{{ $message }}</small> @enderror
                                     </div>
-
-
                                     <!-- Amount Input -->
                                     <div class="col-md-6 mb-3">
                                         <label for="amount" class="form-label">Amount</label>
@@ -458,6 +456,9 @@ new class extends Component {
                                             <option value="discount">Discount</option>
                                             <option value="card">Card</option>
                                             <option value="bank">Bank</option>
+                                            @can('give-discounts')
+                                                <option value="discount">Discount</option>
+                                            @endcan
                                         </select>
                                         @error('method') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
@@ -587,9 +588,7 @@ new class extends Component {
                                     @endif
                                 </td>
                                 <td><strong>{{ ucfirst($payment->payment_method) }}</strong></td>
-                                <td>
-                                    <strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong>
-                                </td>
+                                <td><strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong></td>
                                 <td>{{ ucfirst($payment->payer) }}</td>
                                 <td>
                                     <div class="action-btn">

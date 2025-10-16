@@ -64,6 +64,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view-payments',
             'edit-payments',
             'delete-payments',
+            'give-discounts',
 
             //reports
             'view-reports',
@@ -72,7 +73,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'view-users',
             'create-users',
             'edit-users',
-            'delete-users'
+            'delete-users',
+
+            // Enrollments
+            'create-enrollments',
+            'view-enrollments',
+            'edit-enrollments',
+            'delete-enrollments',
 
         ];
 

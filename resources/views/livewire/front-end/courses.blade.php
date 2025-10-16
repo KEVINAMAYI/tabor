@@ -63,9 +63,9 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <section class="py-5 bg-light-gray">
         <div class="container-fluid">
             <div class="d-flex justify-content-between flex-md-nowrap flex-wrap">
-                <h2 class="fs-15 fw-bolder ">
+                <h4 class="fs-10 fw-bolder ">
                     Our Courses
-                </h2>
+                </h4>
                 <div class="d-flex align-items-center gap-6">
                     <a href="../main/frontend-landingpage.html"
                         class="text-muted fw-bolder link-primary fs-3 text-uppercase">

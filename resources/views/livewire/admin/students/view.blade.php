@@ -27,6 +27,7 @@ new class extends Component {
     public $availableStatuses = ['pending', 'approved', 'rejected', 'completed', 'withdrawn'];
     public $enrollmentId;
     public $enrollmentStatus;
+    public $enrollmentCourse;
     public $enrollmentPayments = [];
 
     public function rules()
@@ -117,6 +118,9 @@ new class extends Component {
     public function openEditModal($id)
     {
         $this->enrollmentId = $id;
+        $enrollment = Enrollment::findOrFail($id);
+        $this->enrollmentStatus = $enrollment->status;
+        $this->enrollmentCourse = $enrollment->course->id;
         $this->dispatch('show-enrollment-status-modal');
     }
 
@@ -128,6 +132,7 @@ new class extends Component {
 
             $enrollment = Enrollment::findOrFail($this->enrollmentId);
             $enrollment->status = $this->enrollmentStatus;
+            $enrollment->course_id = $this->enrollmentCourse;
             $enrollment->save();
 
             $user = $enrollment->student->user ?? null;
@@ -141,10 +146,7 @@ new class extends Component {
 
             // ✅ Now send email after transaction
             if ($user) {
-                $notification = new EnrollmentStatus(
-                    $this->enrollmentStatus,
-                    $enrollment->course->title ?? 'Unknown Program'
-                );
+                $notification = new EnrollmentStatus($this->enrollmentStatus, $enrollment->course->title ?? 'Unknown Program');
 
                 $user->notify($notification);
             }
@@ -202,12 +204,18 @@ new class extends Component {
 
     public function showEnrollmentPayments($enrollmentId)
     {
-        $this->enrollmentPayments = Payment::with('enrollment.course')
-            ->where('enrollment_id', $enrollmentId)
-            ->get();
+        $this->enrollmentPayments = Payment::with('enrollment.course')->where('enrollment_id', $enrollmentId)->get();
 
         $this->dispatch('show-enrollment-payments-modal');
+    }
 
+    public function deleteEnrollment($id)
+    {
+        $enrollment = Enrollment::findOrFail($id);
+        $enrollment->payments()->delete(); // Delete related payments first
+        $enrollment->delete();
+
+        LivewireAlert::text('Enrollment deleted successfully!')->success()->toast()->position('top-end')->show();
     }
 
 }; ?>
@@ -713,6 +721,9 @@ new class extends Component {
                                         <option value="discount">Discount</option>
                                         <option value="card">Card</option>
                                         <option value="bank">Bank</option>
+                                        @can('give-discounts')
+                                            <option value="discount">Discount</option>
+                                        @endcan
                                     </select>
                                     @error('method')
                                     <small class="text-danger">{{ $message }}</small>
@@ -767,10 +778,9 @@ new class extends Component {
                 <div class="modal-body">
                     <!-- Select Course -->
                     <div>
-                        <span class="form-label d-block mb-1 fw-semibold text-muted">Select Course</span>
-                        <select wire:model="selectedCourseId" data-model="selectedCourseId"
-                                class="select2 form-control">
-                            <option value="">Choose Course</option> <!-- ✅ Default option -->
+                        <label for="course" class="mb-1">Select Course</label>
+                        <select wire:model="selectedCourseId" class="form-select select2" id="course">
+                            <option value="">-- Choose Course --</option>
                             @foreach ($courses as $course)
                                 <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}
                                 </option>
@@ -783,10 +793,9 @@ new class extends Component {
 
                     <!-- Select Intake -->
                     <div class="mt-3">
-                        <span class="form-label d-block mb-1 fw-semibold text-muted">Select Intake</span>
-                        <select wire:model="selectedIntakeId" data-model="selectedIntakeId" class="form-select select2"
-                                id="intake">
-                            <option value="">Choose intake</option> <!-- ✅ Default option -->
+                        <label for="intake" class="mb-1">Select Intake</label>
+                        <select wire:model="selectedIntakeId" class="form-select" id="intake">
+                            <option value="">-- Choose Intake --</option>
                             @foreach ($intakes as $intake)
                                 <option value="{{ $intake->id }}">{{ $intake->name }}</option>
                             @endforeach
@@ -795,7 +804,6 @@ new class extends Component {
                         <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-
                     <!-- Select Status -->
                     <div class="mt-3">
                         <label for="status" class="mb-1">Status</label>
@@ -904,6 +912,12 @@ new class extends Component {
                 </div>
 
                 <div class="modal-body">
+                    <label class="my-2" for="status">Select Course:</label>
+                    <select wire:model="enrollmentCourse" class="form-control" id="course">
+                        @foreach ($courses as $course)
+                            <option value="{{ $course->id }}">{{ ucfirst($course->title) }} {{ $course->level }}</option>
+                        @endforeach
+                    </select>
                     <label class="my-2" for="status">Select Status:</label>
                     <select wire:model="enrollmentStatus" class="form-control" id="status">
                         @foreach ($availableStatuses as $status)
@@ -1037,7 +1051,6 @@ new class extends Component {
                 window.print();
             }, 500); // 300ms is usually enough
         }
-
 
     </script>
 @endpush
