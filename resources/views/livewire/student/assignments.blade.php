@@ -144,6 +144,7 @@ new class extends Component {
                                 <th>Due Date</th>
                                 <th>Max Marks</th>
                                 <th>Status</th>
+                                <th>Marks Scored</th> {{-- ✅ New column --}}
                                 <th>Submitted At</th>
                                 <th class="text-center">Actions</th>
                             </tr>
@@ -156,13 +157,17 @@ new class extends Component {
                                         <small class="text-muted">{{ $submission->module_name }}</small><br>
                                         <strong style="color:#f8a952">{{ $submission->course_name }}</strong>
                                     </td>
+
                                     <td>{{ ucfirst($submission->assessment->type) }}</td>
+
                                     <td>
                                         {{ $submission->assessment->due_on
                                             ? \Carbon\Carbon::parse($submission->assessment->due_on)->format('d M Y')
                                             : '-' }}
                                     </td>
+
                                     <td>{{ $submission->assessment->max_marks }}</td>
+
                                     <td>
                                         @switch($submission->status)
                                             @case('pending')
@@ -178,11 +183,23 @@ new class extends Component {
                                                 <span class="badge bg-secondary">N/A</span>
                                         @endswitch
                                     </td>
+
+                                    {{-- ✅ Show marks only if graded --}}
+                                    <td>
+                                        @if($submission->status === 'graded')
+                                            <span
+                                                class="fw-bold text-success">{{ $submission->mark }}/{{ $submission->assessment->max_marks }}</span>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+
                                     <td>
                                         {{ $submission->submitted_at
                                             ? $submission->submitted_at->format('d M Y H:i')
                                             : '-' }}
                                     </td>
+
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
                                             {{-- View file --}}
@@ -203,8 +220,8 @@ new class extends Component {
                                             {{-- Submit / Resubmit --}}
                                             @if(in_array($submission->status, ['pending', 'submitted']))
                                                 <button class="btn btn-sm btn-outline-primary ms-2"
-                                                        data-bs-toggle="modal"
                                                         wire:click="$set('selectedAssessmentId', {{ $submission->id }})"
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#submitAssessmentModal"
                                                         onclick="document.getElementById('modalAssessmentTitle').innerText = '{{ $submission->assessment->title }}'">
                                                     <i class="ti ti-upload"></i>
