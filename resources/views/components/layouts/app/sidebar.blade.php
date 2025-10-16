@@ -666,6 +666,8 @@
 <script src="../assets/libs/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
 <script src="../assets/js/forms/datepicker-init.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../assets/libs/select2/dist/js/select2.full.min.js"></script>
+<script src="../assets/libs/select2/dist/js/select2.min.js"></script>
 
 @stack('scripts')
 

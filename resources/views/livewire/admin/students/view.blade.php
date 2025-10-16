@@ -65,7 +65,11 @@ new class extends Component {
         $enrollment = Enrollment::where('student_id', $this->studentId)->where('course_id', $this->selectedCourseId)->first();
 
         if ($enrollment) {
+
+            $this->reset(['selectedCourseId', 'selectedIntakeId']);
+
             LivewireAlert::text('Enrollment already exists.!')->error()->toast()->position('top-end')->show();
+
         } else {
 
             // Create the enrollment
@@ -98,6 +102,11 @@ new class extends Component {
             //     'student_id' => $this->studentId,
             //     'class_group_id' => $this->class_group_id,
             // ]);
+
+
+            // ✅ Reset selected dropdowns
+            $this->reset(['selectedCourseId', 'selectedIntakeId']);
+
 
             LivewireAlert::text('Student enrolled successfully.!')->success()->toast()->position('top-end')->show();
 
@@ -758,9 +767,10 @@ new class extends Component {
                 <div class="modal-body">
                     <!-- Select Course -->
                     <div>
-                        <label for="course" class="mb-1">Select Course</label>
-                        <select wire:model="selectedCourseId" class="form-select select2" id="course">
-                            <option value="">-- Choose Course --</option>
+                        <span class="form-label d-block mb-1 fw-semibold text-muted">Select Course</span>
+                        <select wire:model="selectedCourseId" data-model="selectedCourseId"
+                                class="select2 form-control">
+                            <option value="">Choose Course</option> <!-- ✅ Default option -->
                             @foreach ($courses as $course)
                                 <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}
                                 </option>
@@ -773,9 +783,10 @@ new class extends Component {
 
                     <!-- Select Intake -->
                     <div class="mt-3">
-                        <label for="intake" class="mb-1">Select Intake</label>
-                        <select wire:model="selectedIntakeId" class="form-select" id="intake">
-                            <option value="">-- Choose Intake --</option>
+                        <span class="form-label d-block mb-1 fw-semibold text-muted">Select Intake</span>
+                        <select wire:model="selectedIntakeId" data-model="selectedIntakeId" class="form-select select2"
+                                id="intake">
+                            <option value="">Choose intake</option> <!-- ✅ Default option -->
                             @foreach ($intakes as $intake)
                                 <option value="{{ $intake->id }}">{{ $intake->name }}</option>
                             @endforeach
@@ -784,6 +795,7 @@ new class extends Component {
                         <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+
                     <!-- Select Status -->
                     <div class="mt-3">
                         <label for="status" class="mb-1">Status</label>
@@ -948,9 +960,29 @@ new class extends Component {
 
 
 @push('scripts')
+
     <script>
         window.addEventListener('show-enrollment-modal', () => {
             new bootstrap.Modal(document.getElementById('enrollCourseModal')).show();
+
+            $('.select2').select2({
+                dropdownParent: $('#enrollCourseModal')
+            }).on('change', function (e) {
+                const value = $(this).val();
+                const model = $(this).data('model');
+
+                if (model) {
+                @this.set(model, value)
+                    ;
+                }
+            });
+
+            Livewire.hook("morphed", () => {
+                $('.select2').select2({
+                    dropdownParent: $('#enrollCourseModal') // ensures dropdown stays inside modal
+                })
+            })
+
         });
 
         window.addEventListener('hide-enrollment-modal', () => {
@@ -1005,6 +1037,7 @@ new class extends Component {
                 window.print();
             }, 500); // 300ms is usually enough
         }
+
 
     </script>
 @endpush

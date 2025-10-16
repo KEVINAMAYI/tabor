@@ -20,6 +20,7 @@ new class extends Component {
     public $editId = null;
     public $selected = [];
     public $search = '';
+    public $student_search = '';
     public $enrollments = [];
 
     public function rules()
@@ -45,6 +46,38 @@ new class extends Component {
         $this->selected = [];
         $this->selectAll = false;
     }
+
+
+    #[On('perform-search')]
+    public function searchEnrollments($query)
+    {
+        $this->student_search = $query;
+
+        $this->enrollments = Enrollment::with(['student', 'course', 'intake'])
+            ->whereHas('student', function ($q) use ($query) {
+                $q->where('first_name', 'like', '%' . $query . '%')
+                    ->orWhere('last_name', 'like', '%' . $query . '%');
+            })
+            ->orWhereHas('course', function ($q) use ($query) {
+                $q->where('title', 'like', '%' . $query . '%');
+            })
+            ->limit(10)
+            ->get();
+    }
+
+    public function selectEnrollment($id)
+    {
+        $this->enrollment_id = $id;
+
+        $enrollment = Enrollment::with(['student', 'course', 'intake'])->find($id);
+
+        if ($enrollment) {
+            $this->student_search = $enrollment->student->first_name . ' ' . $enrollment->student->last_name .
+                ' — ' . $enrollment->course->title .
+                ' (Intake: ' . ($enrollment->intake->name ?? 'N/A') . ')';
+        }
+    }
+
 
     public function with()
     {
@@ -269,6 +302,20 @@ new class extends Component {
             border-color: #f69121;
         }
 
+        .dropdown-results {
+            border-radius: 8px;
+            background-color: #fff;
+            overflow-y: auto;
+        }
+
+        .dropdown-item:hover, .hover-bg:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
     </style>
 @endpush
 
@@ -323,28 +370,77 @@ new class extends Component {
                         <form wire:submit.prevent="{{ $editId ? 'updatePayment' : 'addPayment' }}">
                             <div class="modal-body">
                                 <div class="row">
-                                    <!-- Enrollment Selector -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="enrollment_id" class="form-label">Student</label>
-                                        <select wire:model="enrollment_id" class="form-control">
-                                            <option value="">Select Enrollment</option>
-                                            @foreach($enrollments as $enrollment)
-                                                @php
-                                                    $student = $enrollment->student;
-                                                    $course = $enrollment->course;
-                                                    $intake = $enrollment->intake;
-                                                @endphp
-                                                <option value="{{ $enrollment->id }}">
-                                                    {{ $student->first_name }} {{ $student->last_name }} —
-                                                    {{ $course->title }} —
-                                                    Intake: {{ $intake->name ?? 'N/A' }}
-                                                </option>
-                                            @endforeach
 
-                                        </select>
-                                        @error('enrollment_id') <small
-                                            class="text-danger">{{ $message }}</small> @enderror
+                                    <!-- Enrollment Selector -->
+                                    <div class="col-md-6 mb-3 position-relative"
+                                         x-data="{ open: false, studentSearch: @entangle('student_search').defer }"
+                                         @click.away="open = false">
+
+
+                                    <label for="search" class="form-label">Student</label>
+
+                                        <input
+                                            type="text"
+                                            id="student_search"
+                                            class="form-control"
+                                            placeholder="Search student, course, or intake..."
+                                            x-model="studentSearch"
+                                            @input="$dispatch('perform-search', { query: studentSearch }); open = true"
+                                            @focus="open = true"
+                                        />
+
+
+                                        <!-- Floating Dropdown -->
+                                        @php
+                                            $hasResults = count($enrollments) > 0;
+                                            $dropdownClass = $hasResults ? 'border border-light shadow-lg' : 'border-0 shadow-none';
+                                        @endphp
+
+                                        <div
+                                            x-show="open && studentSearch.length > 0"
+                                            x-transition
+                                            class="dropdown-results position-absolute bg-white rounded mt-1"
+                                            :class="studentSearch.length > 0 && {{ count($enrollments) }} > 0 ? 'border border-light shadow-lg' : 'border-0 shadow-none'"
+                                            style="width: 95%; max-height: 220px; overflow-y: auto; z-index: 1050;"
+                                        >
+
+
+                                        @if(!empty($student_search))
+                                                @if(count($enrollments) > 0)
+                                                    @foreach($enrollments as $enrollment)
+                                                        @php
+                                                            $student = $enrollment->student;
+                                                            $course = $enrollment->course;
+                                                            $intake = $enrollment->intake;
+                                                            $displayText = $student->first_name . ' ' . $student->last_name . ' — ' . $course->title . ' (Intake: ' . ($intake->name ?? 'N/A') . ')';
+                                                        @endphp
+                                                        <div
+                                                            class="dropdown-item px-3 py-2 border-bottom small hover-bg"
+                                                            @click="
+    $wire.selectEnrollment({{ $enrollment->id }});
+    studentSearch = '{{ $displayText }}';
+    open = false;
+"
+
+                                                            style="cursor: pointer;"
+                                                        >
+                                                            <strong>{{ $student->first_name }} {{ $student->last_name }}</strong><br>
+                                                            <span
+                                                                class="text-muted">{{ $course->title }} — Intake: {{ $intake->name ?? 'N/A' }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="px-3 py-2 text-muted small">No results found</div>
+                                                @endif
+                                            @endif
+                                        </div>
+
+                                        @error('enrollment_id')
+                                        <small class="text-danger">{{ $message }}</small>
+                                        @enderror
                                     </div>
+
+
                                     <!-- Amount Input -->
                                     <div class="col-md-6 mb-3">
                                         <label for="amount" class="form-label">Amount</label>
@@ -491,7 +587,9 @@ new class extends Component {
                                     @endif
                                 </td>
                                 <td><strong>{{ ucfirst($payment->payment_method) }}</strong></td>
-                                <td><strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong></td>
+                                <td>
+                                    <strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong>
+                                </td>
                                 <td>{{ ucfirst($payment->payer) }}</td>
                                 <td>
                                     <div class="action-btn">
