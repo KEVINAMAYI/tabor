@@ -277,7 +277,7 @@
                         </li>
                     </ul>
                     <a href="{{ route('login') }}" class="btn btn-outline-info btn-sm py-2 px-9">College Portal</a>
-                    <a href="{{ route('front-end.course-application') }}"
+                    <a href="{{ route('front-end.courses') }}"
                         class="btn mx-2 btn-outline-primary btn-sm py-2 px-9">Enroll Now</a>
                 </div>
             </div>
