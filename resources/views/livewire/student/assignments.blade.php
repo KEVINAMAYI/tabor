@@ -49,6 +49,7 @@ new class extends Component {
 
     public function submitAssessment()
     {
+
         $this->validate([
             'answerFile' => 'required|file|max:10240',
         ]);
@@ -203,8 +204,8 @@ new class extends Component {
                                             @if(in_array($submission->status, ['pending', 'submitted']))
                                                 <button class="btn btn-sm btn-outline-primary ms-2"
                                                         data-bs-toggle="modal"
+                                                        wire:click="$set('selectedAssessmentId', {{ $submission->id }})"
                                                         data-bs-target="#submitAssessmentModal"
-                                                        wire:click="$set('selectedSubmissionId', {{ $submission->id }})"
                                                         onclick="document.getElementById('modalAssessmentTitle').innerText = '{{ $submission->assessment->title }}'">
                                                     <i class="ti ti-upload"></i>
                                                     {{ $submission->status === 'pending' ? 'Submit' : 'Resubmit' }}
