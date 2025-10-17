@@ -599,7 +599,7 @@ new class extends Component {
                                                         <div class="ms-6 d-inline-block w-75">
                                                             <h6 class="mb-1 fw-semibold chat-title"
                                                                 data-username="{{ $course->title }}">
-                                                                {{ $course->title }}
+                                                                {{ $course->title }} - {{ $course->level }}
                                                             </h6>
                                                         </div>
                                                     </a>
