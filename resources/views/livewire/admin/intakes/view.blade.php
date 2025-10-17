@@ -528,7 +528,7 @@ new class extends Component {
                                 </div>
                             </div>
                             <div class="text-center">
-                                <h5 class="mb-0">January 2025 Intake</h5>
+                                <h5 class="mb-0">{{ $intake->name }}</h5>
                             </div>
                         </div>
                     </div>
