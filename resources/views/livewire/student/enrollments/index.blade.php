@@ -49,7 +49,7 @@ new class extends Component {
                                     </span>
                             </td>
                             <td>
-                                <a href="{{ route('student.enrollments.view', $enrollment->course->id ) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('student.enrollments.view', $enrollment->id ) }}" class="btn btn-sm btn-primary">
                                     <i class="ti ti-eye"></i>
                                 </a>
                             </td>
