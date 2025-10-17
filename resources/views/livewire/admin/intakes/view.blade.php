@@ -23,6 +23,7 @@ new class extends Component {
 
     /* ---------- public state ---------- */
     public $courses;           // collection of Course
+    public $intake;
     public $intakeId;           // collection of Course
     public $modules = [];      // collection of Module (for the chosen course)
     public $intakeCourses = [];
@@ -61,6 +62,7 @@ new class extends Component {
         $this->courses = Course::orderBy('title')->get(['id', 'title']);
         $this->activeCourseId = $this->courses[0]->id ?? '';
         $this->activeStudentId = $this->intakeStudents[0]->id ?? '';
+        $this->intake=Intake::findOrFail($intake_id);
 
 
         if (!empty($this->activeCourseId)) {
@@ -475,7 +477,7 @@ new class extends Component {
             <div class="row align-items-center">
                 <div class="col-12">
                     <div class="d-sm-flex align-items-center justify-space-between">
-                        <h4 class="mb-4 mb-sm-0 card-title">January 2025 Intake</h4>
+                        <h4 class="mb-4 mb-sm-0 card-title">{{ $intake->name }}</h4>
                         <nav aria-label="breadcrumb" class="ms-auto">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item d-flex align-items-center">
@@ -485,7 +487,7 @@ new class extends Component {
                                 </li>
                                 <li class="breadcrumb-item" aria-current="page">
                         <span class="badge fw-medium fs-2 bg-primary-subtle text-primary">
-                          January 2025 Intake
+                          {{ $intake->name }}
                         </span>
                                 </li>
                             </ol>
