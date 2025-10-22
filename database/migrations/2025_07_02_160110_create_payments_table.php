@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('enrollment_id')->nullable()->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2)->default(0.00);
-            $table->enum('payment_method', ['cash','mpesa','discount','card','bank'])->default('cash');
+            $table->enum('payment_method', ['mpesa','discount','bank'])->default('mpesa');
+            $table->enum('payment_reason', ['tuition','exam','attachment','other'])->default('tuition');
             $table->enum('status', ['pending','completed','failed'])->default('pending');
             $table->string('transaction_id')->nullable();
             $table->string('reference')->nullable();

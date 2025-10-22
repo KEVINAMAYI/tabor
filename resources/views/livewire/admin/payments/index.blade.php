@@ -16,7 +16,7 @@ new class extends Component {
     use WithPagination;
 
     public $selectAll = false;
-    public $amount, $payment_method, $reference, $paid_at, $enrollment_id, $status, $payer;
+    public $amount, $payment_method, $payment_reason, $reference, $paid_at, $enrollment_id, $status, $payer;
     public $editId = null;
     public $selected = [];
     public $search = '';
@@ -28,6 +28,7 @@ new class extends Component {
         return [
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required',
+            'payment_reason' => 'required',
             'reference' => 'nullable|string|max:255',
             'paid_at' => 'nullable|date',
             'enrollment_id' => 'required|exists:enrollments,id',
@@ -115,6 +116,7 @@ new class extends Component {
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
                 'payment_method' => $this->payment_method,
+                'payment_reason' => $this->payment_reason,
                 'status' => 'completed',
                 'reference' => $this->reference,
                 'paid_at' => $this->paid_at,
@@ -155,6 +157,7 @@ new class extends Component {
         $this->amount = $payment->amount;
         $this->status = $payment->status;
         $this->payment_method = $payment->payment_method;
+        $this->payment_reason = $payment->payment_reason;
         $this->reference = $payment->reference;
         $this->paid_at = $payment->paid_at;
         $this->payer = $payment->payer;
@@ -175,6 +178,7 @@ new class extends Component {
                 'enrollment_id' => $this->enrollment_id,
                 'amount' => $this->amount,
                 'payment_method' => $this->payment_method,
+                'payment_reason' => $this->payment_reason,
                 'reference' => $this->reference,
                 'status' => 'completed',
                 'paid_at' => $this->paid_at,
@@ -233,7 +237,7 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->enrollment_id = $this->search = $this->amount = $this->method = $this->reference = $this->paid_at = null;
+        $this->enrollment_id = $this->search = $this->amount = $this->payment_method = $this->payment_reason = $this->reference = $this->paid_at = null;
         $this->editId = null;
     }
 
@@ -453,16 +457,25 @@ new class extends Component {
                                         <label for="method" class="form-label">Payment Method</label>
                                         <select wire:model="payment_method" class="form-control">
                                             <option value="">Select Payment Method</option>
-                                            <option value="cash">Cash</option>
                                             <option value="mpesa">M-Pesa</option>
-                                            <option value="discount">Discount</option>
-                                            <option value="card">Card</option>
                                             <option value="bank">Bank</option>
                                             @can('give-discounts')
                                                 <option value="discount">Discount</option>
                                             @endcan
                                         </select>
                                         @error('method') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <!-- Payment Method Selector -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="method" class="form-label">Payment For</label>
+                                        <select wire:model="payment_reason" class="form-control">
+                                            <option value="">Select Reason</option>
+                                            <option value="tuition">Tuition</option>
+                                            <option value="exam">Exam</option>
+                                            <option value="attachment">Industrial Attachment</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                        @error('payment_reason') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <!-- Reference Input -->
                                     <div class="col-md-6 mb-3">
@@ -548,6 +561,7 @@ new class extends Component {
                             <th>Amount</th>
                             <th>Status</th>
                             <th>Method</th>
+                            <th>Payment For</th>
                             <th>Paid On</th>
                             <th>Paid By</th>
                             <th>Action</th>
@@ -590,6 +604,7 @@ new class extends Component {
                                     @endif
                                 </td>
                                 <td><strong>{{ ucfirst($payment->payment_method) }}</strong></td>
+                                <td><strong>{{ ucfirst($payment->payment_reason) }}</strong></td>
                                 <td><strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong></td>
                                 <td>{{ ucfirst($payment->payer) }}</td>
                                 <td>

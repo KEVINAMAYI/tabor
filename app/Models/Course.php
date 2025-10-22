@@ -9,19 +9,7 @@ class Course extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'title',
-        'code',
-        'description',
-        'price',
-        'duration',
-        'mode',
-        'level',
-        'certification',
-        'prerequisites',
-        'image_url',
-        'brochure_url',
-    ];
+    protected $guarded = ['id'];
 
 
     /* -----------------------------------------------------------------
