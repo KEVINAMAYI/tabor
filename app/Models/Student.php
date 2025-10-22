@@ -92,7 +92,9 @@ class Student extends Model
 
     // Generate a unique admission number for the student
     public static function generateAdmissionNumber()
-    {
+{
+    do {
+        // Get the latest admission number
         $lastStudent = Student::orderBy('admission_number', 'desc')->first();
 
         if ($lastStudent && is_numeric($lastStudent->admission_number)) {
@@ -103,8 +105,12 @@ class Student extends Model
         }
 
         $nextAdmissionNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
-        return $nextAdmissionNumber;
-    }
+
+        // Check if the generated number already exists
+        $exists = Student::where('admission_number', $nextAdmissionNumber)->exists();
+    } while ($exists);
+    return $nextAdmissionNumber;
+}
 
 }
 

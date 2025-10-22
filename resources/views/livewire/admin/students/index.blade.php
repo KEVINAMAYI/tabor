@@ -37,7 +37,7 @@ new class extends Component {
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'admission_number' => 'nullable|string|max:255|unique:students,admission_number,' . $this->editId,
+            // 'admission_number' => 'nullable|string|max:255|unique:students,admission_number,' . $this->editId,
             'email' => 'required|email',
             'phone_number' => 'required|string',
             'date_of_birth' => 'required|date',
@@ -46,7 +46,7 @@ new class extends Component {
             'highest_level_of_education' => 'nullable|string|max:255',
             'id_url' => 'nullable|file|mimes:pdf,jpeg,png,jpg,gif|max:2048',
             'kcse_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:2048',
-            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048'
+            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 
@@ -84,7 +84,7 @@ new class extends Component {
             ->paginate($this->perPage ?? 10);
 
         return [
-            'students' => $students
+            'students' => $students,
         ];
     }
 
@@ -105,12 +105,8 @@ new class extends Component {
             ]);
 
             // Create the student
-            if (!$this->admission_number) {
-                $admissionnumber = Student::generateAdmissionNumber();
-            } else {
-                $admissionnumber = $this->admission_number;
-            }
             // Generate the next admission number
+            $admissionnumber = Student::generateAdmissionNumber();
 
             $this->admission_number = $admissionnumber;
 
@@ -147,7 +143,8 @@ new class extends Component {
 
             Log::error('Error adding student: ' . $e->getMessage());
 
-            LivewireAlert::text('Failed to add student.!')->error()->toast()->position('top-end')->show();
+            LivewireAlert::text('Failed to add student.!')->error()->toast()->position('top-end')
+            ->show();
         }
     }
 
@@ -165,7 +162,7 @@ new class extends Component {
         $this->country = $student->country;
         $this->highest_level_of_education = $student->highest_level_of_education;
         $this->active = $student->user ? $student->user->active : false;
-        $this->admission_number = $student->admission_number;
+        // $this->admission_number = $student->admission_number;
 
         $this->id_url = $student->id_url;
         $this->kcse_certificate = $student->kcse_certificate;
@@ -197,7 +194,7 @@ new class extends Component {
                 'last_name' => $this->last_name,
                 'email' => $this->email,
                 'phone' => $this->phone_number,
-                'admission_number' => $this->admission_number,
+                // 'admission_number' => $this->admission_number,
                 'dob' => $this->date_of_birth,
                 'address' => $this->address,
                 'country' => $this->country,
@@ -224,6 +221,7 @@ new class extends Component {
     public function deleteStudent($id)
     {
         $student = Student::findOrFail($id);
+        $student->delete();
         $student->user()->delete();
         $this->resetPage();
 
@@ -371,14 +369,14 @@ new class extends Component {
                                             <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
-                                    <div class="col-md-4 mb-3">
+                                    {{-- <div class="col-md-4 mb-3">
                                         <label for="admission_number" class="form-label">Admission Number</label>
                                         <input type="text" wire:model.live="admission_number" id="admission_number"
                                             class="form-control" placeholder="leave empty for auto allocation eg 00112" />
                                         @error('admission_number')
                                             <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
-                                    </div>
+                                    </div> --}}
                                     <div class="col-md-4 mb-3">
                                         <label for="phone_number" class="form-label">Phone Number</label>
                                         <input type="text" wire:model.live="phone_number" id="phone_number"
@@ -596,7 +594,7 @@ new class extends Component {
                                             </span>
                                         @endif
 
-                                    <!-- Actions Dropdown -->
+                                        <!-- Actions Dropdown -->
                                     <td>
                                         <div class="ms-auto">
                                             <div class="dropdown dropstart">
