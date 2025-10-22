@@ -66,8 +66,8 @@ class MpesaApi extends Controller
             [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
+                // CURLOPT_SSL_VERIFYPEER => false,
+                // CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_POSTFIELDS => $data_string,
             ]
         );
