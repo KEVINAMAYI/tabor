@@ -41,7 +41,6 @@ class MpesaApi extends Controller
         $curl_response = curl_exec($curl);
         $access_token = json_decode($curl_response);
         curl_close($curl);
-
         return $access_token->access_token;
     }
 
@@ -67,6 +66,8 @@ class MpesaApi extends Controller
             [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_POSTFIELDS => $data_string,
             ]
         );
@@ -83,9 +84,12 @@ class MpesaApi extends Controller
     }
 
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
-    public static function initiateStk($enrollment, $amount, $phone)
+    public static function initiateStk(Request $request)
     {
-        Log::info("Initiating STK Push for Enrollment ID: " . $enrollment->id . ", Amount: " . $amount . ", Phone: " . $phone);
+        $enrollment = $request->enrollment;
+        $amount = $request->amount;
+        $phone = $request->phone;
+        Log::info("Initiating STK Push for Enrollment: " . $enrollment . ", Amount: " . $amount . ", Phone: " . $phone);
         if (substr($phone, 0, 1) == "0") {
             $phone = "254" . substr($phone, -9);
         }
