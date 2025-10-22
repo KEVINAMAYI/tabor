@@ -83,8 +83,9 @@ class MpesaApi extends Controller
     }
 
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
-    public function initiateStk($enrollment, $amount, $phone)
+    public static function initiateStk($enrollment, $amount, $phone)
     {
+        Log::info("Initiating STK Push for Enrollment ID: " . $enrollment->id . ", Amount: " . $amount . ", Phone: " . $phone);
         if (substr($phone, 0, 1) == "0") {
             $phone = "254" . substr($phone, -9);
         }
@@ -110,18 +111,15 @@ class MpesaApi extends Controller
 
         $url = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
-        $response = $this->makeHttp($url, $body);
+
+        $mpesa = new MpesaApi();
+        $response = $mpesa->makeHttp($url, $body);
 
         Log::info('STK Push Response: ' . $response);
 
         $response_array = json_decode($response);
 
-        if ($response_array->{'ResponseCode'} == 0) {
-
-            echo json_encode(array("status" => "success", "message" => "Processing... Check your phone to enter pin", ''));
-        } else {
-            echo json_encode(array("status" => "failure", "message" => "Payment request failed, please try again"));
-        }
+        return $response_array;
     }
 
     //FUNCTION TO RECEIVE RESPONSES FOR BOTH STK PUSH AND C2B TRANSACTIONS

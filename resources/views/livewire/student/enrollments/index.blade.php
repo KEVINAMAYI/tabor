@@ -1,12 +1,14 @@
 <?php
 
 use Livewire\Volt\Component;
+use App\Http\Controllers\MpesaApi;
 
 new class extends Component {
 
     public $enrollments;
     public $amount;
     public $phone_number;
+    public $enrollment;
 
     public function mount()
     {
@@ -20,6 +22,7 @@ new class extends Component {
         $enrollment = auth()->user()?->student
             ? auth()->user()->student->enrollments()->where('id', $enrollmentId)->first()
             : null;
+        $this->enrollment = $enrollment;
 
         if ($enrollment) {
             $this->amount = $enrollment->course->price - $enrollment->payments->sum('amount');
@@ -36,7 +39,7 @@ new class extends Component {
         ]);
 
         // Process payment logic here (e.g., integrate with payment gateway)
-        
+        $payment = MpesaApi::initiateStk($this->enrollment, $this->amount, $this->phone_number);
         // Close the modal after processing
         $this->dispatch('hide-payment-modal');
     }
