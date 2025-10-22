@@ -144,13 +144,18 @@ new class extends Component {
                                 <th>Due Date</th>
                                 <th>Max Marks</th>
                                 <th>Status</th>
-                                <th>Marks Scored</th> {{-- ✅ New column --}}
+                                <th>Marks Scored</th>
                                 <th>Submitted At</th>
                                 <th class="text-center">Actions</th>
                             </tr>
                             </thead>
                             <tbody>
                             @forelse ($assignments as $submission)
+                                @php
+                                    $due_date = \Carbon\Carbon::parse($submission->assessment->due_on);
+                                    $remaining_days = $due_date->diffInDays(now(), false); // returns negative if due date has passed
+                                @endphp
+
                                 <tr>
                                     <td class="fw-semibold">
                                         {{ $submission->assessment->title }} <br>
@@ -161,9 +166,12 @@ new class extends Component {
                                     <td>{{ ucfirst($submission->assessment->type) }}</td>
 
                                     <td>
-                                        {{ $submission->assessment->due_on
-                                            ? \Carbon\Carbon::parse($submission->assessment->due_on)->format('d M Y')
-                                            : '-' }}
+                                        {{ $due_date->format('d M Y') }}
+                                        @if ($remaining_days >= 0)
+                                            <br><span class="badge bg-warning">{{ round($remaining_days) }} days remaining</span>
+                                        @else
+                                            <br><span class="badge bg-danger">Past Due</span>
+                                        @endif
                                     </td>
 
                                     <td>{{ $submission->assessment->max_marks }}</td>
@@ -184,11 +192,10 @@ new class extends Component {
                                         @endswitch
                                     </td>
 
-                                    {{-- ✅ Show marks only if graded --}}
+                                    {{-- Show marks only if graded --}}
                                     <td>
                                         @if($submission->status === 'graded')
-                                            <span
-                                                class="fw-bold text-success">{{ $submission->mark }}/{{ $submission->assessment->max_marks }}</span>
+                                            <span class="fw-bold text-success">{{ $submission->mark }}/{{ $submission->assessment->max_marks }}</span>
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif
@@ -201,33 +208,56 @@ new class extends Component {
                                     </td>
 
                                     <td class="text-center">
-                                        <div class="d-flex justify-content-center gap-2">
-                                            {{-- View file --}}
-                                            @if($submission->file_path)
-                                                <a href="{{ asset('storage/' . $submission->file_path) }}"
-                                                   target="_blank"
-                                                   class="btn btn-sm btn-outline-success"
-                                                   title="View">
-                                                    <i class="ti ti-eye"></i>
-                                                </a>
-                                                <a href="{{ asset('storage/' . $submission->file_path) }}" download
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   title="Download">
-                                                    <i class="ti ti-download"></i>
-                                                </a>
-                                            @endif
+                                        <div class="d-flex flex-column align-items-center gap-2">
+                                            {{-- First Row: View and Download Files --}}
+                                            <div class="d-flex justify-content-center gap-2 mb-2">
+                                                {{-- View and Download Submitted File --}}
+                                                @if($submission->file_path)
+                                                    <a href="{{ asset('storage/' . $submission->file_path) }}"
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="View Submitted File">
+                                                        <i class="ti ti-eye"></i>
+                                                    </a>
+                                                    <a href="{{ asset('storage/' . $submission->file_path) }}" download
+                                                       class="btn btn-sm btn-outline-secondary"
+                                                       title="Download Submitted File">
+                                                        <i class="ti ti-download"></i>
+                                                    </a>
+                                                @endif
 
-                                            {{-- Submit / Resubmit --}}
-                                            @if(in_array($submission->status, ['pending', 'submitted']))
-                                                <button class="btn btn-sm btn-outline-primary ms-2"
-                                                        wire:click="$set('selectedAssessmentId', {{ $submission->id }})"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#submitAssessmentModal"
-                                                        onclick="document.getElementById('modalAssessmentTitle').innerText = '{{ $submission->assessment->title }}'">
-                                                    <i class="ti ti-upload"></i>
-                                                    {{ $submission->status === 'pending' ? 'Submit' : 'Resubmit' }}
-                                                </button>
-                                            @endif
+                                                {{-- View and Download Assessment File --}}
+                                                @if($submission->assessment && $submission->assessment->file_path)
+                                                    <a href="{{ asset('storage/' . $submission->assessment->file_path) }}"
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-outline-success"
+                                                       title="View Assessment File">
+                                                        <i class="ti ti-eye"></i>
+                                                    </a>
+                                                    <a href="{{ asset('storage/' . $submission->assessment->file_path) }}" download
+                                                       class="btn btn-sm btn-outline-primary"
+                                                       title="Download Assessment File">
+                                                        <i class="ti ti-download"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
+
+                                            {{-- Second Row: Submit / Resubmit Button --}}
+                                            <div class="d-flex justify-content-center gap-2">
+                                                @if(in_array($submission->status, ['pending', 'submitted']) && $remaining_days >= 0)
+                                                    <button class="btn btn-sm btn-outline-warning"
+                                                            wire:click="$set('selectedAssessmentId', {{ $submission->id }})"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#submitAssessmentModal"
+                                                            onclick="document.getElementById('modalAssessmentTitle').innerText = '{{ $submission->assessment->title }}'">
+                                                        <i class="ti ti-upload"></i> {{ $submission->status === 'pending' ? 'Submit' : 'Resubmit' }}
+                                                    </button>
+                                                @elseif($remaining_days < 0)
+                                                    <button class="btn btn-sm btn-outline-warning" disabled>
+                                                        <i class="ti ti-upload"></i> Past Due
+                                                    </button>
+                                                @endif
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

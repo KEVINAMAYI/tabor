@@ -26,7 +26,7 @@
                     <a class="sidebar-link {{ request()->routeIs('student.enrollments.*') ? 'active' : '' }}"
                        href="{{ route('student.enrollments.index') }}">
                         <iconify-icon icon="mdi:school"></iconify-icon>
-                        <span class="hide-menu">My Enrollments</span>
+                        <span class="hide-menu">My Courses</span>
                     </a>
                 </li>
 
