@@ -83,10 +83,8 @@ class MpesaApi extends Controller
     }
 
     //FUNCTION TO TRIGGER STKPUSH ON PHONE
-    public function initiateStk(Request $request)
+    public function initiateStk($enrollment, $amount, $phone)
     {
-        $amount = $request->amount;
-        $phone = $request->phone;
         if (substr($phone, 0, 1) == "0") {
             $phone = "254" . substr($phone, -9);
         }
