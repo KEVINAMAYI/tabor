@@ -56,7 +56,9 @@ new class extends Component {
         $this->enrollments = Enrollment::with(['student', 'course', 'intake'])
             ->whereHas('student', function ($q) use ($query) {
                 $q->where('first_name', 'like', '%' . $query . '%')
-                    ->orWhere('last_name', 'like', '%' . $query . '%');
+                    ->orWhere('last_name', 'like', '%' . $query . '%')
+                    ->orWhere('admission_number', 'like', '%' . $query . '%')
+                    ->orWhere('email', 'like', '%' . $query . '%');
             })
             ->orWhereHas('course', function ($q) use ($query) {
                 $q->where('title', 'like', '%' . $query . '%');
@@ -383,7 +385,7 @@ new class extends Component {
                                             type="text"
                                             id="student_search"
                                             class="form-control"
-                                            placeholder="Search student, course, or intake..."
+                                            placeholder="Search student name, id, phone, course, or intake..."
                                             x-model="studentSearch"
                                             @input="$dispatch('perform-search', { query: studentSearch }); open = true"
                                             @focus="open = true"

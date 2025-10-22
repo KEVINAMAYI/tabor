@@ -387,8 +387,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Vision</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To be the most preferred Thought-Leadership TVET Vision Institution in Building
-                                    Diaspora workers.</p>
+                                    To be a leading Institute and a model of excellence in the training and development
+                                    of globally competent Professionals.</p>
                                 <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
                                 </a>
@@ -411,8 +411,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                             <div class="content-wrapper ps-lg-7 ms-lg-8">
                                 <h2 class="fs-5 fw-bold mb-3 accent-color">Our Mission</h2>
                                 <p class="fs-5 text-muted mb-5">
-                                    To intentionally equip students with talents that meet both local and inter
-                                    National standards.
+                                    Providing holistic education that fosters competence, compassionate and positive
+                                    attitude to meet both local and international markets.
                                 </p>
                                 <a href="{{ route('front-end.about') }}">
                                     <button class="btn btn-primary px-4 py-2 btn-shadow">Learn More</button>
@@ -442,17 +442,19 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                             Tabor Training Institute
                                         </p>
                                         <ol class="list-group list-group-numbered fs-5">
-                                            <li class="list-group-item border-0 px-0 py-2"><b>Commitment to excellence:</b> We
-                                                strive for the highest standards in teaching, learning, clinical
-                                                practice, and service delivery, consistently pursuing improvement
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Commitment to
+                                                    excellence:</b> Commitment to Excellence: Demonstrating a consistent
+                                                drive to achieve the highest standards in teaching, learning, and
+                                                professional conduct.
                                             </li>
-                                            <li class="list-group-item border-0 px-0 py-2"><b>Stewardship:</b> We take
-                                                responsibility for upholding, modeling, and promoting our values across
-                                                all levels of the Institute.
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Stewardship:</b>
+                                                Responsibly managing resources, time, and talents entrusted to us, with
+                                                accountability and integrity.
                                             </li>
-                                            <li class="list-group-item border-0 px-0 py-2"><b>Responsive:</b> We act promptly
-                                                and effectively to meet the changing needs of students, communities, and
-                                                the health sector
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Responsiveness:</b>
+                                                Adapting swiftly and effectively to the needs of students, the
+                                                healthcare industry, and societal challenges through innovation and
+                                                action.
                                             </li>
                                         </ol>
                                     </div>
