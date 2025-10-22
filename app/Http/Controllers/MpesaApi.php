@@ -41,7 +41,7 @@ class MpesaApi extends Controller
         $curl_response = curl_exec($curl);
         $access_token = json_decode($curl_response);
         curl_close($curl);
-        return $access_token->access_token;
+        return $access_token->access_token??'QPDiAAOkroM9KADBIOTsElQGf1hW';
     }
 
     private function makeHttp($url, $body)
