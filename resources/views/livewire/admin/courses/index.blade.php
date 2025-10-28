@@ -16,7 +16,7 @@ new class extends Component {
 
     use WithFileUploads, WithPagination;
 
-    public $title, $code, $description, $price, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
+    public $title, $code, $description, $price, $exam_fee, $attachment_fee, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
 
     public $editId = null;
 
@@ -37,6 +37,8 @@ new class extends Component {
             'code' => 'required|string|max:100|unique:courses,code,' . ($this->editId ?? 'NULL') . ',id', // Ensure unique code except for the current course being edited
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'exam_fee' => 'nullable|numeric|min:0',
+            'attachment_fee' => 'nullable|numeric|min:0',
             'duration' => 'nullable|string|max:100',
             'mode' => 'nullable|in:online,on-campus,hybrid',
             'level' => 'nullable|string|max:100',
@@ -98,6 +100,8 @@ new class extends Component {
                 'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
+                'exam_fee' => $this->exam_fee,
+                'attachment_fee' => $this->attachment_fee,
                 'duration' => $this->duration,
                 'mode' => $this->mode,
                 'level' => $this->level,
@@ -132,6 +136,8 @@ new class extends Component {
         $this->code = $course->code;
         $this->description = $course->description;
         $this->price = $course->price;
+        $this->exam_fee = $course->exam_fee;
+        $this->attachment_fee = $course->attachment_fee;
         $this->duration = $course->duration;
         $this->mode = $course->mode;
         $this->level = $course->level;
@@ -156,6 +162,8 @@ new class extends Component {
                 'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
+                'exam_fee' => $this->exam_fee,
+                'attachment_fee' => $this->attachment_fee,
                 'duration' => $this->duration,
                 'mode' => $this->mode,
                 'level' => $this->level,
@@ -394,11 +402,29 @@ new class extends Component {
                                     </div>
 
                                     <!-- Course Fee -->
-                                    <div class="col-md-12 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="course-fee" class="form-label">Fee</label>
                                         <input id="course-fee" type="number" step="0.01" wire:model="price"
-                                               class="form-control" placeholder="Enter course fee (e.g., 20000 KSH)"/>
+                                               class="form-control" placeholder="Enter course fee"/>
                                         @error('price')
+                                        <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                    <!-- Exam Fee -->
+                                    <div class="col-md-4 mb-3">
+                                        <label for="exam-fee" class="form-label">Exam Fee</label>
+                                        <input id="exam-fee" type="number" step="0.01" wire:model="exam_fee"
+                                               class="form-control" placeholder="Enter exam fee"/>
+                                        @error('exam_fee')
+                                        <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                    <!-- Attachment Fee -->
+                                    <div class="col-md-4 mb-3">
+                                        <label for="attachment-fee" class="form-label">Attachment Fee</label>
+                                        <input id="attachment-fee" type="number" step="0.01" wire:model="attachment_fee"
+                                               class="form-control" placeholder="Enter attachment fee"/>
+                                        @error('attachment_fee')
                                         <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>

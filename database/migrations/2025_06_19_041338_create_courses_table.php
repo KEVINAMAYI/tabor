@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->string('code')->unique();
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('exam_fee', 10, 2)->nullable();
+            $table->decimal('attachment_fee', 10, 2)->nullable();
             $table->string('duration')->nullable();
             $table->enum('mode', ['online', 'on-campus', 'hybrid'])->nullable();
             $table->string('level')->nullable();
