@@ -552,17 +552,14 @@ new class extends Component {
                                 <input wire:click="$dispatch('select-all')" type="checkbox"
                                        class="form-check-input m-0" wire:model="selectAll"/>
                             </th>
-                            <th>#</th>
                             <th>Admission Number</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone Number</th>
+                            <th>Student Info</th>
+                            <th>ID No.</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
                         </thead>
                         <tbody>
-
                         @forelse ($students as $student)
                             <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
                                 <!-- Checkbox -->
@@ -571,44 +568,45 @@ new class extends Component {
                                            value="{{ (string) $student->id }}"/>
                                 </td>
 
-                                <!-- Iteration -->
-                                <td class="fw-bold text-primary" style="color: #0e334f;">
-                                    {{ $loop->iteration }}
-                                </td>
-
                                 <!-- Admission Number -->
                                 <td class="text-uppercase fw-semibold" style="color: #f69122;">
                                     {{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}
                                 </td>
 
-                                <!-- Full Name -->
-                                <td class="fw-semibold" style="color: #0e334f;">
-                                    {{ $student->first_name }} {{ $student->last_name }}
-                                </td>
-
-                                <!-- Email -->
+                                <!-- Combined Info (Name + Email + Phone) -->
                                 <td>
-                                        <span class="badge bg-light text-dark px-2 py-1 rounded-pill">
-                                            {{ $student->email }}
-                                        </span>
+                                    <div class="d-flex flex-column">
+                        <span class="fw-semibold text-dark">
+                            {{ $student->first_name }} {{ $student->last_name }}
+                        </span>
+                                        <span class="text-muted small">
+                            <i class="ti ti-mail me-1"></i>{{ $student->email }}
+                        </span>
+                                        <span class="text-muted small">
+                            <i class="ti ti-phone me-1"></i>{{ $student->phone }}
+                        </span>
+                                    </div>
                                 </td>
 
-                                <!-- Phone -->
-                                <td><span class="text-muted">{{ $student->phone }}</span></td>
+                                <!-- ID Number -->
+                                <td class="text-uppercase fw-semibold text-muted">
+                                    {{ $student->id_number ?? '—' }}
+                                </td>
 
                                 <!-- Status -->
                                 <td>
                                     @if ($student->user && $student->user->active)
                                         <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">
-                                                Active
-                                            </span>
+                            Active
+                        </span>
                                     @else
                                         <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill">
-                                                Inactive
-                                            </span>
+                            Inactive
+                        </span>
                                     @endif
+                                </td>
 
-                                    <!-- Actions Dropdown -->
+                                <!-- Actions -->
                                 <td>
                                     <div class="ms-auto">
                                         <div class="dropdown dropstart">
@@ -659,9 +657,9 @@ new class extends Component {
                                 <td colspan="7" class="text-center">No students found.</td>
                             </tr>
                         @endforelse
-
                         </tbody>
                     </table>
+
                 </div>
 
                 <!-- Pagination -->
