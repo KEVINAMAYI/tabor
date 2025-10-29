@@ -174,6 +174,7 @@
             </div>
             <!-- Nekesa -->
             <div class="col-md-4">
+
                 <div class="card team-card text-dark" data-bs-toggle="modal" data-bs-target="#teamModal"
                     data-name="Zipporah Nekesa" data-title="German Language Instructor"
                     data-img="../assets/images/frontend-pages/Zipporah.jpeg"
@@ -184,6 +185,7 @@
                         <p class="card-text small">German Language Instructor</p>
                     </div>
                 </div>
+
             </div>
 
             <!-- Principal -->
