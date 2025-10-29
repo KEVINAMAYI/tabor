@@ -255,7 +255,7 @@ new class extends Component {
                                     <td class="text-blue">
                                         {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
                                     </td>
-                                    <td class="text-orange">{{ $enrollment->course->title }}</td>
+                                    <td class="text-orange">{{ $enrollment->course->title ?? 'N/A' }}</td>
                                     <td class="text-blue">{{ $enrollment->intake->name }}</td>
                                     <td>{{ $enrollment->student->phone }}</td>
                                     <td>
