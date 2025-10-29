@@ -452,7 +452,7 @@ new class extends Component {
                                     @endif
                                 </div>
                                 <div class="text-muted small">
-                                    Enrolled in {{ $enrollment->course->title }}
+                                    Enrolled in {{ $enrollment->course->title ?? 'N/A' }}
                                 </div>
                             </div>
                             <div class="text-end">
