@@ -179,7 +179,7 @@
                     data-name="Zipporah Nekesa" data-title="German Language Instructor"
                     data-img="../assets/images/frontend-pages/Zipporah.jpeg"
                     data-desc="Zipporah is a dynamic German language expert with a passion for teaching. She empowers learners with practical communication skills and fosters a strong foundation in German language proficiency.">
-                    <img src="../assets/images/frontend-pages/nekesa.PNG" class="card-img-top" alt="Marvin">
+                    <img src="../assets/images/frontend-pages/Zipporah.jpeg" class="card-img-top" alt="Marvin">
                     <div class="card-body text-center">
                         <h5 class="card-title mb-1">Zipporah Nekesa</h5>
                         <p class="card-text small">German Language Instructor</p>
