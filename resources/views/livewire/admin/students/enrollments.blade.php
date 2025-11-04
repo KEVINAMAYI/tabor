@@ -218,7 +218,7 @@ new class extends Component {
                                     <td class="text-blue">
                                         {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
                                     </td>
-                                    <td class="text-orange">{{ $enrollment->course->title }}</td>
+                                    <td class="text-orange">{{ $enrollment->course->title }}-{{ $enrollment->course->level }}</td>
                                     <td>{{ $enrollment->intake->name }}</td>
                                     <td class="text-success fw-bold">
                                         {{ number_format($enrollment->payments->sum('amount'), 2) }}

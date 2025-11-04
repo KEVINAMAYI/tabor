@@ -22,7 +22,7 @@ class extends Component {
     use WithFileUploads;
 
     // Declare variables that will be used in the component
-    public $first_name, $last_name, $admission_number, $email, $phone_number, $address, $country, $highest_level_of_education;
+    public $first_name, $last_name, $admission_number, $email, $phone_number, $address, $country, $highest_level_of_education, $status;
     public $selected_course_id, $selected_intake_id, $id_url, $kcse_certificate, $passport_size_url, $date_of_birth;
     public $courses = [], $intakes = [];
     public $terms = false;
@@ -34,9 +34,11 @@ class extends Component {
         $this->courses = Course::all();
         $this->selected_course_id = !empty($course_id) ? $course_id : $this->courses->first()->id;
 
-        $this->intakes = Intake::whereHas('intakeModules.module', function ($query) use ($course_id) {
+        /* $this->intakes = Intake::whereHas('intakeModules.module', function ($query) use ($course_id) {
             $query->where('course_id', $course_id);
-        })->distinct()->get();
+        })->distinct()->get(); */
+
+        $this->intakes = Intake::all();
 
 
         $this->selected_intake_id = $this->intakes->first()->id ?? null;

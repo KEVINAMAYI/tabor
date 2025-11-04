@@ -72,7 +72,7 @@ new class extends Component {
     {
         $this->enrollment_id = $id;
 
-        $enrollment = Enrollment::with(['student', 'course', 'intake'])->find($id);
+        $enrollment = Enrollment::with(['student', 'course', 'intake'])->findOrFail($id);
 
         if ($enrollment) {
             $this->student_search = $enrollment->student->first_name . ' ' . $enrollment->student->last_name .
