@@ -28,6 +28,7 @@ new class extends Component {
     public $enrollmentId;
     public $enrollmentStatus;
     public $enrollmentPayments = [];
+    public $course_id = null;
 
     public function rules()
     {
@@ -104,16 +105,20 @@ new class extends Component {
     public function openEditModal($id)
     {
         $this->enrollmentId = $id;
+        $model = Enrollment::findOrFail($id);
+        $this->course_id = $model->course_id;
+        $this->enrollmentStatus = $model->status;
         $this->dispatch('show-enrollment-status-modal');
     }
 
-    public function updateEnrollmentStatus()
+    public function updateEnrollment()
     {
         try {
             DB::beginTransaction();
 
             $enrollment = Enrollment::findOrFail($this->enrollmentId);
             $enrollment->status = $this->enrollmentStatus;
+            $enrollment->course_id = $this->course_id;
             $enrollment->save();
 
             $user = $enrollment->student->user ?? null;
@@ -143,6 +148,25 @@ new class extends Component {
             LivewireAlert::text('Failed to update enrollment status.!')->error()->toast()->position('top-end')->show();
 
             dd('Caught Exception: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteEnrollment($id)
+    {
+        DB::beginTransaction();
+        try {
+            $enrollment = Enrollment::with('payments')->findOrFail($id);
+            $enrollment->payments->each->delete();
+            $enrollment->delete();
+
+            DB::commit();
+
+            LivewireAlert::text('Enrollment deleted successfully!')->success()->toast()->position('top-end')->show();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete enrollment: ' . $e->getMessage());
+
+            LivewireAlert::text('Failed to delete enrollment!')->error()->toast()->position('top-end')->show();
         }
     }
 
@@ -431,19 +455,32 @@ new class extends Component {
                                                 };
                                             @endphp
 
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <h6 class="mt-1">Status:</h6><span
-                                                        class="badge {{ $statusClass }} text-light">{{ ucfirst($enrollmentStatus == 'approved' ? 'Active' : $enrollmentStatus) }}</span>
-                                                </div>
-                                                <!-- Pencil Icon Button -->
-                                                <button style="border:0px;"
-                                                    wire:click="openEditModal({{ $enrollment->id }})"
-                                                    class="btn btn-sm btn-outline-secondary" title="Edit Status">
-                                                    <iconify-icon style="font-weight:bold;" icon="mdi:pencil"
-                                                        width="16" height="16"></iconify-icon>
-                                                </button>
+                                            <div class="d-flex col-md-6 gap-2">
+                                                <h6 class="mt-1 mb-0">Status:</h6>
+                                                <span class="badge {{ $statusClass }} text-light">
+                                                    {{ ucfirst($enrollmentStatus == 'approved' ? 'Active' : $enrollmentStatus) }}
+                                                </span>
+                                            </div>
 
+                                            <!-- Action Icons (Edit + Delete) -->
+                                            <div class="col-md-6 text-end">
+                                                @can('edit-enrollments')
+                                                    <button style="border:0;"
+                                                        wire:click="openEditModal({{ $enrollment->id }})"
+                                                        class="btn btn-sm btn-outline-secondary" title="Edit Status">
+                                                        <iconify-icon style="font-weight:bold;" icon="mdi:pencil"
+                                                            width="16" height="16"></iconify-icon>
+                                                    </button>
+                                                @endcan
+                                                @can('delete-enrollments')
+                                                    <button style="border:0;"
+                                                        onclick="confirm('Are you sure you want to delete this enrollment? This action cannot be undone.') || event.stopImmediatePropagation()"
+                                                        wire:click="deleteEnrollment({{ $enrollment->id }})"
+                                                        class="btn btn-sm btn-outline-danger" title="Delete Enrollment">
+                                                        <iconify-icon style="font-weight:bold;" icon="mdi:delete"
+                                                            width="16" height="16"></iconify-icon>
+                                                    </button>
+                                                @endcan
                                             </div>
                                         </div>
                                         <!-- Course Details -->
@@ -698,7 +735,7 @@ new class extends Component {
                                         <option value="mpesa">M-Pesa</option>
                                         <option value="bank">Bank</option>
                                         @can('give-discounts')
-                                        <option value="discount">Discount</option>
+                                            <option value="discount">Discount</option>
                                         @endcan
                                     </select>
                                     @error('method')
@@ -713,7 +750,7 @@ new class extends Component {
                                         <option value="exam">Exam</option>
                                         <option value="attachment">Attachment</option>
                                         @can('give-discounts')
-                                        <option value="discount">Discount</option>
+                                            <option value="discount">Discount</option>
                                         @endcan
                                     </select>
                                     @error('method')
@@ -903,10 +940,19 @@ new class extends Component {
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Enrollment Status</h5>
+                    <h5 class="modal-title">Edit Enrollment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
+                <div class="modal-body">
+                    <label class="my-2" for="enr">Course:</label>
+                    <select wire:model="course_id" class="form-control" id="enr">
+                        @foreach ($courses as $course)
+                            <option value="{{ $course->id }}">{{ ucfirst($course->title) }} -
+                                {{ $course->level }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="modal-body">
                     <label class="my-2" for="status">Select Status:</label>
                     <select wire:model="enrollmentStatus" class="form-control" id="status">
@@ -918,7 +964,7 @@ new class extends Component {
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
-                    <button type="button" class="btn btn-primary" wire:click="updateEnrollmentStatus">Update
+                    <button type="button" class="btn btn-primary" wire:click="updateEnrollment">Update
                     </button>
                 </div>
             </div>

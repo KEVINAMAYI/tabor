@@ -1,7 +1,9 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Attendance Report</title>
+    <title>Active Enrollments</title>
+
+    <base href="{{ URL::to('/') }}">
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -106,7 +108,6 @@
 <table class="table search-table align-middle text-nowrap">
     <thead class="header-item">
     <tr>
-        <th>#</th>
         <th>Enrollment ID</th>
         <th>Name</th>
         <th>Course</th>
@@ -121,15 +122,14 @@
 
     @forelse ($enrollments as $enrollment)
         <tr class="search-items">
-            <td>{{ $loop->iteration }}</td>
-            <td>{{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
+            <td>{{ 'TTI/' . $enrollment->student?->admission_number . '/' . $enrollment->course?->code . '/' . $enrollment->created_at->format('Y') }}
             </td>
-            <td>{{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+            <td>{{ $enrollment->student?->first_name }} {{ $enrollment->student?->last_name }}
             </td>
-            <td>{{ $enrollment->course->title }}</td>
-            <td>{{ $enrollment->intake->name }}</td>
+            <td>{{ $enrollment->course?->title }}</td>
+            <td>{{ $enrollment->intake?->name }}</td>
             <td>{{ number_format($enrollment->payments->sum('amount'), 2) }}</td>
-            <td>{{ number_format($enrollment->course->price - $enrollment->payments->sum('amount'), 2) }}</td>
+            <td>{{ number_format($enrollment->course?->price - $enrollment->payments?->sum('amount'), 2) }}</td>
             <td>{{ $enrollment->created_at->format('d-m-Y') }}</td>
             <td>
                 <div class="action-btn dropdown">

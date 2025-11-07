@@ -169,7 +169,7 @@ new class extends Component {
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:school-outline" class="me-2"
                                 style="font-size: 20px;"></iconify-icon>
-                            Enrollment List
+                            Enrollments List
                         </h6>
 
                         <!-- Action Buttons -->

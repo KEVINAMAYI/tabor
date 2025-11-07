@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Attendance Report</title>
+    <title>Payments Report</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -106,28 +106,25 @@
 <table class="table search-table align-middle text-nowrap">
     <thead class="header-item">
     <tr>
-        <th>#</th>
         <th>Trans ID</th>
-        <th>Reference</th>
         <th>Student</th>
+        <th>Course</th>
         <th>Amount</th>
         <th>Status</th>
         <th>Method</th>
+        <th>Payment For</th>
         <th>Paid On</th>
-        <th>Paid By</th>
+        <th>Narration</th>
     </tr>
     </thead>
     <tbody>
     @forelse ($payments as $payment)
         <tr>
-            <td>{{ $loop->iteration }}</td> <!-- Assuming `course` is a property of $payment -->
             <td>
                 <span class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
             </td>
-            <td>
-                <span class="badge bg-light text-dark">{{ $payment->reference ?? 'N/A' }}</span>
-            </td>
-            <td><span class="">{{ $payment->enrollment?->student->first_name }}</span></td>
+            <td><span class="">{{ $payment->enrollment?->student->first_name . ' ' . $payment->enrollment?->student->last_name }}</span></td>
+            <td><span class="">{{ !empty($payment->enrollment)?$payment->enrollment->course->title ." - ". $payment->enrollment->course->level : 'N/A' }}</span></td>
             <td>{{ number_format($payment->amount, 2) }}</td>
             <td>
                 @if($payment->status == 'completed')
@@ -137,6 +134,7 @@
                 @endif
             </td>
             <td><span>{{ ucfirst($payment->payment_method) }}</span></td>
+            <td><span>{{ ucfirst($payment->payment_reason) }}</span></td>
             <td>{{ Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</td>
             <td><span>{{ ucfirst($payment->payer) }}</span></td>
         </tr>
