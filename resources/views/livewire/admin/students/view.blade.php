@@ -278,6 +278,11 @@ new class extends Component {
             width: 100%;
         }
 
+        /* Add top border to the last row */
+        .styled-payment-table tbody tr:last-child td {
+            border-top: 1px solid #f0f0f0;
+        }
+
         /* Print styling */
         @media print {
             @page {
@@ -359,7 +364,7 @@ new class extends Component {
                                     <div
                                         class="border-4 border-white d-flex mt-4 align-items-center justify-content-center rounded-circle overflow-hidden round-100">
                                         <img src="../assets/images/profile/user-1.jpg" alt="matdash-img"
-                                            class="w-100 h-100">
+                                             class="w-100 h-100">
                                     </div>
                                 </div>
                             </div>
@@ -411,7 +416,7 @@ new class extends Component {
         <div class="tab-content" id="pills-tabContent">
             <!-- Courses Tab -->
             <div class="tab-pane fade {{ $activeTab === 'pills-courses' ? 'show active' : '' }}" id="pills-courses"
-                role="tabpanel" aria-labelledby="pills-courses-tab" tabindex="0">
+                 role="tabpanel" aria-labelledby="pills-courses-tab" tabindex="0">
                 <div class="row mb-4">
                     <div class="col-md-4 col-xl-3">
                     </div>
@@ -419,7 +424,7 @@ new class extends Component {
                         class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
 
                         <a href="javascript:void(0)" wire:click="$dispatch('show-enrollment-modal')"
-                            class="btn btn-primary d-flex align-items-center">
+                           class="btn btn-primary d-flex align-items-center">
                             <i class="ti ti-school text-white me-1 fs-5"></i> Enroll in a Course
                         </a>
                     </div>
@@ -466,19 +471,21 @@ new class extends Component {
                                             <div class="col-md-6 text-end">
                                                 @can('edit-enrollments')
                                                     <button style="border:0;"
-                                                        wire:click="openEditModal({{ $enrollment->id }})"
-                                                        class="btn btn-sm btn-outline-secondary" title="Edit Status">
+                                                            wire:click="openEditModal({{ $enrollment->id }})"
+                                                            class="btn btn-sm btn-outline-secondary"
+                                                            title="Edit Status">
                                                         <iconify-icon style="font-weight:bold;" icon="mdi:pencil"
-                                                            width="16" height="16"></iconify-icon>
+                                                                      width="16" height="16"></iconify-icon>
                                                     </button>
                                                 @endcan
                                                 @can('delete-enrollments')
                                                     <button style="border:0;"
-                                                        onclick="confirm('Are you sure you want to delete this enrollment? This action cannot be undone.') || event.stopImmediatePropagation()"
-                                                        wire:click="deleteEnrollment({{ $enrollment->id }})"
-                                                        class="btn btn-sm btn-outline-danger" title="Delete Enrollment">
+                                                            onclick="confirm('Are you sure you want to delete this enrollment? This action cannot be undone.') || event.stopImmediatePropagation()"
+                                                            wire:click="deleteEnrollment({{ $enrollment->id }})"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            title="Delete Enrollment">
                                                         <iconify-icon style="font-weight:bold;" icon="mdi:delete"
-                                                            width="16" height="16"></iconify-icon>
+                                                                      width="16" height="16"></iconify-icon>
                                                     </button>
                                                 @endcan
                                             </div>
@@ -487,13 +494,13 @@ new class extends Component {
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:map-marker-radius"
-                                                    class="text-primary fs-4 mt-1"></iconify-icon>
+                                                              class="text-primary fs-4 mt-1"></iconify-icon>
                                                 <span class="text-dark fs-3">Intake:
                                                     {{ $enrollment->intake->name }}</span>
                                             </li>
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:calendar-clock"
-                                                    class="text-primary fs-4 mt-1"></iconify-icon>
+                                                              class="text-primary fs-4 mt-1"></iconify-icon>
                                                 <span class="text-dark fs-3">Duration:
                                                     {{ $course->duration ?? 'N/A' }}</span>
                                             </li>
@@ -505,31 +512,31 @@ new class extends Component {
                                             </li> --}}
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:currency-usd"
-                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
                                                 <span class="fs-3">Tuition Fee:
                                                     {{ number_format($course->price, 2) }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:currency-usd"
-                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
                                                 <span class="fs-3">Exam Fee:
                                                     {{ number_format($course->exam_fee, 2) }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:currency-usd"
-                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
                                                 <span class="fs-3">Attachment Fee:
                                                     {{ number_format($course->attachment_fee, 2) }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:currency-usd"
-                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
                                                 <span class="text-success fs-3">Paid Amount:
                                                     {{ number_format($enrollment->payments->sum('amount'), 2) }}</span>
                                             </li>
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:currency-usd"
-                                                    class="text-info fs-4 mt-1"></iconify-icon>
+                                                              class="text-info fs-4 mt-1"></iconify-icon>
                                                 @if ($course->price - $enrollment->payments->sum('amount') > 0)
                                                     <span class="text-danger fs-3">Balance:
                                                         {{ number_format($course->price + $course->exam_fee + $course->attachment_fee - $enrollment->payments->sum('amount'), 2) }}</span>
@@ -548,7 +555,7 @@ new class extends Component {
             </div>
 
             <div class="tab-pane fade {{ $activeTab === 'pills-payments' ? 'show active' : '' }}" id="pills-payments"
-                role="tabpanel" aria-labelledby="pills-payments-tab" tabindex="0">
+                 role="tabpanel" aria-labelledby="pills-payments-tab" tabindex="0">
                 <div class="row">
                     <div class="col-12">
                         <div class="widget-content searchable-container list">
@@ -557,7 +564,7 @@ new class extends Component {
                                     <div class="col-md-4 col-xl-3">
                                         <form class="position-relative">
                                             <input type="text" class="form-control product-search ps-5"
-                                                id="input-search" placeholder="Search Payments..." />
+                                                   id="input-search" placeholder="Search Payments..."/>
                                             <i
                                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                                         </form>
@@ -566,13 +573,13 @@ new class extends Component {
                                         class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                                         <div class="action-btn show-btn">
                                             <a href="javascript:void(0)"
-                                                class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
+                                               class="delete-multiple bg-danger-subtle btn me-2 text-danger d-flex align-items-center ">
                                                 <i class="ti ti-trash me-1 fs-5"></i> Delete All Row
                                             </a>
                                         </div>
                                         <a href="javascript:void(0)" data-bs-toggle="modal"
-                                            data-bs-target="#addPaymentModal"
-                                            class="btn btn-primary d-flex align-items-center">
+                                           data-bs-target="#addPaymentModal"
+                                           class="btn btn-primary d-flex align-items-center">
                                             <i class="ti ti-users text-white me-1 fs-5"></i> Add Payment
                                         </a>
                                     </div>
@@ -583,61 +590,61 @@ new class extends Component {
                                 <div class="table-responsive">
                                     <table class="table search-table align-middle text-nowrap">
                                         <thead class="header-item">
-                                            <th>
-                                                <div class="n-chk align-self-center text-center">
-                                                    <div class="form-check">
-                                                        <input type="checkbox" class="form-check-input primary"
-                                                            id="contact-check-all" />
-                                                        <label class="form-check-label"
-                                                            for="contact-check-all"></label>
-                                                        <span class="new-control-indicator"></span>
-                                                    </div>
+                                        <th>
+                                            <div class="n-chk align-self-center text-center">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input primary"
+                                                           id="contact-check-all"/>
+                                                    <label class="form-check-label"
+                                                           for="contact-check-all"></label>
+                                                    <span class="new-control-indicator"></span>
                                                 </div>
-                                            </th>
-                                            <th>Course</th>
-                                            <th>Status</th>
-                                            <th>Account Number</th>
-                                            <th>Total Paid</th>
-                                            <th>Subpayments</th>
-                                            <th>Remaining Balance</th>
+                                            </div>
+                                        </th>
+                                        <th>Course</th>
+                                        <th>Status</th>
+                                        <th>Account Number</th>
+                                        <th>Total Paid</th>
+                                        <th>Subpayments</th>
+                                        <th>Remaining Balance</th>
                                         </thead>
                                         <tbody>
-                                            @foreach ($student->enrollments as $enrollment)
-                                                @php
-                                                    $course = $enrollment->course;
-                                                    $modules = $course->modules;
-                                                    $intake = $enrollment->intake;
-                                                    $enrollmentStatus = $enrollment->status ?? 'In Progress'; // Default status
-                                                @endphp
-                                                <tr class="search-items">
-                                                    <td>
-                                                        <div class="n-chk align-self-center text-center">
-                                                            <div class="form-check">
-                                                                <input type="checkbox"
-                                                                    class="form-check-input contact-chkbox primary"
-                                                                    id="checkbox1" />
-                                                                <label class="form-check-label"
-                                                                    for="checkbox1"></label>
+                                        @foreach ($student->enrollments as $enrollment)
+                                            @php
+                                                $course = $enrollment->course;
+                                                $modules = $course->modules;
+                                                $intake = $enrollment->intake;
+                                                $enrollmentStatus = $enrollment->status ?? 'In Progress'; // Default status
+                                            @endphp
+                                            <tr class="search-items">
+                                                <td>
+                                                    <div class="n-chk align-self-center text-center">
+                                                        <div class="form-check">
+                                                            <input type="checkbox"
+                                                                   class="form-check-input contact-chkbox primary"
+                                                                   id="checkbox1"/>
+                                                            <label class="form-check-label"
+                                                                   for="checkbox1"></label>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="ms-3">
+                                                            <div class="user-meta-info">
+                                                                <h6 class="user-name mb-0"
+                                                                    data-name="{{ $course->title }}">
+                                                                    {{ $course->title }}</h6>
+                                                                <small class="text-muted d-block mb-1">
+                                                                    {{ 'Intake: ' }}{{ $intake->name ?? '' }}
+                                                                </small>
+                                                                <span class="usr-course-amount fs-3"
+                                                                      data-amount="">{{ 'Fee: KES ' }}{{ number_format($course->price, 2) }}</span>
                                                             </div>
                                                         </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="ms-3">
-                                                                <div class="user-meta-info">
-                                                                    <h6 class="user-name mb-0"
-                                                                        data-name="{{ $course->title }}">
-                                                                        {{ $course->title }}</h6>
-                                                                    <small class="text-muted d-block mb-1">
-                                                                        {{ 'Intake: ' }}{{ $intake->name ?? '' }}
-                                                                    </small>
-                                                                    <span class="usr-course-amount fs-3"
-                                                                        data-amount="">{{ 'Fee: KES ' }}{{ number_format($course->price, 2) }}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>
+                                                    </div>
+                                                </td>
+                                                <td>
                                                         <span
                                                             class="badge rounded-pill
                                                         {{ $enrollment->status == 'completed'
@@ -648,29 +655,29 @@ new class extends Component {
                                                                     ? 'bg-warning'
                                                                     : 'bg-primary')) }}">{{ $enrollment->status == 'approved' ? 'active' : $enrollment->status }}</span>
 
-                                                    </td>
-                                                    <td>
+                                                </td>
+                                                <td>
                                                         <span class="usr-email-addr"
-                                                            data-email="">{{ $this->student->admission_number . '/' . $course->code }}</span>
-                                                    </td>
-                                                    <td>
+                                                              data-email="">{{ $this->student->admission_number . '/' . $course->code }}</span>
+                                                </td>
+                                                <td>
                                                         <span class="usr-email-addr"
-                                                            data-email="">{{ number_format($enrollment->payments->sum('amount'), 2) }}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div class="action-btn">
-                                                            <a wire:click.prevent='showEnrollmentPayments({{ $enrollment->id }})'
-                                                                class="btn btn-secondary btn-sm">
-                                                                <i class="fa fa-eye" aria-hidden="true"></i> View
-                                                            </a>
-                                                        </div>
-                                                    </td>
-                                                    <td>
+                                                              data-email="">{{ number_format($enrollment->payments->sum('amount'), 2) }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="action-btn">
+                                                        <a wire:click.prevent='showEnrollmentPayments({{ $enrollment->id }})'
+                                                           class="btn btn-secondary btn-sm">
+                                                            <i class="fa fa-eye" aria-hidden="true"></i> View
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>
                                                         <span
                                                             class="{{ $course->price - $enrollment->payments->sum('amount') > 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($course->price - $enrollment->payments->sum('amount'), 2) }}</span>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
+                                                </td>
+                                            </tr>
+                                        @endforeach
 
                                         </tbody>
                                     </table>
@@ -684,13 +691,13 @@ new class extends Component {
 
         <!-- Modal -->
         <div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog"
-            aria-labelledby="addPaymentModalTitle" aria-hidden="true" wire:ignore.self>
+             aria-labelledby="addPaymentModalTitle" aria-hidden="true" wire:ignore.self>
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header d-flex align-items-center">
                         <h5 class="modal-title">Add Payment</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                                aria-label="Close"></button>
                     </div>
                     <form wire:submit.prevent="{{ 'addPayment' }}">
                         <div class="modal-body">
@@ -714,16 +721,16 @@ new class extends Component {
 
                                     </select>
                                     @error('enrollment_id')
-                                        <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-danger">{{ $message }}</small>
                                     @enderror
                                 </div>
                                 <!-- Amount Input -->
                                 <div class="col-md-6 mb-3">
                                     <label for="amount" class="form-label">Amount</label>
                                     <input type="number" wire:model="amount" class="form-control"
-                                        placeholder="Amount" />
+                                           placeholder="Amount"/>
                                     @error('amount')
-                                        <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-danger">{{ $message }}</small>
                                     @enderror
                                 </div>
                                 <!-- Payment Method Selector -->
@@ -739,7 +746,7 @@ new class extends Component {
                                         @endcan
                                     </select>
                                     @error('method')
-                                        <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-danger">{{ $message }}</small>
                                     @enderror
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -754,24 +761,24 @@ new class extends Component {
                                         @endcan
                                     </select>
                                     @error('method')
-                                        <small class="text-danger">{{ $message }}</small>
+                                    <small class="text-danger">{{ $message }}</small>
                                     @enderror
                                 </div>
                                 <!-- Reference Input -->
                                 <div class="col-md-6 mb-3">
                                     <label for="reference" class="form-label">Reference</label>
                                     <input type="text" wire:model="reference" class="form-control"
-                                        placeholder="Reference" />
+                                           placeholder="Reference"/>
                                 </div>
                                 <!-- Paid Date Input -->
                                 <div class="col-md-6 mb-3">
                                     <label for="paid_at" class="form-label">Paid On</label>
-                                    <input type="date" wire:model="paid_at" class="form-control" />
+                                    <input type="date" wire:model="paid_at" class="form-control"/>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="payer" class="form-label">Paid By</label>
                                     <input type="text" wire:model="payer" class="form-control"
-                                        placeholder="Paid By" />
+                                           placeholder="Paid By"/>
                                 </div>
                             </div>
                         </div>
@@ -781,7 +788,7 @@ new class extends Component {
                                     {{ 'Add' }}
                                 </button>
                                 <button type="button" class="btn bg-danger-subtle text-danger"
-                                    data-bs-dismiss="modal">Discard
+                                        data-bs-dismiss="modal">Discard
                                 </button>
                             </div>
                         </div>
@@ -793,7 +800,7 @@ new class extends Component {
 
 
     <div class="modal fade" id="enrollCourseModal" tabindex="-1" aria-labelledby="enrollCourseModalTitle"
-        aria-hidden="true" wire:ignore.self>
+         aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -808,7 +815,7 @@ new class extends Component {
                     <div>
                         <p class="form-label d-block mb-1 fw-semibold text-muted">Select Course</p>
                         <select wire:model="selectedCourseId" data-model="selectedCourseId"
-                            class="select2 form-select" id="course">
+                                class="select2 form-select" id="course">
                             <option value="">-- Choose Course --</option>
                             @foreach ($courses as $course)
                                 <option value="{{ $course->id }}">{{ $course->title }} - {{ $course->level }}
@@ -816,7 +823,7 @@ new class extends Component {
                             @endforeach
                         </select>
                         @error('selectedCourseId')
-                            <span class="text-danger">{{ $message }}</span>
+                        <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
 
@@ -824,14 +831,14 @@ new class extends Component {
                     <div class="mt-3">
                         <p class="form-label d-block mb-1 fw-semibold text-muted">Select Intake</p>
                         <select wire:model="selectedIntakeId" data-model="selectedIntakeId"
-                            class="select2 form-select" id="intake">
+                                class="select2 form-select" id="intake">
                             <option value="">-- Choose Intake --</option>
                             @foreach ($intakes as $intake)
                                 <option value="{{ $intake->id }}">{{ $intake->name }}</option>
                             @endforeach
                         </select>
                         @error('selectedIntakeId')
-                            <span class="text-danger">{{ $message }}</span>
+                        <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
                     <!-- Select Status -->
@@ -870,7 +877,7 @@ new class extends Component {
     </div>
 
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel"
-        aria-hidden="true">
+         aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -881,32 +888,32 @@ new class extends Component {
                 <div class="modal-body">
                     <table class="table table-bordered table-striped">
                         <thead>
-                            <tr>
-                                <th>Reference</th>
-                                <th>Transaction ID</th>
-                                <th>Date</th>
-                                <th>Payment Method</th>
-                                <th>Payment For</th>
-                                <th>Amount</th>
-                                <th>Paid By</th>
-                                <th>Action</th>
-                            </tr>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Transaction ID</th>
+                            <th>Date</th>
+                            <th>Payment Method</th>
+                            <th>Payment For</th>
+                            <th>Amount</th>
+                            <th>Paid By</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            @php $totalPayments = 0; @endphp
-                            @foreach ($enrollmentPayments as $payment)
-                                <tr>
-                                    <td>{{ $payment->reference ?? 'N/A' }}</td>
-                                    <td>{{ $payment->transaction_id ?? 'N/A' }}</td>
-                                    <td>
-                                        {{ $payment->paid_at ? \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') : 'N/A' }}
-                                    </td>
-                                    <td>{{ $payment->payment_method ? ucfirst($payment->payment_method) : 'N/A' }}</td>
-                                    <td>{{ $payment->payment_reason ? ucfirst($payment->payment_reason) : 'N/A' }}</td>
-                                    <td>{{ number_format($payment->amount ?? 0, 2) }}</td>
-                                    <td>{{ $payment->payer ?? 'N/A' }}</td>
-                                    <td>
-                                        <button class="btn-print"
+                        @php $totalPayments = 0; @endphp
+                        @foreach ($enrollmentPayments as $payment)
+                            <tr>
+                                <td>{{ $payment->reference ?? 'N/A' }}</td>
+                                <td>{{ $payment->transaction_id ?? 'N/A' }}</td>
+                                <td>
+                                    {{ $payment->paid_at ? \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') : 'N/A' }}
+                                </td>
+                                <td>{{ $payment->payment_method ? ucfirst($payment->payment_method) : 'N/A' }}</td>
+                                <td>{{ $payment->payment_reason ? ucfirst($payment->payment_reason) : 'N/A' }}</td>
+                                <td>{{ number_format($payment->amount ?? 0, 2) }}</td>
+                                <td>{{ $payment->payer ?? 'N/A' }}</td>
+                                <td>
+                                    <button class="btn-print"
                                             onclick="printReceipt(
                     '{{ $payment->enrollment->course->title ?? 'N/A' }}',
                     '{{ number_format($payment->amount, 2) }}',
@@ -915,21 +922,24 @@ new class extends Component {
                     '{{ $payment->reference }}',
                     '{{ $payment->enrollment->student->first_name ?? 'N/A' }}',
                     '{{ $payment->enrollment->student->last_name ?? 'N/A' }}',
-                    '{{ 'RCT' . $payment->id }}'
+                    '{{ 'RCT' . $payment->id }}',
+                    '{{ $payment->enrollment->course->level ?? 'N/A' }}',
+                    '{{ ucfirst($payment->payment_reason) ?? 'N/A' }}',
+
                 )">
-                                            <i class="ti ti-printer"></i> Print
-                                        </button>
-                                    </td>
-                                </tr>
-                                @php $totalPayments += $payment->amount ?? 0; @endphp
-                            @endforeach
+                                        <i class="ti ti-printer"></i> Print
+                                    </button>
+                                </td>
+                            </tr>
+                            @php $totalPayments += $payment->amount ?? 0; @endphp
+                        @endforeach
                         </tbody>
 
                         <tfoot>
-                            <tr>
-                                <th colspan="5">Total</th>
-                                <th colspan="1">Ksh {{ number_format($totalPayments, 2) }}</th>
-                            </tr>
+                        <tr>
+                            <th colspan="5">Total</th>
+                            <th colspan="1">Ksh {{ number_format($totalPayments, 2) }}</th>
+                        </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -939,7 +949,7 @@ new class extends Component {
 
 
     <div class="modal fade" id="enrollmentStatusModal" tabindex="-1" role="dialog"
-        aria-labelledby="enrollmentStatusModalLabel" aria-hidden="true">
+         aria-labelledby="enrollmentStatusModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -975,15 +985,15 @@ new class extends Component {
     </div>
 
     <!-- Hidden Printable Receipt -->
-    <!-- Hidden Printable Receipt -->
     <div id="receipt" class="receipt-print">
         <div
-            style="max-width: 650px; margin: auto; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 30px; border: 1px solid #bbb; background-color: #fff; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+            style="max-width: 650px; margin: auto; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border: 1px solid #bbb; background-color: #fff; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
 
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 20px;">
                 <img src="assets/images/logos/tabor_logo.png" alt="Company Logo" style="height: 70px;">
-                <h2 style="margin: 10px 0 4px; color: #0e334e; letter-spacing: 0.4px;">Tabor University</h2>
+                <h2 style="margin: 10px 0 4px; color: #0e334e; letter-spacing: 0.4px; font-size: 20px;">Tabor Training
+                    Institute</h2>
                 <p style="font-size: 13px; color: #666; margin: 0;">Official Payment Receipt</p>
             </div>
 
@@ -1008,20 +1018,26 @@ new class extends Component {
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>First
-                                Name:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>First Name:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
                                 id="receipt-first-name"></span></td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Last
-                                Name:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Last Name:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
                                 id="receipt-last-name"></span></td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px;"><strong>Course Title:</strong></td>
-                        <td style="padding: 8px 15px;"><span id="receipt-course"></span></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Title:</strong>
+                        </td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-course"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Level:</strong>
+                        </td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
+                                id="receipt-course-level"></span></td>
                     </tr>
                 </table>
             </div>
@@ -1033,22 +1049,25 @@ new class extends Component {
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Amount
-                                Paid:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Amount Paid:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee; color: #0e334e; font-weight: bold;">
                             KES <span id="receipt-amount"></span></td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Payment
-                                Method:</strong>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Payment Method:</strong>
                         </td>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                id="receipt-method"></span>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-method"></span>
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px;"><strong>Reference:</strong></td>
-                        <td style="padding: 8px 15px;"><span id="receipt-reference"></span></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reference:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
+                                id="receipt-reference"></span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reason:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
+                                id="receipt-payment-reason"></span></td>
                     </tr>
                 </table>
             </div>
@@ -1056,16 +1075,13 @@ new class extends Component {
             <hr style="border: none; border-top: 1px dashed #ccc; margin: 25px 0;">
 
             <!-- Footer -->
-            <div style="text-align: center;">
-                <p style="font-size: 13px; color: #555;">Thank you for your payment. This receipt serves as
-                    <strong>official
-                        proof of payment</strong>.</p>
+            <div style="text-align: center; font-size: 13px; color: #555;">
+                <p>Thank you for your payment. This receipt serves as <strong>official proof of payment</strong>.</p>
                 <p style="font-size: 12px; color: #888; margin-top: 8px;">For assistance, contact
                     <a href="mailto:support@tabor.ac.ke" style="color: #0e334e; text-decoration: none;">office@tabor.ac.ke</a>
                 </p>
-                <p style="font-size: 12px; color: #aaa; margin-top: 10px;">&copy; {{ date('Y') }} Tabor
-                    University. All
-                    Rights Reserved.</p>
+                <p style="font-size: 12px; color: #aaa; margin-top: 10px;">&copy; {{ date('Y') }} Tabor Training
+                    Institute. All Rights Reserved.</p>
             </div>
         </div>
     </div>
@@ -1081,7 +1097,7 @@ new class extends Component {
 
             new bootstrap.Modal(modal[0]).show();
 
-            modal.find('.select2').each(function() {
+            modal.find('.select2').each(function () {
                 const select = $(this);
 
                 if (select.hasClass('select2-hidden-accessible')) {
@@ -1090,11 +1106,12 @@ new class extends Component {
 
                 select.select2({
                     dropdownParent: modal.find('.modal-body')
-                }).on('change', function(e) {
+                }).on('change', function (e) {
                     const value = $(this).val();
                     const model = $(this).data('model');
                     if (model) {
-                        @this.set(model, value);
+                    @this.set(model, value)
+                        ;
                     }
                 });
             });
@@ -1139,7 +1156,7 @@ new class extends Component {
             bootstrap.Modal.getInstance(document.getElementById('paymentModal'))?.hide();
         });
 
-        function printReceipt(course, amount, method, date, reference, firstName, lastName, receiptNumber) {
+        function printReceipt(course, amount, method, date, reference, firstName, lastName, receiptNumber, level, reason) {
             // Fill receipt
             document.getElementById('receipt-course').innerText = course;
             document.getElementById('receipt-amount').innerText = amount;
@@ -1149,6 +1166,8 @@ new class extends Component {
             document.getElementById('receipt-first-name').innerText = firstName;
             document.getElementById('receipt-last-name').innerText = lastName;
             document.getElementById('receipt-number').innerText = receiptNumber;
+            document.getElementById('receipt-course-level').innerText = level;
+            document.getElementById('receipt-payment-reason').innerText = reason;
 
             // Delay print to allow DOM to update
             setTimeout(() => {

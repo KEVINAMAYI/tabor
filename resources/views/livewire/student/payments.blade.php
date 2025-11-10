@@ -144,6 +144,11 @@ new class extends Component {
             left: -9999px;
         }
 
+        /* Add top border to the last row */
+        .styled-payment-table tbody tr:last-child td {
+            border-top: 1px solid #f0f0f0;
+        }
+
 
         @media print {
             @page {
@@ -219,7 +224,9 @@ new class extends Component {
                     '{{ $payment->reference }}',
                     '{{ $payment->enrollment->student->first_name ?? 'N/A' }}',
                     '{{ $payment->enrollment->student->last_name ?? 'N/A' }}',
-                    '{{ 'RCT' . $payment->id }}'
+                    '{{ 'RCT' . $payment->id }}',
+                    '{{ $payment->enrollment->course->level ?? 'N/A' }}',
+                    '{{ ucfirst($payment->payment_reason) ?? 'N/A' }}',
                 )">
                                     <i class="ti ti-printer"></i> Print
                                 </button>
@@ -234,14 +241,15 @@ new class extends Component {
                 </table>
 
                 <!-- Hidden Printable Receipt -->
+                <!-- Hidden Printable Receipt -->
                 <div id="receipt" class="receipt-print">
                     <div
-                        style="max-width: 650px; margin: auto; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 30px; border: 1px solid #bbb; background-color: #fff; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+                        style="max-width: 650px; margin: auto; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border: 1px solid #bbb; background-color: #fff; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
 
                         <!-- Header -->
                         <div style="text-align: center; margin-bottom: 20px;">
                             <img src="assets/images/logos/tabor_logo.png" alt="Company Logo" style="height: 70px;">
-                            <h2 style="margin: 10px 0 4px; color: #0e334e; letter-spacing: 0.4px;">Tabor University</h2>
+                            <h2 style="margin: 10px 0 4px; color: #0e334e; letter-spacing: 0.4px; font-size: 20px;">Tabor Training Institute</h2>
                             <p style="font-size: 13px; color: #666; margin: 0;">Official Payment Receipt</p>
                         </div>
 
@@ -266,20 +274,20 @@ new class extends Component {
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                                 <tr>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>First
-                                            Name:</strong></td>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                            id="receipt-first-name"></span></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>First Name:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-first-name"></span></td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Last
-                                            Name:</strong></td>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                            id="receipt-last-name"></span></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Last Name:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-last-name"></span></td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 8px 15px;"><strong>Course Title:</strong></td>
-                                    <td style="padding: 8px 15px;"><span id="receipt-course"></span></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Title:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-course"></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Level:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-course-level"></span></td>
                                 </tr>
                             </table>
                         </div>
@@ -291,22 +299,20 @@ new class extends Component {
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                                 <tr>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Amount
-                                            Paid:</strong></td>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee; color: #0e334e; font-weight: bold;">
-                                        KES <span id="receipt-amount"></span></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Amount Paid:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee; color: #0e334e; font-weight: bold;">KES <span id="receipt-amount"></span></td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Payment
-                                            Method:</strong>
-                                    </td>
-                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                            id="receipt-method"></span>
-                                    </td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Payment Method:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-method"></span></td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 8px 15px;"><strong>Reference:</strong></td>
-                                    <td style="padding: 8px 15px;"><span id="receipt-reference"></span></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reference:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-reference"></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reason:</strong></td>
+                                    <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-payment-reason"></span></td>
                                 </tr>
                             </table>
                         </div>
@@ -314,19 +320,16 @@ new class extends Component {
                         <hr style="border: none; border-top: 1px dashed #ccc; margin: 25px 0;">
 
                         <!-- Footer -->
-                        <div style="text-align: center;">
-                            <p style="font-size: 13px; color: #555;">Thank you for your payment. This receipt serves as
-                                <strong>official
-                                    proof of payment</strong>.</p>
+                        <div style="text-align: center; font-size: 13px; color: #555;">
+                            <p>Thank you for your payment. This receipt serves as <strong>official proof of payment</strong>.</p>
                             <p style="font-size: 12px; color: #888; margin-top: 8px;">For assistance, contact
                                 <a href="mailto:support@tabor.ac.ke" style="color: #0e334e; text-decoration: none;">office@tabor.ac.ke</a>
                             </p>
-                            <p style="font-size: 12px; color: #aaa; margin-top: 10px;">&copy; {{ date('Y') }} Tabor
-                                University. All
-                                Rights Reserved.</p>
+                            <p style="font-size: 12px; color: #aaa; margin-top: 10px;">&copy; {{ date('Y') }} Tabor Training Institute All Rights Reserved.</p>
                         </div>
                     </div>
                 </div>
+
 
             </div>
         </div>
@@ -334,7 +337,7 @@ new class extends Component {
 </div>
 @push('scripts')
     <script>
-        function printReceipt(course, amount, method, date, reference, firstName, lastName, receiptNumber) {
+        function printReceipt(course, amount, method, date, reference, firstName, lastName, receiptNumber, level, reason) {
             // Fill receipt
             document.getElementById('receipt-course').innerText = course;
             document.getElementById('receipt-amount').innerText = amount;
@@ -344,6 +347,8 @@ new class extends Component {
             document.getElementById('receipt-first-name').innerText = firstName;
             document.getElementById('receipt-last-name').innerText = lastName;
             document.getElementById('receipt-number').innerText = receiptNumber;
+            document.getElementById('receipt-course-level').innerText = level;
+            document.getElementById('receipt-payment-reason').innerText = reason;
 
             // Delay print to allow DOM to update
             setTimeout(() => {
