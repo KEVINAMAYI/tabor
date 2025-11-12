@@ -47,7 +47,7 @@ new class extends Component {
             'highest_level_of_education' => 'nullable|string|max:255',
             'id_url' => 'nullable|file|mimes:pdf,jpeg,png,jpg,gif|max:2048',
             'kcse_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:2048',
-            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048'
+            'passport_size_url' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 
@@ -85,7 +85,7 @@ new class extends Component {
             ->paginate($this->perPage ?? 10);
 
         return [
-            'students' => $students
+            'students' => $students,
         ];
     }
 
@@ -272,7 +272,7 @@ new class extends Component {
                 ->latest()
                 ->paginate(10)
                 ->pluck('id')
-                ->map(fn($id) => (string)$id)
+                ->map(fn($id) => (string) $id)
                 ->toArray();
 
             $this->selected = $currentPageStudentIds;
@@ -309,8 +309,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                   class="form-control product-search ps-5" placeholder="Search Students..."
-                                   wire:model="search"/>
+                                class="form-control product-search ps-5" placeholder="Search Students..."
+                                wire:model="search" />
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -322,7 +322,7 @@ new class extends Component {
                             @can('delete-students')
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                       class="delete-multiple bg-danger-subtle btn me-2 text-danger">
+                                        class="delete-multiple bg-danger-subtle btn me-2 text-danger">
                                         <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                                     </a>
                                 </div>
@@ -330,7 +330,7 @@ new class extends Component {
                         @endif
                         @can('add-students')
                             <a href="javascript:void(0)" wire:click="$dispatch('show-student-modal')"
-                               class="btn btn-primary d-flex align-items-center">
+                                class="btn btn-primary d-flex align-items-center">
                                 <i class="ti ti-users text-white me-1 fs-5"></i> Add Student
                             </a>
                         @endcan
@@ -340,13 +340,13 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="addStudentModal" tabindex="-1" role="dialog"
-                 aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
+                aria-labelledby="addStudentModalTitle" aria-hidden="true" wire:ignore.self>
                 <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">Add Student</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                                aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateStudent' : 'addStudent' }}">
                             <div class="modal-body">
@@ -354,67 +354,67 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="first_name" class="form-label">First Name</label>
                                         <input type="text" wire:model.live="first_name" id="first_name"
-                                               class="form-control" placeholder="Enter your first name"/>
+                                            class="form-control" placeholder="Enter your first name" />
                                         @error('first_name')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="last_name" class="form-label">Last Name</label>
                                         <input type="text" wire:model.live="last_name" id="last_name"
-                                               class="form-control" placeholder="Enter your last name"/>
+                                            class="form-control" placeholder="Enter your last name" />
                                         @error('last_name')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="email" class="form-label">Email Address</label>
                                         <input type="email" wire:model.live="email" id="email"
-                                               class="form-control" placeholder="Enter your email address"/>
+                                            class="form-control" placeholder="Enter your email address" />
                                         @error('email')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="admission_number" class="form-label">Admission Number</label>
                                         <input type="text" wire:model.live="admission_number" id="admission_number"
-                                               class="form-control"
-                                               placeholder="leave empty for auto allocation eg 00112"/>
+                                            class="form-control"
+                                            placeholder="leave empty for auto allocation eg 00112" />
                                         @error('admission_number')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="phone_number" class="form-label">Phone Number</label>
                                         <input type="text" wire:model.live="phone_number" id="phone_number"
-                                               class="form-control" placeholder="Enter your phone number"/>
+                                            class="form-control" placeholder="Enter your phone number" />
                                         @error('phone_number')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="id_number" class="form-label">ID Number</label>
                                         <input type="text" wire:model.live="id_number" id="id_number"
-                                               class="form-control" placeholder="Enter your ID Number"/>
+                                            class="form-control" placeholder="Enter your ID Number" />
                                         @error('id_number')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="country" class="form-label">Country</label>
                                         <input type="text" wire:model.live="country" id="country"
-                                               class="form-control" placeholder="Enter your country"/>
+                                            class="form-control" placeholder="Enter your country" />
                                         @error('country')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
                                         <label for="date_of_birth" class="form-label">Date of Birth</label>
                                         <input type="date" wire:model.live="date_of_birth" id="date_of_birth"
-                                               class="form-control" placeholder="Select your date of birth"/>
+                                            class="form-control" placeholder="Select your date of birth" />
                                         @error('date_of_birth')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -422,9 +422,9 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="address" class="form-label">Address</label>
                                         <input type="text" wire:model.live="address" id="address"
-                                               class="form-control" placeholder="Enter your address"/>
+                                            class="form-control" placeholder="Enter your address" />
                                         @error('address')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -432,10 +432,10 @@ new class extends Component {
                                         <label for="highest_level_of_education" class="form-label">Highest Level of
                                             Education</label>
                                         <input type="text" wire:model.live="highest_level_of_education"
-                                               id="highest_level_of_education" class="form-control"
-                                               placeholder="Enter your highest level of education"/>
+                                            id="highest_level_of_education" class="form-control"
+                                            placeholder="Enter your highest level of education" />
                                         @error('highest_level_of_education')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -443,29 +443,29 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="id_url" class="form-label">Upload ID</label>
                                         <input type="file" wire:model.live="id_url" id="id_url"
-                                               class="form-control" placeholder="Upload your ID"/>
+                                            class="form-control" placeholder="Upload your ID" />
                                         @error('id_url')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="kcse_certificate" class="form-label">Upload KCSE
                                             Certificate</label>
                                         <input type="file" wire:model.live="kcse_certificate"
-                                               id="kcse_certificate" class="form-control"
-                                               placeholder="Upload your KCSE certificate"/>
+                                            id="kcse_certificate" class="form-control"
+                                            placeholder="Upload your KCSE certificate" />
                                         @error('kcse_certificate')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="passport_size_url" class="form-label">Upload Passport Size
                                             Photo</label>
                                         <input type="file" wire:model.live="passport_size_url"
-                                               id="passport_size_url" class="form-control"
-                                               placeholder="Upload your passport size photo"/>
+                                            id="passport_size_url" class="form-control"
+                                            placeholder="Upload your passport size photo" />
                                         @error('passport_size_url')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <div class="col-md-4 mb-3">
@@ -475,11 +475,11 @@ new class extends Component {
                                             <option value="0">Inactive</option>
                                         </select>
                                         @error('active')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                         </select>
                                         @error('intake_id')
-                                        <small class="text-error text-danger">{{ $message }}</small>
+                                            <small class="text-error text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                 </div>
@@ -488,7 +488,7 @@ new class extends Component {
                             <div class="modal-footer">
                                 <div class="d-flex gap-1 m-0">
                                     <button type="button" class="btn btn-danger bg-error-subtle"
-                                            data-bs-dismiss="modal">Discard
+                                        data-bs-dismiss="modal">Discard
                                     </button>
                                     <button type="submit" class="btn btn-success">
                                         {{ $editId ? 'Save' : 'Add' }}
@@ -520,7 +520,7 @@ new class extends Component {
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:account-group" class="me-2"
-                                          style="font-size: 20px;"></iconify-icon>
+                                style="font-size: 20px;"></iconify-icon>
                             Student List
                         </h6>
 
@@ -529,17 +529,17 @@ new class extends Component {
 
                             <!-- Export Excel Button -->
                             <button wire:click="exportExcel"
-                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-excel-outline" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 Excel
                             </button>
 
                             <!-- Export PDF Button -->
                             <button wire:click="exportPdf"
-                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-pdf-box" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 PDF
                             </button>
                         </div>
@@ -547,116 +547,116 @@ new class extends Component {
 
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                        <tr>
-                            <th class="text-center align-middle" style="width: 40px;">
-                                <input wire:click="$dispatch('select-all')" type="checkbox"
-                                       class="form-check-input m-0" wire:model="selectAll"/>
-                            </th>
-                            <th>Admission Number</th>
-                            <th>Student Info</th>
-                            <th>ID No.</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th class="text-center align-middle" style="width: 40px;">
+                                    <input wire:click="$dispatch('select-all')" type="checkbox"
+                                        class="form-check-input m-0" wire:model="selectAll" />
+                                </th>
+                                <th>Admission Number</th>
+                                <th>Student Info</th>
+                                <th>ID No.</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        @forelse ($students as $student)
-                            <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
-                                <!-- Checkbox -->
-                                <td class="text-center">
-                                    <input type="checkbox" class="form-check-input" wire:model="selected"
-                                           value="{{ (string) $student->id }}"/>
-                                </td>
+                            @forelse ($students as $student)
+                                <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
+                                    <!-- Checkbox -->
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input" wire:model="selected"
+                                            value="{{ (string) $student->id }}" />
+                                    </td>
 
-                                <!-- Admission Number -->
-                                <td class="text-uppercase fw-semibold" style="color: #f69122;">
-                                    {{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}
-                                </td>
+                                    <!-- Admission Number -->
+                                    <td class="text-uppercase fw-semibold" style="color: #f69122;">
+                                        {{ 'TTI/' . $student->admission_number . '/' . $student->created_at->format('Y') }}
+                                    </td>
 
-                                <!-- Combined Info (Name + Email + Phone) -->
-                                <td>
-                                    <div class="d-flex flex-column">
-                        <span class="fw-semibold text-dark">
-                            {{ $student->first_name }} {{ $student->last_name }}
-                        </span>
-                                        <span class="text-muted small">
-                            <i class="ti ti-mail me-1"></i>{{ $student->email }}
-                        </span>
-                                        <span class="text-muted small">
-                            <i class="ti ti-phone me-1"></i>{{ $student->phone }}
-                        </span>
-                                    </div>
-                                </td>
+                                    <!-- Combined Info (Name + Email + Phone) -->
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-semibold text-dark">
+                                                {{ $student->first_name }} {{ $student->last_name }}
+                                            </span>
+                                            <span class="text-muted small">
+                                                <i class="ti ti-mail me-1"></i>{{ $student->email }}
+                                            </span>
+                                            <span class="text-muted small">
+                                                <i class="ti ti-phone me-1"></i>{{ $student->phone }}
+                                            </span>
+                                        </div>
+                                    </td>
 
-                                <!-- ID Number -->
-                                <td class="text-uppercase fw-semibold text-muted">
-                                    {{ $student->id_number ?? '—' }}
-                                </td>
+                                    <!-- ID Number -->
+                                    <td class="text-uppercase fw-semibold text-muted">
+                                        {{ $student->id_number ?? '—' }}
+                                    </td>
 
-                                <!-- Status -->
-                                <td>
-                                    @if ($student->user && $student->user->active)
-                                        <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">
-                            Active
-                        </span>
-                                    @else
-                                        <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill">
-                            Inactive
-                        </span>
-                                    @endif
-                                </td>
+                                    <!-- Status -->
+                                    <td>
+                                        @if ($student->user && $student->user->active)
+                                            <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">
+                                                Active
+                                            </span>
+                                        @else
+                                            <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill">
+                                                Inactive
+                                            </span>
+                                        @endif
+                                    </td>
 
-                                <!-- Actions -->
-                                <td>
-                                    <div class="ms-auto">
-                                        <div class="dropdown dropstart">
-                                            <a href="javascript:void(0)" class="link"
-                                               id="student-actions-{{ $student->id }}"
-                                               data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="ti ti-dots-vertical fs-6" style="color: #0e334f;"></i>
-                                            </a>
-                                            <ul class="dropdown-menu"
-                                                aria-labelledby="student-actions-{{ $student->id }}">
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="{{ route('students.view', $student->id) }}">
-                                                        <iconify-icon icon="mdi:eye-outline"
-                                                                      class="text-primary w-4 h-4"></iconify-icon>
-                                                        <span>View</span>
-                                                    </a>
-                                                </li>
-                                                @can('edit-students')
+                                    <!-- Actions -->
+                                    <td>
+                                        <div class="ms-auto">
+                                            <div class="dropdown dropstart">
+                                                <a href="javascript:void(0)" class="link"
+                                                    id="student-actions-{{ $student->id }}"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="ti ti-dots-vertical fs-6" style="color: #0e334f;"></i>
+                                                </a>
+                                                <ul class="dropdown-menu"
+                                                    aria-labelledby="student-actions-{{ $student->id }}">
                                                     <li>
                                                         <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="javascript:void(0)"
-                                                           wire:click="editStudent({{ $student->id }})">
-                                                            <iconify-icon icon="mdi:pencil-outline"
-                                                                          class="text-warning w-4 h-4"></iconify-icon>
-                                                            <span>Edit</span>
+                                                            href="{{ route('students.view', $student->id) }}">
+                                                            <iconify-icon icon="mdi:eye-outline"
+                                                                class="text-primary w-4 h-4"></iconify-icon>
+                                                            <span>View</span>
                                                         </a>
                                                     </li>
-                                                @endcan
-                                                @can('delete-students')
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
-                                                           href="javascript:void(0)"
-                                                           wire:click="deleteStudent({{ $student->id }})">
-                                                            <iconify-icon icon="mdi:delete-outline"
-                                                                          class="text-danger w-4 h-4"></iconify-icon>
-                                                            <span>Delete</span>
-                                                        </a>
-                                                    </li>
-                                                @endcan
-                                            </ul>
+                                                    @can('edit-students')
+                                                        <li>
+                                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                                href="javascript:void(0)"
+                                                                wire:click="editStudent({{ $student->id }})">
+                                                                <iconify-icon icon="mdi:pencil-outline"
+                                                                    class="text-warning w-4 h-4"></iconify-icon>
+                                                                <span>Edit</span>
+                                                            </a>
+                                                        </li>
+                                                    @endcan
+                                                    @can('delete-students')
+                                                        <li>
+                                                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                                href="javascript:void(0)"
+                                                                wire:click="deleteStudent({{ $student->id }})">
+                                                                <iconify-icon icon="mdi:delete-outline"
+                                                                    class="text-danger w-4 h-4"></iconify-icon>
+                                                                <span>Delete</span>
+                                                            </a>
+                                                        </li>
+                                                    @endcan
+                                                </ul>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center">No students found.</td>
-                            </tr>
-                        @endforelse
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center">No students found.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
 

@@ -44,28 +44,43 @@ new class extends Component {
     public function with()
     {
         $active_enrollments = Enrollment::where('enrollments.status', 'approved')
-    ->join('students', 'enrollments.student_id', '=', 'students.id')
-    ->leftJoin('payments', 'enrollments.id', '=', 'payments.enrollment_id') // Optional, if you want search by payment reference
-    ->with(['student.user', 'course', 'intake', 'payments'])
-    ->when(!empty($this->search), function ($query) {
-        $query->where(function ($q) {
-            $q->where('students.first_name', 'like', "%{$this->search}%")
-              ->orWhere('students.last_name', 'like', "%{$this->search}%")
-              ->orWhere('students.email', 'like', "%{$this->search}%")
-              ->orWhere('students.phone', 'like', "%{$this->search}%")
-              ->orWhere('students.admission_number', 'like', "%{$this->search}%")
-              ->orWhere('payments.reference', 'like', "%{$this->search}%"); // Payment reference search
-        });
-    })
-    ->orderBy('students.first_name', 'asc')
-    ->select('enrollments.*') // Avoid ambiguous column issues
-    ->paginate($this->perPage ?? 10);
+            ->join('students', 'enrollments.student_id', '=', 'students.id')
+            ->leftJoin('payments', 'enrollments.id', '=', 'payments.enrollment_id') // Optional, if you want search by payment reference
+            ->with(['student.user', 'course', 'intake', 'payments'])
+            ->when(!empty($this->search), function ($query) {
+                $query->where(function ($q) {
+                    $q->where('students.first_name', 'like', "%{$this->search}%")
+                        ->orWhere('students.last_name', 'like', "%{$this->search}%")
+                        ->orWhere('students.email', 'like', "%{$this->search}%")
+                        ->orWhere('students.phone', 'like', "%{$this->search}%")
+                        ->orWhere('students.admission_number', 'like', "%{$this->search}%")
+                        ->orWhere('payments.reference', 'like', "%{$this->search}%"); // Payment reference search
+                });
+            })
+            ->orderBy('students.first_name', 'asc')
+            ->select('enrollments.*') // Avoid ambiguous column issues
+            ->groupBy('enrollments.id')
+            ->paginate($this->perPage ?? 10);
+
+       /*  $active_enrollments = Enrollment::where('status', 'approved')
+            ->whereHas('student', function ($q) {
+                $q->where('first_name', 'like', "%{$this->search}%")
+                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%")
+                    ->orWhere('phone', 'like', "%{$this->search}%")
+                    ->orWhere('admission_number', 'like', "%{$this->search}%");
+            })
+            ->orWhereHas('payments', function ($q) {
+                $q->where('reference', 'like', "%{$this->search}%");
+            })
+            ->with(['student.user', 'course', 'intake', 'payments'])
+            ->orderBy('student.first_name', 'asc')
+            ->paginate($this->perPage ?? 10); */
 
         return [
             'enrollments' => $active_enrollments, // Pass the Paginator instance
         ];
     }
-
 
     public function exportExcel()
     {
@@ -77,7 +92,6 @@ new class extends Component {
         $url = route('enrollments.export.pdf');
         return redirect()->to($url);
     }
-
 }; ?>
 
 @push('styles')
@@ -216,9 +230,15 @@ new class extends Component {
                                         {{ 'TTI/' . $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' . $enrollment->created_at->format('Y') }}
                                     </td>
                                     <td class="text-blue">
-                                        {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}
+                                        <a href="{{ route('students.view', $enrollment->student->id) }}">
+                                            {{ !empty($enrollment) ? $enrollment->student->first_name . ' ' . $enrollment->student->last_name : 'N/A' }}
+                                        </a>
                                     </td>
-                                    <td class="text-orange">{{ $enrollment->course->title }}-{{ $enrollment->course->level }}</td>
+                                    <td class="text-orange">
+                                        <a href="{{ route('courses.view', $enrollment->course->id) }}">
+                                            {{ !empty($enrollment) ? $enrollment->course->title . '-' . $enrollment->course->level : 'N/A' }}
+                                        </a>
+                                    </td>
                                     <td>{{ $enrollment->intake->name }}</td>
                                     <td class="text-success fw-bold">
                                         {{ number_format($enrollment->payments->sum('amount'), 2) }}

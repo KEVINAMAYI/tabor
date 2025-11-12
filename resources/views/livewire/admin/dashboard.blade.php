@@ -445,8 +445,8 @@ new class extends Component {
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <div class="fw-semibold">
-                                    @if($enrollment->student)
-                                        {{ $enrollment->student->first_name.' '.$enrollment->student->last_name }}
+                                    @if ($enrollment->student)
+                                        {{ $enrollment->student->first_name . ' ' . $enrollment->student->last_name }}
                                     @else
                                         No student name available
                                     @endif
