@@ -59,23 +59,8 @@ new class extends Component {
             })
             ->orderBy('students.first_name', 'asc')
             ->select('enrollments.*') // Avoid ambiguous column issues
-            ->groupBy('enrollments.id')
-            ->paginate($this->perPage ?? 10);
-
-       /*  $active_enrollments = Enrollment::where('status', 'approved')
-            ->whereHas('student', function ($q) {
-                $q->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%")
-                    ->orWhere('phone', 'like', "%{$this->search}%")
-                    ->orWhere('admission_number', 'like', "%{$this->search}%");
-            })
-            ->orWhereHas('payments', function ($q) {
-                $q->where('reference', 'like', "%{$this->search}%");
-            })
-            ->with(['student.user', 'course', 'intake', 'payments'])
-            ->orderBy('student.first_name', 'asc')
-            ->paginate($this->perPage ?? 10); */
+            ->distinct() // Ensure distinct enrollments
+            ->paginate($this->perPage);
 
         return [
             'enrollments' => $active_enrollments, // Pass the Paginator instance
