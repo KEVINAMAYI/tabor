@@ -12,7 +12,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
     public function mount()
     {
-        $this->courses = Course::latest()->get();
+        $this->courses = Course::with('category')->orderBy('course_category_id')->get();
         $this->courseCount = $this->courses->count();
     }
 }; ?>
@@ -107,14 +107,15 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card rounded-3 overflow-hidden h-100">
                                 <a href="#" class="position-relative">
-                                    <img src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
+                                    <img height="50%" width="50%"
+                                    src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
                                         alt="{{ $course->title }}" class="w-100 img-fluid" />
                                 </a>
                                 <div class="mt-7 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
                                         <a href="#" class="fs-5 fw-bolder">{{ $course->title }}
                                             {{ $course->level ? ' - ' . $course->level : '' }} </a>
-                                        <p>{{ \Illuminate\Support\Str::limit($course->description, 100) }}</p>
+                                        <p>{{ 'Category: ' . ($course->category?->name ?? 'Uncategorized') }}</p>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:calendar-clock"
