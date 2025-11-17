@@ -113,11 +113,14 @@ class extends Component {
 
             $this->resetForm();
 
-            LivewireAlert::text('Application submitted successfully!')
-                ->success()
-                ->toast()
-                ->position('top-end')
-                ->show();
+            /* LivewireAlert::text('Application submitted successfully!')
+            ->success()
+            ->toast()
+            ->position('top-end')
+            ->show(); */
+
+            session()->flash('success', 'Application submitted successfully!');
+            return redirect()->route('front-end.courses');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -384,7 +387,7 @@ class extends Component {
                                         <div
                                             class="step-line position-absolute top-35 start-0 w-100 translate-middle-y"></div>
 
-                                        <template x-for="(label, index) in ['Course', 'Info', 'Documents', 'Submit']"
+                                        <template x-for="(label, index) in ['Course', 'Info', 'Submit']"
                                                   :key="index">
                                             <div class="text-center z-1 flex-fill">
                                                 <div class="step-circle mx-auto"
@@ -522,7 +525,7 @@ class extends Component {
 
 
                                 <!-- Step 3: Upload Documents -->
-                                <div x-show="step === 3" x-cloak class="card shadow-sm p-4 mb-4">
+                               {{--  <div x-show="step === 3" x-cloak class="card shadow-sm p-4 mb-4">
                                     <h5 class="fw-bold mb-4 text-primary">Step 3: Upload Documents</h5>
 
                                     <div class="row g-4">
@@ -564,11 +567,11 @@ class extends Component {
                                             <iconify-icon icon="mdi:arrow-right" class="fs-5"></iconify-icon>
                                         </button>
                                     </div>
-                                </div>
+                                </div> --}}
 
 
                                 <!-- Step 4: Submit -->
-                                <div x-show="step === 4" x-cloak class="card shadow-sm p-4 mb-4">
+                                <div x-show="step === 3" x-cloak class="card shadow-sm p-4 mb-4">
                                     <h5 class="fw-bold mb-4 text-primary">Step 4: Review & Submit</h5>
 
                                     <div class="mb-3">
@@ -592,7 +595,7 @@ class extends Component {
                                         <p><strong>Education:</strong> {{ $highest_level_of_education }}</p>
                                     </div>
 
-                                    <div class="mb-3">
+                                    {{-- <div class="mb-3">
                                         <h6>Uploaded Documents</h6>
                                         <p>
                                             <strong>ID/Passport:</strong> {{ $id_url ? $id_url->getClientOriginalName() : 'Not Uploaded' }}
@@ -603,7 +606,7 @@ class extends Component {
                                         <p><strong>Passport
                                                 Photo:</strong> {{ $passport_size_url ? $passport_size_url->getClientOriginalName() : 'Not Uploaded' }}
                                         </p>
-                                    </div>
+                                    </div> --}}
 
                                     <!-- Terms and Conditions Checkbox -->
                                     <div class="form-check my-3">
