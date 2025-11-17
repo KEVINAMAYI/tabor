@@ -17,6 +17,11 @@ class Course extends Model
      |------------------------------------------------------------------
      */
 
+     public function category()
+     {
+         return $this->belongsTo(CourseCategory::class, 'course_category_id');
+     }
+
     // All modules that belong to this course
     public function modules()
     {

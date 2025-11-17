@@ -2,6 +2,7 @@
 
 use App\Exports\CourseExport;
 use App\Models\Course;
+use App\Models\CourseCategory;
 use App\Models\Lecturer;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
@@ -12,11 +13,9 @@ use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
 new class extends Component {
-
-
     use WithFileUploads, WithPagination;
 
-    public $title, $code, $description, $price, $exam_fee, $attachment_fee, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
+    public $title, $course_category_id, $code, $description, $price, $exam_fee, $attachment_fee, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
 
     public $editId = null;
 
@@ -27,6 +26,7 @@ new class extends Component {
     public $search = '';
 
     public $lecturers = [];
+    public $categories = [];
 
     public $lecturer_ids = [];
 
@@ -56,7 +56,7 @@ new class extends Component {
         }
 
         $this->lecturers = Lecturer::all();
-
+        $this->categories = CourseCategory::all();
     }
 
     #[On('search')]
@@ -69,7 +69,7 @@ new class extends Component {
 
     public function with()
     {
-        $query = Course::query();
+        $query = Course::with('category');
 
         if (!empty($this->search)) {
             $query->where(function ($q) {
@@ -79,7 +79,7 @@ new class extends Component {
             });
         }
 
-        $courses = $query->latest()->paginate(10);
+        $courses = $query->orderBy('course_category_id')->paginate(10);
 
         return [
             'courses' => $courses,
@@ -88,7 +88,6 @@ new class extends Component {
 
     public function addCourse()
     {
-
         $this->validate();
 
         try {
@@ -97,6 +96,7 @@ new class extends Component {
 
             $course = Course::create([
                 'title' => $this->title,
+                'course_category_id' => $this->course_category_id,
                 'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
@@ -143,6 +143,7 @@ new class extends Component {
         $this->level = $course->level;
         $this->certification = $course->certification;
         $this->prerequisites = $course->prerequisites;
+        $this->course_category_id = $course->course_category_id;
 
         $this->dispatch('show-course-modal');
     }
@@ -159,6 +160,7 @@ new class extends Component {
 
             $course->update([
                 'title' => $this->title,
+                'course_category_id' => $this->course_category_id,
                 'code' => $this->code,
                 'description' => $this->description,
                 'price' => $this->price,
@@ -179,7 +181,6 @@ new class extends Component {
                 $course->lecturers()->detach(); // Optional: remove all if no lecturer_ids provided
             }
 
-
             $this->resetForm();
             $this->resetPage();
             $this->dispatch('hide-course-modal');
@@ -191,7 +192,6 @@ new class extends Component {
             LivewireAlert::text('Failed to update Course.!')->error()->toast()->position('top-end')->show();
         }
     }
-
 
     #[On('setLecturers')]
     public function setLecturers($lecturers)
@@ -236,7 +236,7 @@ new class extends Component {
                 ->latest()
                 ->paginate(10)
                 ->pluck('id')
-                ->map(fn($id) => (string)$id)
+                ->map(fn($id) => (string) $id)
                 ->toArray();
 
             $this->selected = $currentPageCourseIds;
@@ -245,20 +245,16 @@ new class extends Component {
         }
     }
 
-
     public function exportExcel()
     {
         return Excel::download(app(CourseExport::class), 'courses.xlsx');
     }
-
 
     public function exportPdf()
     {
         $url = route('courses.export.pdf');
         return redirect()->to($url);
     }
-
-
 }; ?>
 
 
@@ -270,7 +266,8 @@ new class extends Component {
 
         /* For multiple select */
         .select2-container .select2-selection--multiple {
-            min-height: 38px; /* match Bootstrap input height */
+            min-height: 38px;
+            /* match Bootstrap input height */
             border: 1px solid #ced4da;
             border-radius: 0.375rem;
         }
@@ -326,8 +323,8 @@ new class extends Component {
                     <div class="col-md-4 col-xl-3">
                         <form class="position-relative" autocomplete="off">
                             <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                   class="form-control product-search ps-5" placeholder="Search Courses..."
-                                   wire:model="search"/>
+                                class="form-control product-search ps-5" placeholder="Search Courses..."
+                                wire:model="search" />
                             <i
                                 class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                         </form>
@@ -338,7 +335,7 @@ new class extends Component {
                             @if (count($selected) > 0)
                                 <div class="action-btn">
                                     <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                       class="delete-multiple bg-danger-subtle btn me-2 text-danger">
+                                        class="delete-multiple bg-danger-subtle btn me-2 text-danger">
                                         <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
                                     </a>
                                 </div>
@@ -346,7 +343,7 @@ new class extends Component {
                         @endcan
                         @can('add-courses')
                             <a href="javascript:void(0)" wire:click="$dispatch('show-course-modal')"
-                               class="btn btn-primary d-flex align-items-center">
+                                class="btn btn-primary d-flex align-items-center">
                                 <i class="ti ti-book text-white me-1 fs-5"></i> Add Course
                             </a>
                         @endcan
@@ -356,13 +353,13 @@ new class extends Component {
 
             <!-- Modal -->
             <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog"
-                 aria-labelledby="addCourseModalTitle" aria-hidden="true" wire:ignore.self>
+                aria-labelledby="addCourseModalTitle" aria-hidden="true" wire:ignore.self>
                 <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header d-flex align-items-center">
                             <h5 class="modal-title">{{ $editId ? 'Update' : 'Add' }} Course</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                                aria-label="Close"></button>
                         </div>
                         <form wire:submit.prevent="{{ $editId ? 'updateCourse' : 'addCourse' }}">
                             <div class="modal-body">
@@ -371,61 +368,74 @@ new class extends Component {
                                     <div class="col-md-6 mb-3">
                                         <label for="course-title" class="form-label">Course Title</label>
                                         <input id="course-title" type="text" wire:model="title" class="form-control"
-                                               placeholder="Enter the course name (e.g., Web Development for Beginners)"/>
+                                            placeholder="Enter the course name (e.g., Web Development for Beginners)" />
                                         @error('title')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
+                                    </div>
+
+                                    <!-- Mode -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="course-category" class="form-label">Course Category</label>
+                                        <select id="course-category" wire:model="course_category_id"
+                                            class="form-control">
+                                            <option value="">-- Select Category --</option>
+                                            @foreach ($categories as $category)
+                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
 
                                     <!-- Course Code -->
                                     <div class="col-md-6 mb-3">
                                         <label for="course-code" class="form-label">Course Code</label>
                                         <input id="course-code" type="text" wire:model="code" class="form-control"
-                                               placeholder="Enter the course code (e.g., WEB101)"/>
+                                            placeholder="Enter the course code (e.g., WEB101)" />
                                         @error('code')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
-
-                                    <p class="form-label">Course Lecturers</p>
-                                    <div class="mb-3 col-md-12" wire:ignore>
+                                    <div class="mb-3 col-md-6" wire:ignore>
+                                        <p class="form-label">Course Lecturers</p>
                                         <select style="padding-top:10px; padding-bottom:10px;"
-                                                class="form-control select2" required multiple
-                                                data-placeholder="Select lecturers"
-                                                wire:model="lecturers">
-                                            @foreach($lecturers as $lecturer)
-                                                <option
-                                                    value="{{ $lecturer->id }}">{{ $lecturer->first_name.''.$lecturer->last_name }}</option>
+                                            class="form-control select2" multiple
+                                            data-placeholder="Select lecturers" wire:model="lecturers">
+                                            @foreach ($lecturers as $lecturer)
+                                                <option value="{{ $lecturer->id }}">
+                                                    {{ $lecturer->first_name . '' . $lecturer->last_name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('lecturers ') <small class="text-danger">{{ $message }}</small> @enderror
+                                        @error('lecturers ')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
                                     </div>
 
                                     <!-- Course Fee -->
                                     <div class="col-md-4 mb-3">
                                         <label for="course-fee" class="form-label">Fee</label>
                                         <input id="course-fee" type="number" step="0.01" wire:model="price"
-                                               class="form-control" placeholder="Enter course fee"/>
+                                            class="form-control" placeholder="Enter course fee" />
                                         @error('price')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <!-- Exam Fee -->
                                     <div class="col-md-4 mb-3">
                                         <label for="exam-fee" class="form-label">Exam Fee</label>
                                         <input id="exam-fee" type="number" step="0.01" wire:model="exam_fee"
-                                               class="form-control" placeholder="Enter exam fee"/>
+                                            class="form-control" placeholder="Enter exam fee" />
                                         @error('exam_fee')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
                                     <!-- Attachment Fee -->
                                     <div class="col-md-4 mb-3">
                                         <label for="attachment-fee" class="form-label">Attachment Fee</label>
-                                        <input id="attachment-fee" type="number" step="0.01" wire:model="attachment_fee"
-                                               class="form-control" placeholder="Enter attachment fee"/>
+                                        <input id="attachment-fee" type="number" step="0.01"
+                                            wire:model="attachment_fee" class="form-control"
+                                            placeholder="Enter attachment fee" />
                                         @error('attachment_fee')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -433,10 +443,9 @@ new class extends Component {
                                     <div class="col-md-12 mb-3">
                                         <label for="course-description" class="form-label">Course Description</label>
                                         <textarea id="course-description" wire:model="description" class="form-control"
-                                                  placeholder="Provide a brief description of the course"
-                                                  rows="4"></textarea>
+                                            placeholder="Provide a brief description of the course" rows="4"></textarea>
                                         @error('description')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -444,7 +453,7 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="course-duration" class="form-label">Duration</label>
                                         <input id="course-duration" type="text" wire:model="duration"
-                                               class="form-control" placeholder="Duration (e.g., 6 weeks, 3 months)"/>
+                                            class="form-control" placeholder="Duration (e.g., 6 weeks, 3 months)" />
                                     </div>
 
                                     <!-- Mode -->
@@ -462,25 +471,25 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="course-level" class="form-label">Level</label>
                                         <input id="course-level" type="text" wire:model="level"
-                                               class="form-control" placeholder="Level (e.g., Beginner, Intermediate)"/>
+                                            class="form-control" placeholder="Level (e.g., Beginner, Intermediate)" />
                                     </div>
 
                                     <!-- Certification -->
                                     <div class="col-md-4 mb-3">
                                         <label for="course-certification" class="form-label">Certification</label>
                                         <input id="course-certification" type="text" wire:model="certification"
-                                               class="form-control"
-                                               placeholder="Certification (e.g., Certificate of Completion)"/>
+                                            class="form-control"
+                                            placeholder="Certification (e.g., Certificate of Completion)" />
                                     </div>
 
                                     <!-- Course Image -->
                                     <div class="col-md-4 mb-3">
                                         <label for="course-image" class="form-label">Course Image</label>
                                         <input type="file" wire:model="image"
-                                               accept="image/jpeg, image/png, image/jpg, image/gif"
-                                               class="form-control"/>
+                                            accept="image/jpeg, image/png, image/jpg, image/gif"
+                                            class="form-control" />
                                         @error('image')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
@@ -488,19 +497,17 @@ new class extends Component {
                                     <div class="col-md-4 mb-3">
                                         <label for="course-brochure" class="form-label">Course Brochure (PDF)</label>
                                         <input id="course-brochure" type="file" wire:model="brochure"
-                                               class="form-control" accept=".pdf"/>
+                                            class="form-control" accept=".pdf" />
                                         @error('brochure')
-                                        <small class="text-danger">{{ $message }}</small>
+                                            <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
 
                                     <!-- Prerequisites -->
                                     <div class="col-md-12 mb-3">
                                         <label for="course-prerequisites" class="form-label">Prerequisites</label>
-                                        <textarea id="course-prerequisites" wire:model="prerequisites"
-                                                  class="form-control"
-                                                  placeholder="Any prerequisites or prior knowledge required"
-                                                  rows="3"></textarea>
+                                        <textarea id="course-prerequisites" wire:model="prerequisites" class="form-control"
+                                            placeholder="Any prerequisites or prior knowledge required" rows="3"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -512,7 +519,7 @@ new class extends Component {
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
                                     <button type="button" class="btn bg-danger-subtle text-danger"
-                                            data-bs-dismiss="modal">
+                                        data-bs-dismiss="modal">
                                         Discard
                                     </button>
                                 </div>
@@ -530,7 +537,7 @@ new class extends Component {
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:book-open-page-variant" class="me-2"
-                                          style="font-size: 20px;"></iconify-icon>
+                                style="font-size: 20px;"></iconify-icon>
                             Courses List
                         </h6>
 
@@ -539,17 +546,17 @@ new class extends Component {
 
                             <!-- Export Excel Button -->
                             <button wire:click="exportExcel"
-                                    class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-excel-outline" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 Excel
                             </button>
 
                             <!-- Export PDF Button -->
                             <button wire:click="exportPdf"
-                                    class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
+                                class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
                                 <iconify-icon icon="mdi:file-pdf-box" class="me-1"
-                                              style="font-size: 18px;"></iconify-icon>
+                                    style="font-size: 18px;"></iconify-icon>
                                 PDF
                             </button>
                         </div>
@@ -557,66 +564,68 @@ new class extends Component {
 
                     <table class="table search-table align-middle text-nowrap">
                         <thead class="header-item">
-                        <tr>
-                            <th>
-                                <div class="form-check text-center">
-                                    <input wire:click="$dispatch('select-all')" type="checkbox"
-                                           class="form-check-input" wire:model="selectAll"/>
-                                </div>
-                            </th>
-                            <th>#</th>
-                            <th>Title</th>
-                            <th>Code</th>
-                            <th>Description</th>
-                            <th>Fee</th>
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th>
+                                    <div class="form-check text-center">
+                                        <input wire:click="$dispatch('select-all')" type="checkbox"
+                                            class="form-check-input" wire:model="selectAll" />
+                                    </div>
+                                </th>
+                                <th>#</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Fee</th>
+                                <th>Action</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        @forelse ($courses as $course)
-                            <tr wire:key="{{ $course->id }}" class="search-items">
-                                <td>
-                                    <div class="form-check text-center">
-                                        <input type="checkbox" class="form-check-input" wire:model="selected"
-                                               value="{{ (string) $course->id }}"/>
-                                    </div>
-                                </td>
-                                <td class="text-muted">{{ $loop->iteration }}</td>
-                                <td class="course-title">{{ $course->title }}</td>
-                                <td class="text-muted">{{ $course->code }}</td>
-                                <td>
-                    <span class="text-ellipsis" title="{{ $course->description }}">
-                        {{ \Illuminate\Support\Str::limit($course->description, 60) }}
-                    </span>
-                                </td>
-                                <td class="course-fee">KES {{ number_format($course->price, 2) }}</td>
-                                <td>
-                                    <div class="action-btn">
-                                        <a href="{{ route('courses.view', $course->id) }}" class="text-info"
-                                           title="View">
-                                            <i class="ti ti-eye fs-5"></i>
-                                        </a>
-                                        @can('edit-courses')
-                                            <a href="javascript:void(0)" wire:click="editCourse({{ $course->id }})"
-                                               class="text-primary" title="Edit">
-                                                <i class="ti ti-pencil fs-5"></i>
+                            @forelse ($courses as $course)
+                                <tr wire:key="{{ $course->id }}" class="search-items">
+                                    <td>
+                                        <div class="form-check text-center">
+                                            <input type="checkbox" class="form-check-input" wire:model="selected"
+                                                value="{{ (string) $course->id }}" />
+                                        </div>
+                                    </td>
+                                    <td class="text-muted">{{ $loop->iteration }}</td>
+                                    <td class="course-title">{{ $course->title }} - {{ $course->level }}</td>
+                                    <td class="course-title">{{ $course->category?->name ?? 'N/A' }}</td>
+                                    <td class="text-muted">{{ $course->code }}</td>
+                                    <td>
+                                        <span class="text-ellipsis" title="{{ $course->description }}">
+                                            {{ \Illuminate\Support\Str::limit($course->description, 60) }}
+                                        </span>
+                                    </td>
+                                    <td class="course-fee">KES {{ number_format($course->price, 2) }}</td>
+                                    <td>
+                                        <div class="action-btn">
+                                            <a href="{{ route('courses.view', $course->id) }}" class="text-info"
+                                                title="View">
+                                                <i class="ti ti-eye fs-5"></i>
                                             </a>
-                                        @endcan
-                                        @can('delete-courses')
-                                            <a href="javascript:void(0)"
-                                               wire:click="deleteCourse({{ $course->id }})"
-                                               class="text-danger" title="Delete">
-                                                <i class="ti ti-trash fs-5"></i>
-                                            </a>
-                                        @endcan
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center text-muted">No courses found.</td>
-                            </tr>
-                        @endforelse
+                                            @can('edit-courses')
+                                                <a href="javascript:void(0)" wire:click="editCourse({{ $course->id }})"
+                                                    class="text-primary" title="Edit">
+                                                    <i class="ti ti-pencil fs-5"></i>
+                                                </a>
+                                            @endcan
+                                            @can('delete-courses')
+                                                <a href="javascript:void(0)"
+                                                    wire:click="deleteCourse({{ $course->id }})" class="text-danger"
+                                                    title="Delete">
+                                                    <i class="ti ti-trash fs-5"></i>
+                                                </a>
+                                            @endcan
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No courses found.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
 
@@ -635,12 +644,11 @@ new class extends Component {
 </div>
 
 @push('scripts')
-
     <script src="assets/libs/select2/dist/js/select2.full.min.js"></script>
 
     <script>
         function initializeMultiSelect(context = document) {
-            $(context).find('select.select2[multiple]').each(function () {
+            $(context).find('select.select2[multiple]').each(function() {
                 const $el = $(this);
                 const parentModal = $el.closest('.modal');
 
@@ -654,14 +662,16 @@ new class extends Component {
 
                 // 🔑 Sync values to Livewire on change
                 // 🔑 Sync values to Livewire on change
-                $el.on('change', function () {
+                $el.on('change', function() {
                     let selected = $(this).val();
-                    Livewire.dispatch('setLecturers', {lecturers: selected});
+                    Livewire.dispatch('setLecturers', {
+                        lecturers: selected
+                    });
                 });
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             initializeMultiSelect();
         });
 
@@ -681,5 +691,3 @@ new class extends Component {
         });
     </script>
 @endpush
-
-
