@@ -29,7 +29,7 @@
                     <div class="min-vh-100 bg-body row justify-content-center align-items-center p-5">
                         <div class="col-12 auth-card">
                             <div class="d-flex justify-content-center mb-4">
-                                <a href="../main/index.html" class="text-nowrap">
+                                <a href="{{ route('front-end.home') }}" class="text-nowrap">
                                     <img src="../assets/images/logos/tabor_logo.png" width="145" height="145"
                                          class="dark-logo" alt="Logo-Dark"/>
                                 </a>

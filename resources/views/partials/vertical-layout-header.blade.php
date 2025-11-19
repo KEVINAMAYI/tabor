@@ -79,14 +79,14 @@
                                     My Profile
                                     <iconify-icon icon="mdi:user" style="font-size: 1.2em;"></iconify-icon>
                                 </a>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit"
-                                            class="p-2 dropdown-item h6 rounded-1 w-100 text-start border-0 bg-transparent d-flex justify-content-between align-items-center">
-                                        Sign Out
-                                        <iconify-icon icon="mdi:logout" style="font-size: 1.2em;"></iconify-icon>
-                                    </button>
-                                </form>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit"
+                                                class="p-2 dropdown-item h6 rounded-1 w-100 text-start border-0 bg-transparent d-flex justify-content-between align-items-center">
+                                            Sign Out
+                                            <iconify-icon icon="mdi:logout" style="font-size: 1.2em;"></iconify-icon>
+                                        </button>
+                                    </form>
                             </div>
                         </div>
                     </div>

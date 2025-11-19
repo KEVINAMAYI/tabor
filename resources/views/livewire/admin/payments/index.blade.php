@@ -353,7 +353,8 @@ new class extends Component {
 
                                         <label for="search" class="form-label">Student</label>
 
-                                        <input type="text" id="student_search" class="form-control" autocomplete="off"
+                                        <input type="text" id="student_search" class="form-control"
+                                            autocomplete="off"
                                             placeholder="Search student name, id, phone, course, or intake..."
                                             x-model="studentSearch"
                                             @input="$dispatch('perform-search', { query: studentSearch }); open = true"
@@ -387,21 +388,19 @@ new class extends Component {
                                                                 ' ' .
                                                                 $student->last_name .
                                                                 ' — ' .
-                                                                $course->title .
+                                                                $course?->title .
                                                                 ' (Intake: ' .
                                                                 ($intake->name ?? 'N/A') .
                                                                 ')';
                                                         @endphp
                                                         <div class="dropdown-item px-3 py-2 border-bottom small hover-bg"
                                                             @click="
-    $wire.selectEnrollment({{ $enrollment->id }});
-    studentSearch = '{{ $displayText }}';
-    open = false;
-"
-                                                            style="cursor: pointer;">
+                                                                    $wire.selectEnrollment({{ $enrollment->id }});
+                                                                    studentSearch = '{{ $displayText }}';
+                                                                    open = false;" style="cursor: pointer;">
                                                             <strong>{{ $student->first_name }}
                                                                 {{ $student->last_name }}</strong><br>
-                                                            <span class="text-muted">{{ $course->title }} — Intake:
+                                                            <span class="text-muted">{{ $course?->title }} — Intake:
                                                                 {{ $intake->name ?? 'N/A' }}</span>
                                                         </div>
                                                     @endforeach
@@ -467,17 +466,13 @@ new class extends Component {
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="payer" class="form-label">Narration/Comments</label>
-                                        <textarea wire:model="payer" class="form-control"
-                                            placeholder="Narration/Comments"></textarea>
+                                        <textarea wire:model="payer" class="form-control" placeholder="Narration/Comments"></textarea>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <div class="d-flex gap-1 m-0">
-                                    <button type="submit"
-                                     class="btn btn-success"
-                                     wire:loading.attr="disabled"
-                                     >
+                                    <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
                                         {{ $editId ? 'Save' : 'Add' }}
                                     </button>
                                     <button type="button" class="btn bg-danger-subtle text-danger"
@@ -571,24 +566,24 @@ new class extends Component {
                                         <span
                                             class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
                                     </td>
-                                    @if(!empty($payment->enrollment))
-                                    <td style="color: #446076; font-weight: 500;">
-                                        <a href="{{ route('students.view', $payment->enrollment->student->id) }}">
+                                    @if (!empty($payment->enrollment))
+                                        <td style="color: #446076; font-weight: 500;">
+                                            <a href="{{ route('students.view', $payment->enrollment->student->id) }}">
+                                                {{ !empty($payment->enrollment)
+                                                    ? $payment->enrollment->student->first_name . ' ' . $payment->enrollment->student->last_name
+                                                    : 'N/A' }}
+                                            </a>
+                                        </td>
+                                    @else
+                                        <td style="color: #446076; font-weight: 500;">
                                             {{ !empty($payment->enrollment)
                                                 ? $payment->enrollment->student->first_name . ' ' . $payment->enrollment->student->last_name
                                                 : 'N/A' }}
-                                        </a>
-                                    </td>
-                                    @else
-                                    <td style="color: #446076; font-weight: 500;">
-                                        {{ !empty($payment->enrollment)
-                                                ? $payment->enrollment->student->first_name . ' ' . $payment->enrollment->student->last_name
-                                                : 'N/A' }}
-                                    </td>
+                                        </td>
                                     @endif
                                     <td>
                                         <span
-                                            class="badge bg-light text-dark">{{ !empty($payment->enrollment)?$payment->enrollment->course->title ." - ". $payment->enrollment->course->level : 'N/A' }}</span>
+                                            class="badge bg-light text-dark">{{ !empty($payment->enrollment) ? $payment->enrollment->course->title . ' - ' . $payment->enrollment->course->level : 'N/A' }}</span>
                                     </td>
                                     <td style="color: #f69121; font-weight: 600;">
                                         {{ number_format($payment->amount, 2) }}

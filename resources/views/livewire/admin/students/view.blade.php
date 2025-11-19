@@ -919,12 +919,15 @@ new class extends Component {
                     '{{ number_format($payment->amount, 2) }}',
                     '{{ ucfirst($payment->payment_method) }}',
                     '{{ \Carbon\Carbon::parse($payment->paid_at)->format('d M Y') }}',
-                    '{{ $payment->reference }}',
+                    '{{ $payment->transaction_id ?? 'N/A' }}',
                     '{{ $payment->enrollment->student->first_name ?? 'N/A' }}',
                     '{{ $payment->enrollment->student->last_name ?? 'N/A' }}',
+                    '{{ 'TTI/'.$payment->enrollment->student->admission_number.'/'.$payment->enrollment->student->created_at->format('Y') ?? 'N/A' }}',
                     '{{ 'RCT' . $payment->id }}',
                     '{{ $payment->enrollment->course->level ?? 'N/A' }}',
                     '{{ ucfirst($payment->payment_reason) ?? 'N/A' }}',
+                    '{{ ucfirst($payment->payer) ?? 'N/A' }}',
+                    '{{ $payment->narration ?? 'N/A' }}',
 
                 )">
                                         <i class="ti ti-printer"></i> Print
@@ -1006,7 +1009,7 @@ new class extends Component {
                     <td style="text-align: right;"><strong><span id="receipt-number"></span></strong></td>
                 </tr>
                 <tr>
-                    <td style="color: #555;">Date:</td>
+                    <td style="color: #555;">Payment Date:</td>
                     <td style="text-align: right;"><strong><span id="receipt-date"></span></strong></td>
                 </tr>
             </table>
@@ -1018,26 +1021,20 @@ new class extends Component {
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>First Name:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Student Name:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                id="receipt-first-name"></span></td>
+                                id="receipt-student-name"></span></td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Last Name:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Student ID:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                id="receipt-last-name"></span></td>
+                                id="receipt-student-id"></span></td>
                     </tr>
                     <tr>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Title:</strong>
                         </td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span id="receipt-course"></span>
                         </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Course Level:</strong>
-                        </td>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
-                                id="receipt-course-level"></span></td>
                     </tr>
                 </table>
             </div>
@@ -1060,7 +1057,7 @@ new class extends Component {
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reference:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Ref/TranID:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
                                 id="receipt-reference"></span></td>
                     </tr>
@@ -1068,6 +1065,11 @@ new class extends Component {
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Reason:</strong></td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
                                 id="receipt-payment-reason"></span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><strong>Narration/Comments:</strong></td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #eee;"><span
+                                id="receipt-narration"></span></td>
                     </tr>
                 </table>
             </div>
@@ -1156,18 +1158,18 @@ new class extends Component {
             bootstrap.Modal.getInstance(document.getElementById('paymentModal'))?.hide();
         });
 
-        function printReceipt(course, amount, method, date, reference, firstName, lastName, receiptNumber, level, reason) {
+        function printReceipt(course, amount, method, date, reference, firstName, lastName, studentId, receiptNumber, level, reason, narration) {
             // Fill receipt
-            document.getElementById('receipt-course').innerText = course;
+            document.getElementById('receipt-course').innerText = course+' - '+level;
             document.getElementById('receipt-amount').innerText = amount;
             document.getElementById('receipt-method').innerText = method;
             document.getElementById('receipt-date').innerText = date;
             document.getElementById('receipt-reference').innerText = reference;
-            document.getElementById('receipt-first-name').innerText = firstName;
-            document.getElementById('receipt-last-name').innerText = lastName;
+            document.getElementById('receipt-student-name').innerText = firstName+' '+lastName;
+            document.getElementById('receipt-student-id').innerText = studentId;
             document.getElementById('receipt-number').innerText = receiptNumber;
-            document.getElementById('receipt-course-level').innerText = level;
             document.getElementById('receipt-payment-reason').innerText = reason;
+            document.getElementById('receipt-narration').innerText = narration;
 
             // Delay print to allow DOM to update
             setTimeout(() => {
