@@ -194,7 +194,8 @@ new class extends Component {
                         <!-- Role / Title -->
                         <td>{{ $member->title ?? '-' }}</td>
 
-                        <td class="text-muted small description-cell" title="{{ $member->description }}">
+                        <td style="cursor:pointer;" class="text-muted small description-cell"
+                            title="{{ $member->description }}">
                             {{ $member->description ?? '-' }}
                         </td>
 
