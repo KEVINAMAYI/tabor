@@ -26,7 +26,7 @@ new class extends Component {
     {
         return Team::where('name', 'like', "%{$this->search}%")
             ->orWhere('title', 'like', "%{$this->search}%")
-            ->orderBy('id', 'desc')
+            ->orderBy('id', 'asc')
             ->paginate(10);
     }
 
@@ -175,10 +175,10 @@ new class extends Component {
                 <thead class="header-item">
                 <tr>
                     <th class="text-center align-middle" style="width: 50px;">#</th>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Role / Title</th>
                     <th>Description</th>
-                    <th>Image</th>
                     <th>Action</th>
                 </tr>
                 </thead>
@@ -187,6 +187,15 @@ new class extends Component {
                     <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
                         <!-- Index -->
                         <td class="text-center">{{ $index + 1 }}</td>
+                        <!-- Image -->
+                        <td>
+                            @if($member->image)
+                                <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
+                                     class="rounded-circle" width="50" height="50">
+                            @else
+                                <span class="text-muted">No Image</span>
+                            @endif
+                        </td>
 
                         <!-- Name -->
                         <td class="fw-semibold">{{ $member->name }}</td>
@@ -198,17 +207,6 @@ new class extends Component {
                             title="{{ $member->description }}">
                             {{ $member->description ?? '-' }}
                         </td>
-
-                        <!-- Image -->
-                        <td>
-                            @if($member->image)
-                                <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
-                                     class="rounded-circle" width="50" height="50">
-                            @else
-                                <span class="text-muted">No Image</span>
-                            @endif
-                        </td>
-
                         <!-- Actions -->
                         <td>
                             <div class="dropdown dropstart">
