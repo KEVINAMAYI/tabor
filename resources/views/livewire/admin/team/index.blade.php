@@ -99,9 +99,23 @@ new class extends Component {
 };
 ?>
 
+@push('styles')
+    <style>
+        td.description-cell {
+            max-width: 300px;
+            max-height: 4.5em; /* roughly 3 lines */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* number of lines to show */
+            -webkit-box-orient: vertical;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+    </style>
+@endpush
 
 <div>
-
 
     <div class="card card-body">
         <div class="row">
