@@ -180,8 +180,10 @@ new class extends Component {
                         <!-- Role / Title -->
                         <td>{{ $member->title ?? '-' }}</td>
 
-                        <!-- Description -->
-                        <td class="text-muted small">{{ $member->description ?? '-' }}</td>
+                        <td class="text-muted small"
+                            style="max-width: 300px; word-wrap: break-word; white-space: normal;">
+                            {{ $member->description ?? '-' }}
+                        </td>
 
                         <!-- Image -->
                         <td>
