@@ -574,7 +574,8 @@ new class extends Component {
                                     </td>
 
                                     <!-- Combined Info (Name + Email + Phone) -->
-                                    <td>
+                                    <td style="color: #446076; font-weight: 500;">
+                                        <a  href="{{ route('students.view',$student->id) }}">
                                         <div class="d-flex flex-column">
                                             <span class="fw-semibold text-dark">
                                                 {{ $student->first_name }} {{ $student->last_name }}
@@ -586,6 +587,7 @@ new class extends Component {
                                                 <i class="ti ti-phone me-1"></i>{{ $student->phone }}
                                             </span>
                                         </div>
+                                        </a>
                                     </td>
 
                                     <!-- ID Number -->

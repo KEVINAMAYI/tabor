@@ -59,7 +59,8 @@ new class extends Component {
             })
             ->orderBy('students.first_name', 'asc')
             ->select('enrollments.*') // Avoid ambiguous column issues
-            ->distinct() // Ensure distinct enrollments
+            ->distinct() // on the server
+            // ->groupBy('enrollments.id')  // on my local machine
             ->paginate($this->perPage);
 
         return [

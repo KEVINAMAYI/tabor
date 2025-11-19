@@ -395,11 +395,9 @@ new class extends Component {
                                                         @endphp
                                                         <div class="dropdown-item px-3 py-2 border-bottom small hover-bg"
                                                             @click="
-    $wire.selectEnrollment({{ $enrollment->id }});
-    studentSearch = '{{ $displayText }}';
-    open = false;
-"
-                                                            style="cursor: pointer;">
+                                                                    $wire.selectEnrollment({{ $enrollment->id }});
+                                                                    studentSearch = '{{ $displayText }}';
+                                                                    open = false;" style="cursor: pointer;">
                                                             <strong>{{ $student->first_name }}
                                                                 {{ $student->last_name }}</strong><br>
                                                             <span class="text-muted">{{ $course?->title }} — Intake:

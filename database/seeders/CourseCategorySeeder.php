@@ -16,7 +16,7 @@ class CourseCategorySeeder extends Seeder
     {
         $categories = [
             'Healthcare',
-            'Language',
+            'Languages',
             'Hospitality',
             'Beauty',
             'ICT',

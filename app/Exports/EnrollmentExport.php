@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class EnrollmentExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
+class EnrollmentExport implements FromView, ShouldAutoSize, WithTitle
 {
 
     protected StudentReportService $reportService;
@@ -30,21 +30,18 @@ class EnrollmentExport implements FromView, ShouldAutoSize, WithTitle, WithStyle
 
         $enrollments = $this->reportService->getEnrollments();
 
-        return view('exports.students.enrollments', [
-            'enrollments' => $enrollments,
-            'title' => 'Active Enrollments Report',
-            'date' => now()->format('d M Y, H:i'),
-            'isExcel' => true
+        return view('exports.students.enrollments_excel', [
+            'enrollments' => $enrollments
         ]);
     }
 
 
     public function title(): string
     {
-        return 'Active Enrollment Report';
+        return 'Active Enrollments Report';
     }
 
-    public function styles(Worksheet $sheet)
+    /* public function styles(Worksheet $sheet)
     {
         $sheet->getStyle('A1:R1')->applyFromArray([
             'font' => [
@@ -76,5 +73,5 @@ class EnrollmentExport implements FromView, ShouldAutoSize, WithTitle, WithStyle
         $sheet->getStyle('A1:G' . $sheet->getHighestRow())->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_LEFT)
             ->setVertical(Alignment::VERTICAL_CENTER);
-    }
+    } */
 }
