@@ -107,16 +107,16 @@
                     </li>
                 @endcan
 
-{{--                @can('view-attendance')--}}
-{{--                    <li class="sidebar-item">--}}
-{{--                        <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"--}}
-{{--                           href="{{ route('attendance.index') }}"--}}
-{{--                           aria-expanded="false">--}}
-{{--                            <iconify-icon icon="solar:repeat-one-minimalistic-bold-duotone"></iconify-icon>--}}
-{{--                            <span class="hide-menu">Attendance Tracking</span>--}}
-{{--                        </a>--}}
-{{--                    </li>--}}
-{{--                @endcan--}}
+                {{--                @can('view-attendance')--}}
+                {{--                    <li class="sidebar-item">--}}
+                {{--                        <a class="sidebar-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}"--}}
+                {{--                           href="{{ route('attendance.index') }}"--}}
+                {{--                           aria-expanded="false">--}}
+                {{--                            <iconify-icon icon="solar:repeat-one-minimalistic-bold-duotone"></iconify-icon>--}}
+                {{--                            <span class="hide-menu">Attendance Tracking</span>--}}
+                {{--                        </a>--}}
+                {{--                    </li>--}}
+                {{--                @endcan--}}
 
                 @can('view-payments')
                     <li class="sidebar-item">
@@ -169,7 +169,18 @@
                                 </a>
                             </li>
                         @endcan
+
                     </ul>
+                </li>
+
+                <li class="sidebar-item">
+                    <a class="sidebar-link {{ request()->routeIs('team.index') ? 'active' : '' }}"
+                       href="{{ route('team.index') }}"
+                       aria-expanded="false">
+                        <iconify-icon icon="mdi:account-group-outline"
+                                      class="fs-5 me-2"></iconify-icon>
+                        <span class="hide-menu">Team</span>
+                    </a>
                 </li>
 
                 <li class="sidebar-item">
