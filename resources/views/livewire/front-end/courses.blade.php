@@ -123,38 +123,47 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
     <section class="bg-light-gray pb-3 pb-md-7 pb-lg-12">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-3">
+
+                {{-- Desktop Filters --}}
+                <div class="d-none d-md-block col-md-3">
                     @include('livewire.front-end.filters')
                 </div>
-                <div class="col-9">
-                    <!-- Check if there are any courses -->
+
+                {{-- Main Courses Column --}}
+                <div class="col-12 col-md-9">
+
+                    {{-- Mobile Filter Button --}}
+                    <div class="d-md-none mb-3">
+                        <button class="btn btn-primary w-100" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters">
+                            <i class="ti ti-filter"></i> Filters
+                        </button>
+                    </div>
+
+                    {{-- Check if courses exist --}}
                     @if ($courses->isEmpty())
-                        <div class="col-12">
-                            <div class="alert alert-info text-center py-5 mt-4">
-                                <h3 class="fw-bold">Currently, there are no courses available under that category.</h3>
-                                <p class="fs-5">
-                                    We are constantly adding new courses. Please check back later or <a
-                                        href="{{ route('front-end.contact') }}" class="text-primary">contact us</a>
-                                    if you
-                                    have any questions.
-                                </p>
-                            </div>
+                        <div class="alert alert-info text-center py-5 mt-4">
+                            <h3 class="fw-bold">No courses available in this category.</h3>
+                            <p class="fs-5">
+                                More courses coming soon.
+                                <a href="{{ route('front-end.contact') }}" class="text-primary">Contact us</a> for help.
+                            </p>
                         </div>
                     @else
                         <div class="row mt-4">
                             @foreach ($courses as $course)
-                                <div class="col-lg-4 mt-4">
-                                    <div class="card rounded-3 overflow-hidden h-100">
-                                        {{-- <a href="#" class="position-relative">
-                                    <img height="50%" width="50%"
-                                    src="{{ $course->image_url ? asset('storage/' . $course->image_url) : asset('assets/images/frontend-pages/blog-3.jpg') }}"
-                                        alt="{{ $course->title }}" class="w-100 img-fluid" />
-                                </a> --}}
+                                <div class="col-lg-4 col-md-6 mt-4">
+                                    <div class="card rounded-3 h-100">
+
                                         <div class="mt-7 px-7 pb-7 h-100">
                                             <div class="d-flex flex-column h-100 justify-content-between">
-                                                <a href="javascript:void(0);" class="fs-5 fw-bolder">{{ $course->title }}
-                                                    {{ $course->level ? ' - ' . $course->level : '' }} </a>
-                                                <p class="mt-1">Category: {{ $course->category?->name ?? 'Uncategorized' }}</p>
+
+                                                <a href="javascript:void(0);"
+                                                    class="fs-5 fw-bolder">{{ $course->title }}
+                                                    {{ $course->level ? ' - ' . $course->level : '' }}</a>
+
+                                                <p class="mt-1">Category:
+                                                    {{ $course->category?->name ?? 'Uncategorized' }}</p>
+
                                                 <ul class="list-unstyled mb-0">
                                                     <li class="mb-2 d-flex align-items-start gap-2">
                                                         <iconify-icon icon="mdi:calendar-clock"
@@ -181,47 +190,59 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                                             {{ $course->certification ?? 'N/A' }}</span>
                                                     </li>
                                                 </ul>
-                                                <div class="mt-0" id="details-{{ $course->id }}">
-                                                    <ol class="list-unstyled">
-                                                        <p class="mb-1 text-primary"><strong>Prerequisites:</strong>
-                                                        </p>
-                                                        @foreach (explode("\n", $course->prerequisites ?? '') as $prerequisite)
-                                                            @if (trim($prerequisite) !== '')
-                                                                <li class="d-flex align-items-start gap-2">
-                                                                    <i class="ti ti-check text-success mt-1"></i>
-                                                                    <span>{{ $prerequisite }}</span>
-                                                                </li>
-                                                            @endif
-                                                        @endforeach
-                                                    </ol>
-                                                </div>
 
                                                 <div>
-                                                    <a class="btn btn-primary d-block w-100 mb-3"
-                                                        href="{{ route('front-end.course-application', ['course_id' => $course->id]) }}">Apply
-                                                        Now</a>
+                                                    <p class="mb-1 text-primary"><strong>Prerequisites:</strong></p>
+                                                    @foreach (explode("\n", $course->prerequisites ?? '') as $pre)
+                                                        @if (trim($pre) !== '')
+                                                            <li class="d-flex align-items-start gap-2">
+                                                                <i class="ti ti-check text-success mt-1"></i>
+                                                                <span>{{ $pre }}</span>
+                                                            </li>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+
+                                                <div class="mt-3">
+                                                    <a class="btn btn-primary d-block w-100 mb-2"
+                                                        href="{{ route('front-end.course-application', ['course_id' => $course->id]) }}">
+                                                        Apply Now
+                                                    </a>
+
                                                     @if ($course->brochure_url)
                                                         <a href="{{ asset('storage/' . $course->brochure_url) }}"
-                                                            class="btn btn-outline-primary d-block w-100 mb-3"
+                                                            class="btn btn-outline-primary d-block w-100"
                                                             target="_blank">
                                                             <i class="ti ti-download me-1"></i> Download Brochure
                                                         </a>
                                                     @endif
                                                 </div>
+
                                             </div>
                                         </div>
+
                                     </div>
                                 </div>
                             @endforeach
                         </div>
+
+                    @endif
+
                 </div>
+            </div>
+        </div>
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileFilters">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title">Filter by Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            </div>
 
-                @endif
-
-
+            <div class="offcanvas-body">
+                @include('livewire.front-end.filters')
             </div>
         </div>
     </section>
+
     <!-- ------------------------------------- -->
     <!-- List End  -->
     <!-- ------------------------------------- -->
