@@ -243,14 +243,14 @@
                                 Courses
                             </a>
                         </li>
-{{--                        <li class="nav-item">--}}
-{{--                            <a href="{{ route('front-end.course-application') }}"--}}
-{{--                                class="{{ request()->routeIs('front-end.course-application')--}}
-{{--                                    ? 'btn btn-dark btn-sm py-2 px-4 mx-1'--}}
-{{--                                    : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">--}}
-{{--                                Apply--}}
-{{--                            </a>--}}
-{{--                        </li>--}}
+                        {{--                        <li class="nav-item"> --}}
+                        {{--                            <a href="{{ route('front-end.course-application') }}" --}}
+                        {{--                                class="{{ request()->routeIs('front-end.course-application') --}}
+                        {{--                                    ? 'btn btn-dark btn-sm py-2 px-4 mx-1' --}}
+                        {{--                                    : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}"> --}}
+                        {{--                                Apply --}}
+                        {{--                            </a> --}}
+                        {{--                        </li> --}}
                         {{-- <li class="nav-item">
                             <a href="{{ route('front-end.news') }}"
                                 class="{{ request()->routeIs('front-end.news')
@@ -267,14 +267,63 @@
                                 FAQs
                             </a>
                         </li>
-                        <li class="nav-item">
+                        {{-- <li class="nav-item d-flex align-items-center gap-2">
+                            <a href="{{ route('front-end.contact') }}"
+                                class="nav-link fs-4 fw-bold text-dark">Contact</a>
+
+                            <a href="https://facebook.com" target="_blank"><i
+                                    class="ti ti-brand-facebook fs-4 text-primary"></i></a>
+                            <a href="https://twitter.com" target="_blank"><i
+                                    class="ti ti-brand-twitter fs-4 text-info"></i></a>
+                            <a href="https://linkedin.com" target="_blank"><i
+                                    class="ti ti-brand-linkedin fs-4 text-primary"></i></a>
+                            <a href="javascript:void(0)" onclick="openChatbot()"><i
+                                    class="ti ti-message-dots fs-4 text-success"></i></a>
+                        </li> --}}
+
+                        <li class="nav-item dropdown">
+                            <a class="{{ request()->routeIs('front-end.contact')
+                                ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
+                                : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }} dropdown-toggle"
+                                href="#" id="contactDropdown" role="button" data-bs-toggle="dropdown">
+                                Contact
+                            </a>
+
+                            <ul class="dropdown-menu" aria-labelledby="contactDropdown">
+
+                                <!-- Contact Page -->
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('front-end.contact') }}">
+                                        <i class="ti ti-mail me-2 text-primary"></i> Contact Page
+                                    </a>
+                                </li>
+
+                                <!-- Chatbot -->
+                                <li>
+                                    <a class="dropdown-item" target="_blank"
+                                href="https://api.whatsapp.com/send?phone=254115278369&text=Hello, I'm interested in learning more about Tabor TVET courses.">
+                                        <i class="ti ti-message-dots text-success me-2"></i> Chat With Us
+                                    </a>
+                                </li>
+
+                                <!-- Social Icons -->
+                                <li>
+                                    <a class="dropdown-item" href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/" target="_blank">
+                                        <i class="ti ti-brand-facebook text-primary me-2"></i> Facebook
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+
+                        {{-- <li class="nav-item">
                             <a href="{{ route('front-end.contact') }}"
                                 class="{{ request()->routeIs('front-end.contact')
                                     ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
                                     : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">
                                 Contact
                             </a>
-                        </li>
+                        </li> --}}
                     </ul>
                     <a href="{{ route('login') }}" class="btn btn-outline-info btn-sm py-2 px-9">College Portal</a>
                     <a href="{{ route('front-end.courses') }}"
@@ -334,12 +383,12 @@
                     </a>
                 </li>
 
-{{--                <li class="mb-1">--}}
-{{--                    <a href="{{ route('front-end.course-application') }}"--}}
-{{--                        class="px-0 fs-4 d-block w-100 py-2 text-dark link-primary {{ request()->routeIs('front-end.course-application') ? 'active' : '' }}">--}}
-{{--                        Apply--}}
-{{--                    </a>--}}
-{{--                </li>--}}
+                {{--                <li class="mb-1"> --}}
+                {{--                    <a href="{{ route('front-end.course-application') }}" --}}
+                {{--                        class="px-0 fs-4 d-block w-100 py-2 text-dark link-primary {{ request()->routeIs('front-end.course-application') ? 'active' : '' }}"> --}}
+                {{--                        Apply --}}
+                {{--                    </a> --}}
+                {{--                </li> --}}
 
                 <li class="mb-1">
                     <a href="{{ route('front-end.contact') }}"
@@ -370,7 +419,8 @@
                         <li><a href="{{ route('front-end.home') }}" class="fs-4 text-light">Home</a></li>
                         <li><a href="{{ route('front-end.about') }}" class="fs-4 text-light">About</a></li>
                         <li><a href="{{ route('front-end.courses') }}" class="fs-4 text-light">Courses</a></li>
-                        <li><a href="{{ route('front-end.course-application') }}" class="fs-4 text-light">Course Application</a></li>
+                        <li><a href="{{ route('front-end.course-application') }}" class="fs-4 text-light">Course
+                                Application</a></li>
                         <li><a href="{{ route('front-end.contact') }}" class="fs-4 text-light">Contact</a></li>
                     </ul>
                 </div>
@@ -397,7 +447,8 @@
                     <h3 class="fs-5 text-white fw-semibold mb-7">About Tabor TVET</h3>
                     <p class="fs-3 text-light">
                         We offer TVET courses that help you build practical skills and industry-specific knowledge. Some
-                        courses prepare students for global markets including: Germany, Australia, the US, Canada, KSA and the
+                        courses prepare students for global markets including: Germany, Australia, the US, Canada, KSA
+                        and the
                         Gulf region.
                     </p>
                 </div>

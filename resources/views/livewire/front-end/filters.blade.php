@@ -1,4 +1,4 @@
-<div class="shop-filters flex-shrink-0 border-end d-none d-lg-block">
+<div class="shop-filters flex-shrink-0 border-end">
     <ul class="list-group pt-2 border-bottom rounded-0">
         <h6 class="my-3 mx-4 fw-semibold">Filter by Category</h6>
         <li class="list-group-item border-0 p-0 mx-4 mb-0">
