@@ -575,11 +575,11 @@ new class extends Component {
 
                                     <!-- Combined Info (Name + Email + Phone) -->
                                     <td style="color: #446076; font-weight: 500;">
-                                        <a  href="{{ route('students.view',$student->id) }}">
                                         <div class="d-flex flex-column">
-                                            <span class="fw-semibold text-dark">
-                                                {{ $student->first_name }} {{ $student->last_name }}
-                                            </span>
+                                            <a href="{{ route('students.view', $student->id) }}">
+                                                <span class="fw-semibold text-dark">
+                                                    {{ $student->first_name }} {{ $student->last_name }}
+                                                </span></a>
                                             <span class="text-muted small">
                                                 <i class="ti ti-mail me-1"></i>{{ $student->email }}
                                             </span>
@@ -587,7 +587,7 @@ new class extends Component {
                                                 <i class="ti ti-phone me-1"></i>{{ $student->phone }}
                                             </span>
                                         </div>
-                                        </a>
+
                                     </td>
 
                                     <!-- ID Number -->

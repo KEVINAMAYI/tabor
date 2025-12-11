@@ -9,6 +9,14 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     // Route to manage dashboard
     Volt::route('dashboard', 'admin.dashboard')->name('admin.dashboard');
 
+    Route::get('/portal', function () {
+        if (auth()->check()) {
+            auth()->logout();
+        }
+
+        return redirect()->route('login');
+    })->name('portal.redirect');
+
     // Route to manage students
     Volt::route('students', 'admin.students.index')->name('students.index');
     Volt::route('students/pending', 'admin.students.pending')->name('students.pending');
