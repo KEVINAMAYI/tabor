@@ -306,7 +306,7 @@
                                         <i class="ti ti-brand-whatsapp text-success me-2"></i>
                                     </a>
                                 </li>
-                               {{--  <li>
+                                {{--  <li>
                                     <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/"
                                         target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                         data-bs-toggle="tooltip" data-bs-title="Facebook">
@@ -327,7 +327,8 @@
                             </a>
                         </li> --}}
                     </ul>
-                    <a href="{{ route('portal.redirect') }}" class="btn btn-outline-info btn-sm py-2 px-9">College Portal</a>
+                    <a href="{{ route('portal.redirect') }}" class="btn btn-outline-info btn-sm py-2 px-9">College
+                        Portal</a>
                     <a href="{{ route('front-end.courses') }}"
                         class="btn mx-2 btn-outline-primary btn-sm py-2 px-9">Enroll Now</a>
                 </div>
@@ -397,6 +398,31 @@
                         class="px-0 fs-4 d-block w-100 py-2 text-dark link-primary {{ request()->routeIs('front-end.contact') ? 'active' : '' }}">
                         Contact
                     </a>
+                </li>
+                <li class="nav-item d-flex align-items-center">
+                    <ul class="nav flex-row flex-nowrap gap-3">
+                        <li>
+                            <a href="https://api.whatsapp.com/send?phone=254115278369&text=Hello, I'm interested in learning more about Tabor TVET courses."
+                                target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
+                                data-bs-toggle="tooltip" data-bs-title="Chat with us">
+                                <i class="ti ti-message-dots text-success me-2"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://api.whatsapp.com/send?phone=254798496129&text=Hello, I'm interested in learning more about Tabor TVET courses."
+                                target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
+                                data-bs-toggle="tooltip" data-bs-title="Whatsapp us">
+                                <i class="ti ti-brand-whatsapp text-success me-2"></i>
+                            </a>
+                        </li>
+                        {{--  <li>
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/"
+                                        target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
+                                        data-bs-toggle="tooltip" data-bs-title="Facebook">
+                                        <i class="ti ti-brand-facebook text-primary me-2"></i>
+                                    </a>
+                                </li> --}}
+                    </ul>
                 </li>
 
                 <li class="mt-3">
