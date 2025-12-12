@@ -296,14 +296,14 @@
                                     <a href="https://api.whatsapp.com/send?phone=254115278369&text=Hello, I'm interested in learning more about Tabor TVET courses."
                                         target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                         data-bs-toggle="tooltip" data-bs-title="Chat with us">
-                                        <i class="ti ti-message-dots text-success me-2"></i>
+                                        <i class="ti ti-message-dots text-success me-2 fs-8"></i>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="https://api.whatsapp.com/send?phone=254798496129&text=Hello, I'm interested in learning more about Tabor TVET courses."
                                         target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                         data-bs-toggle="tooltip" data-bs-title="Whatsapp us">
-                                        <i class="ti ti-brand-whatsapp text-success me-2"></i>
+                                        <i class="ti ti-brand-whatsapp text-success me-2 fs-8"></i>
                                     </a>
                                 </li>
                                 {{--  <li>
@@ -405,23 +405,16 @@
                             <a href="https://api.whatsapp.com/send?phone=254115278369&text=Hello, I'm interested in learning more about Tabor TVET courses."
                                 target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                 data-bs-toggle="tooltip" data-bs-title="Chat with us">
-                                <i class="ti ti-message-dots text-success me-2"></i>
+                                <i class="ti ti-message-dots text-success me-2 fs-10"></i>
                             </a>
                         </li>
                         <li>
                             <a href="https://api.whatsapp.com/send?phone=254798496129&text=Hello, I'm interested in learning more about Tabor TVET courses."
                                 target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                 data-bs-toggle="tooltip" data-bs-title="Whatsapp us">
-                                <i class="ti ti-brand-whatsapp text-success me-2"></i>
+                                <i class="ti ti-brand-whatsapp text-success me-2 fs-10"></i>
                             </a>
                         </li>
-                        {{--  <li>
-                                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.tabor.ac.ke/"
-                                        target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
-                                        data-bs-toggle="tooltip" data-bs-title="Facebook">
-                                        <i class="ti ti-brand-facebook text-primary me-2"></i>
-                                    </a>
-                                </li> --}}
                     </ul>
                 </li>
 
