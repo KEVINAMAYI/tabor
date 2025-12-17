@@ -213,10 +213,9 @@
                     <img height="120" width="120" src="../assets/images/logos/tabor_logo_transparent.png"
                         alt="Logo" />
                 </a>
-                <button class="navbar-toggler border-0 p-0 shadow-none" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
-                    <i class="ti ti-menu-2 fs-8"></i>
-                </button>
+                <button type="button" class="btn btn-primary navbar-toggler text-white"
+                    data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">View More
+                    Options</button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav mx-auto mb-2 gap-xl-7 gap-8 mb-lg-0">
                         <li class="nav-item">
@@ -344,8 +343,8 @@
     <!-- ------------------------------------- -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
         <div class="offcanvas-header">
-            <a href="../main/frontend-landingpage.html" class="text-nowrap logo-img">
-                <img src="../assets/images/logos/logo.svg" alt="Logo" />
+            <a href="{{ route('front-end.home') }}" class="text-nowrap logo-img">
+                <img src="../assets/images/logos/tabor_logo.png" alt="Logo" />
             </a>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>

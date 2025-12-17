@@ -134,8 +134,8 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
 
                     {{-- Mobile Filter Button --}}
                     <div class="d-md-none mb-3">
-                        <button class="btn btn-primary w-100" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters">
-                            <i class="ti ti-filter"></i> Filters
+                        <button class="btn btn-secondary text-white w-100" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters">
+                            <i class="ti ti-filter"></i> Click Here to See Courses by Category
                         </button>
                     </div>
 
