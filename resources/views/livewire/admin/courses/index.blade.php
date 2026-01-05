@@ -575,6 +575,7 @@ new class extends Component {
                                 <th>Title</th>
                                 <th>Category</th>
                                 <th>Code</th>
+                                <th>Duration</th>
                                 <th>Description</th>
                                 <th>Fee</th>
                                 <th>Action</th>
@@ -593,6 +594,7 @@ new class extends Component {
                                     <td class="course-title">{{ $course->title }} - {{ $course->level }}</td>
                                     <td class="course-title">{{ $course->category?->name ?? 'N/A' }}</td>
                                     <td class="text-muted">{{ $course->code }}</td>
+                                    <td class="text-muted">{{ $course->duration }}</td>
                                     <td>
                                         <span class="text-ellipsis" title="{{ $course->description }}">
                                             {{ \Illuminate\Support\Str::limit($course->description, 60) }}

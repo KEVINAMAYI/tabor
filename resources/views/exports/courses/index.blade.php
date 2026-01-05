@@ -109,6 +109,7 @@
         <th>#</th>
         <th>Title</th>
         <th>Code</th>
+        <th>Duration</th>
         <th>Description</th>
         <th>Fee</th>
     </tr>
@@ -119,6 +120,7 @@
             <td>{{ $loop->iteration }}</td>
             <td>{{ $course->title }}</td>
             <td>{{ $course->code }}</td>
+            <td>{{ $course->duration }}</td>
             <td>{{ \Illuminate\Support\Str::limit($course->description, 60) }}</td>
             <td>KES {{ number_format($course->price, 2) }}</td>
         </tr>
