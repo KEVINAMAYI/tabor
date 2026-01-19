@@ -19,6 +19,11 @@ class Enrollment extends Model
      |------------------------------------------------------------------
      */
 
+     public function trimesters()
+     {
+         return $this->hasMany(EnrollmentTrimester::class);
+     }
+
     public function student()
     {
         return $this->belongsTo(Student::class);

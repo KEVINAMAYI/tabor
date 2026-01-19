@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\EnrollmentService;
 
 new class extends Component {
     use WithFileUploads, WithPagination;
@@ -99,6 +100,9 @@ new class extends Component {
                 // Update remarks AFTER successful user activation
                 $enrollment->remarks = 'Approved by ' . auth()->user()->first_name;
                 $enrollment->save();
+
+                //create enrollment trimesters
+                EnrollmentService::createEnrollmentTrimesters($enrollment);
             }
             DB::commit();
 

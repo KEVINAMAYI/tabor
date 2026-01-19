@@ -17,10 +17,10 @@ class Course extends Model
      |------------------------------------------------------------------
      */
 
-     public function category()
-     {
-         return $this->belongsTo(CourseCategory::class, 'course_category_id');
-     }
+    public function category()
+    {
+        return $this->belongsTo(CourseCategory::class, 'course_category_id');
+    }
 
     // All modules that belong to this course
     public function modules()
@@ -73,5 +73,40 @@ class Course extends Model
     {
         return $this->belongsToMany(Lecturer::class, 'course_lecturer');
     }
+
+    public function trimesters()
+    {
+        return $this->hasMany(CourseTrimester::class)
+            ->orderBy('trimester_number');
+    }
+
+    public static function createOrUpdateCourseTrimesters($course)
+    {
+        $feePerTrimester = round(
+            $course->price / $course->number_of_trimesters,
+            2
+        );
+
+        // 1. Create or update required trimesters
+        for ($i = 1; $i <= $course->number_of_trimesters; $i++) {
+            CourseTrimester::updateOrCreate(
+                [
+                    'course_id' => $course->id,
+                    'trimester_number' => $i,
+                ],
+                [
+                    // 'duration_months' => $durationPerTrimester,
+                    'fee_amount' => $feePerTrimester,
+                ]
+            );
+        }
+
+        // 2. Remove excess trimesters
+        CourseTrimester::where('course_id', $course->id)
+            ->where('trimester_number', '>', $course->number_of_trimesters)
+            ->delete();
+    }
+
+
 
 }
