@@ -428,7 +428,6 @@ new class extends Component {
                     @foreach ($student->enrollments as $enrollment)
                         @php
                             $course = $enrollment->course;
-                            $modules = $course->modules;
                             $intake = $enrollment->intake;
                             $enrollmentStatus = $enrollment->status ?? 'In Progress';
                         @endphp
@@ -438,8 +437,10 @@ new class extends Component {
                                 <div class="mt-2 px-7 pb-7 h-100">
                                     <div class="d-flex gap-3 flex-column h-100 justify-content-between">
 
+                                        {{-- COURSE TITLE --}}
                                         <h5 class="mt-3 fw-bolder">{{ $course->title }} - {{ $course->level }}</h5>
 
+                                        {{-- STATUS --}}
                                         <div class="d-flex justify-content-between">
                                             @php
                                                 $statusClass = match (strtolower($enrollmentStatus)) {
@@ -455,7 +456,7 @@ new class extends Component {
                                             <div class="d-flex col-md-6 gap-2">
                                                 <h6 class="mt-1 mb-0">Status:</h6>
                                                 <span class="badge {{ $statusClass }} text-light">
-                                                    {{ ucfirst($enrollmentStatus == 'approved' ? 'Active' : $enrollmentStatus) }}
+                                                    {{ ucfirst($enrollmentStatus === 'approved' ? 'Active' : $enrollmentStatus) }}
                                                 </span>
                                             </div>
 
@@ -488,12 +489,13 @@ new class extends Component {
                                             </div>
                                         </div>
 
+                                        {{-- DETAILS --}}
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2 d-flex align-items-start gap-2">
                                                 <iconify-icon icon="mdi:school"
                                                     class="text-primary fs-4 mt-1"></iconify-icon>
                                                 <span class="text-dark fs-3">
-                                                    Intake: {{ $enrollment->intake->name }}
+                                                    Intake: {{ $intake->name }}
                                                 </span>
                                             </li>
 
@@ -506,44 +508,61 @@ new class extends Component {
                                             </li>
 
                                             @php
+                                                /* =======================
+                               ACADEMIC STATE
+                               ======================= */
                                                 $currentTrimester = $enrollment->trimesters
                                                     ->where('status', 'in-progress')
                                                     ->first();
 
                                                 $hasCurrentTrimester = !is_null($currentTrimester);
-
                                                 $currentNumber = $currentTrimester?->trimester_number;
                                                 $total = $course->number_of_trimesters;
 
+                                                /* =======================
+                               FINANCIAL STATE
+                               ======================= */
                                                 $totalTuitionPaid = $enrollment->payments
                                                     ->where('payment_reason', 'tuition')
                                                     ->sum('amount');
 
-                                                $remainingPaid = $totalTuitionPaid;
+                                                $totalTrimesterFees = $enrollment->trimesters->sum('fee_amount');
+
                                                 $effectivePaid = 0;
-                                                $balance = 0;
+                                                $currentBalance = 0;
 
-                                                foreach (
-                                                    $enrollment->trimesters->sortBy('trimester_number')
-                                                    as $trimester
-                                                ) {
-                                                    if ($remainingPaid <= 0) {
-                                                        break;
+                                                if ($hasCurrentTrimester) {
+                                                    $currentFee = $currentTrimester->fee_amount;
+                                                    $remainingPaid = $totalTuitionPaid;
+
+                                                    foreach (
+                                                        $enrollment->trimesters->sortBy('trimester_number')
+                                                        as $trimester
+                                                    ) {
+                                                        if ($remainingPaid <= 0) {
+                                                            break;
+                                                        }
+
+                                                        if ($trimester->trimester_number < $currentNumber) {
+                                                            $remainingPaid -= $trimester->fee_amount;
+                                                            continue;
+                                                        }
+
+                                                        if ($trimester->trimester_number === $currentNumber) {
+                                                            $effectivePaid = min($remainingPaid, $currentFee);
+                                                            break;
+                                                        }
                                                     }
 
-                                                    if ($trimester->trimester_number < $currentNumber) {
-                                                        $remainingPaid -= $trimester->fee_amount;
-                                                        continue;
-                                                    }
-
-                                                    if ($trimester->trimester_number === $currentNumber) {
-                                                        $effectivePaid = min($remainingPaid, $trimester->fee_amount);
-                                                        $balance = max(0, $trimester->fee_amount - $remainingPaid);
-                                                        break;
-                                                    }
+                                                    // ALWAYS compute balance from fee
+                                                    $currentBalance = $currentFee - $effectivePaid;
                                                 }
+
+                                                // For completed enrollments
+                                                $overallBalance = max(0, $totalTrimesterFees - $totalTuitionPaid);
                                             @endphp
 
+                                            {{-- CURRENT TRIMESTER --}}
                                             <li class="d-flex align-items-start gap-2 mt-2">
                                                 <iconify-icon icon="mdi:progress-check"
                                                     class="text-info fs-4 mt-1"></iconify-icon>
@@ -553,7 +572,7 @@ new class extends Component {
                                                 </span>
                                             </li>
 
-                                            {{-- PAID: show ONLY if there is an in-progress trimester --}}
+                                            {{-- ACTIVE ENROLLMENT --}}
                                             @if ($hasCurrentTrimester)
                                                 <li class="d-flex align-items-start gap-2 mt-2">
                                                     <iconify-icon icon="mdi:cash-check"
@@ -562,26 +581,25 @@ new class extends Component {
                                                         Paid: {{ number_format($effectivePaid, 2) }}
                                                     </span>
                                                 </li>
+
                                                 <li class="d-flex align-items-start gap-2 mt-2">
                                                     <iconify-icon icon="mdi:wallet"
-                                                        class="fs-4 mt-1 {{ $balance > 0 ? 'text-danger' : 'text-success' }}">
+                                                        class="fs-4 mt-1 {{ $currentBalance > 0 ? 'text-danger' : 'text-success' }}">
                                                     </iconify-icon>
-
                                                     <span
-                                                        class="fs-3 {{ $balance > 0 ? 'text-danger' : 'text-success' }}">
-                                                        Balance: {{ number_format($balance, 2) }}
+                                                        class="fs-3 {{ $currentBalance > 0 ? 'text-danger' : 'text-success' }}">
+                                                        Balance: {{ number_format($currentBalance, 2) }}
                                                     </span>
                                                 </li>
                                             @endif
-                                            @if (!$hasCurrentTrimester && ($course->price - $totalTuitionPaid) > 0)
+
+                                            {{-- COMPLETED ENROLLMENT --}}
+                                            @if (!$hasCurrentTrimester && $overallBalance > 0)
                                                 <li class="d-flex align-items-start gap-2 mt-2">
                                                     <iconify-icon icon="mdi:wallet"
-                                                        class="fs-4 mt-1 {{ $course->price - $totalTuitionPaid > 0 ? 'text-danger' : 'text-success' }}">
-                                                    </iconify-icon>
-
-                                                    <span
-                                                        class="fs-3 {{ $course->price - $totalTuitionPaid > 0 ? 'text-danger' : 'text-success' }}">
-                                                        Balance: {{ number_format($course->price - $totalTuitionPaid, 2) }}
+                                                        class="fs-4 mt-1 text-danger"></iconify-icon>
+                                                    <span class="fs-3 text-danger">
+                                                        Balance: {{ number_format($overallBalance, 2) }}
                                                     </span>
                                                 </li>
                                             @endif
@@ -592,6 +610,8 @@ new class extends Component {
                             </div>
                         </div>
                     @endforeach
+
+
 
                 </div>
             </div>
