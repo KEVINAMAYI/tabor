@@ -2,6 +2,9 @@
 
 use App\Exports\CourseExport;
 use App\Models\Course;
+use App\Models\CourseTrimester;
+use App\Services\CourseTrimesterService;
+use Illuminate\Support\Facades\DB;
 use App\Models\CourseCategory;
 use App\Models\Lecturer;
 use Livewire\Attributes\On;
@@ -11,11 +14,17 @@ use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\AcademicTrimester;
+use App\Models\Enrollment;
+use App\Models\EnrollmentTrimester;
+use App\Models\Payment;
+use Carbon\Carbon;
+use App\Services\EnrollmentService;
 
 new class extends Component {
     use WithFileUploads, WithPagination;
 
-    public $title, $course_category_id, $code, $description, $price, $exam_fee, $attachment_fee, $duration, $mode, $level, $certification, $prerequisites, $image, $brochure;
+    public $title, $course_category_id, $code, $description, $price, $exam_fee, $attachment_fee, $duration, $number_of_trimesters, $mode, $level, $certification, $prerequisites, $image, $brochure;
 
     public $editId = null;
 
@@ -25,10 +34,13 @@ new class extends Component {
 
     public $search = '';
 
+    public $perPage = 10;
+
     public $lecturers = [];
     public $categories = [];
 
     public $lecturer_ids = [];
+    public $count = 0;
 
     public function rules()
     {
@@ -39,7 +51,8 @@ new class extends Component {
             'price' => 'required|numeric|min:0',
             'exam_fee' => 'nullable|numeric|min:0',
             'attachment_fee' => 'nullable|numeric|min:0',
-            'duration' => 'nullable|string|max:100',
+            'duration' => 'required|string|max:100',
+            'number_of_trimesters' => 'required|integer',
             'mode' => 'nullable|in:online,on-campus,hybrid',
             'level' => 'nullable|string|max:100',
             'certification' => 'nullable|string|max:100',
@@ -51,6 +64,8 @@ new class extends Component {
 
     public function mount()
     {
+        
+
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
@@ -79,7 +94,7 @@ new class extends Component {
             });
         }
 
-        $courses = $query->orderBy('course_category_id')->paginate(10);
+        $courses = $query->orderBy('course_category_id')->paginate(perPage: $this->perPage);
 
         return [
             'courses' => $courses,
@@ -91,6 +106,7 @@ new class extends Component {
         $this->validate();
 
         try {
+            DB::beginTransaction();
             $imagePath = $this->image ? $this->image->store('courses', 'public') : null;
             $brochurePath = $this->brochure ? $this->brochure->store('brochures', 'public') : null;
 
@@ -103,6 +119,7 @@ new class extends Component {
                 'exam_fee' => $this->exam_fee,
                 'attachment_fee' => $this->attachment_fee,
                 'duration' => $this->duration,
+                'number_of_trimesters' => $this->number_of_trimesters,
                 'mode' => $this->mode,
                 'level' => $this->level,
                 'certification' => $this->certification,
@@ -115,7 +132,10 @@ new class extends Component {
                 $course->lecturers()->attach($this->lecturer_ids);
             }
 
+            CourseTrimesterService::syncCourseTrimesters($course);
+
             $this->dispatch('hide-course-modal');
+            DB::commit();
             $this->resetForm();
             $this->resetPage();
 
@@ -139,11 +159,14 @@ new class extends Component {
         $this->exam_fee = $course->exam_fee;
         $this->attachment_fee = $course->attachment_fee;
         $this->duration = $course->duration;
+        $this->number_of_trimesters = $course->number_of_trimesters;
         $this->mode = $course->mode;
         $this->level = $course->level;
         $this->certification = $course->certification;
         $this->prerequisites = $course->prerequisites;
         $this->course_category_id = $course->course_category_id;
+        $this->number_of_trimesters = $course->number_of_trimesters;
+        $this->lecturer_ids = $course->lecturers()->pluck('lecturers.id')->map(fn($id) => (string) $id)->toArray();
 
         $this->dispatch('show-course-modal');
     }
@@ -153,6 +176,7 @@ new class extends Component {
         $this->validate();
 
         try {
+            DB::beginTransaction();
             $course = Course::findOrFail($this->editId);
 
             $imagePath = $this->image ? $this->image->store('courses', 'public') : $course->image_url;
@@ -167,6 +191,7 @@ new class extends Component {
                 'exam_fee' => $this->exam_fee,
                 'attachment_fee' => $this->attachment_fee,
                 'duration' => $this->duration,
+                'number_of_trimesters' => $this->number_of_trimesters,
                 'mode' => $this->mode,
                 'level' => $this->level,
                 'certification' => $this->certification,
@@ -180,6 +205,9 @@ new class extends Component {
             } else {
                 $course->lecturers()->detach(); // Optional: remove all if no lecturer_ids provided
             }
+            CourseTrimesterService::syncCourseTrimesters($course);
+
+            DB::commit();
 
             $this->resetForm();
             $this->resetPage();
@@ -187,6 +215,7 @@ new class extends Component {
 
             LivewireAlert::text('Course updated successfully.!')->success()->toast()->position('top-end')->show();
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error updating course: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to update Course.!')->error()->toast()->position('top-end')->show();
@@ -201,14 +230,26 @@ new class extends Component {
 
     public function deleteCourse($id)
     {
-        Course::findOrFail($id)->delete();
-        $this->resetPage();
+        try {
+            DB::beginTransaction();
+            $course = Course::findOrFail($id);
+            $course->trimesters()->delete();
+            $course->delete();
+            DB::commit();
+            LivewireAlert::text('Course deleted successfully.!')->success()->toast()->position('top-end')->show();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting course: ' . $e->getMessage());
+            LivewireAlert::text('There was an error while deleting course.')->error()->toast()->position('top-end')->show();
+            return;
+        }
 
-        LivewireAlert::text('Course deleted successfully.!')->success()->toast()->position('top-end')->show();
+        $this->resetPage();
     }
 
     public function deleteSelected()
     {
+        CourseTrimester::whereIn('course_id', $this->selected)->delete();
         Course::whereIn('id', $this->selected)->delete();
         $this->selected = [];
         $this->selectAll = false;
@@ -398,8 +439,8 @@ new class extends Component {
                                     <div class="mb-3 col-md-6" wire:ignore>
                                         <p class="form-label">Course Lecturers</p>
                                         <select style="padding-top:10px; padding-bottom:10px;"
-                                            class="form-control select2" multiple
-                                            data-placeholder="Select lecturers" wire:model="lecturers">
+                                            class="form-control select2" multiple data-placeholder="Select lecturers"
+                                            wire:model="lecturers">
                                             @foreach ($lecturers as $lecturer)
                                                 <option value="{{ $lecturer->id }}">
                                                     {{ $lecturer->first_name . '' . $lecturer->last_name }}</option>
@@ -451,9 +492,24 @@ new class extends Component {
 
                                     <!-- Duration -->
                                     <div class="col-md-4 mb-3">
-                                        <label for="course-duration" class="form-label">Duration</label>
+                                        <label for="course-duration" class="form-label">Total Course Duration</label>
                                         <input id="course-duration" type="text" wire:model="duration"
-                                            class="form-control" placeholder="Duration (e.g., 6 weeks, 3 months)" />
+                                            class="form-control"
+                                            placeholder="Duration (e.g., 6 weeks, 3 months, 3 years...)" />
+                                        @error('duration')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Trimesters -->
+                                    <div class="col-md-4 mb-3">
+                                        <label for="course-trimesters" class="form-label">Number of Trimesters</label>
+                                        <input id="course-trimesters" type="text"
+                                            wire:model="number_of_trimesters" class="form-control"
+                                            placeholder="Number of trimesters (e.g., 3, 4, 6...)" />
+                                        @error('number_of_trimesters')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
                                     </div>
 
                                     <!-- Mode -->
@@ -534,6 +590,16 @@ new class extends Component {
 
                     <!-- Top Bar Inside the Card -->
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                        <div class="d-flex align-items-center">
+                            <label for="perPage" class="form-label me-2">Show</label>
+                            <select wire:model.live="perPage" id="perPage" class="form-select form-select-sm">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="ms-2">entries</span>
+                        </div>
                         <!-- Title -->
                         <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                             <iconify-icon icon="mdi:book-open-page-variant" class="me-2"
@@ -576,7 +642,7 @@ new class extends Component {
                                 <th>Category</th>
                                 <th>Code</th>
                                 <th>Duration</th>
-                                <th>Description</th>
+                                <th>No. of trimesters</th>
                                 <th>Fee</th>
                                 <th>Action</th>
                             </tr>
@@ -595,11 +661,12 @@ new class extends Component {
                                     <td class="course-title">{{ $course->category?->name ?? 'N/A' }}</td>
                                     <td class="text-muted">{{ $course->code }}</td>
                                     <td class="text-muted">{{ $course->duration }}</td>
-                                    <td>
+                                    <td class="text-muted">{{ $course->number_of_trimesters }}</td>
+                                    {{-- <td>
                                         <span class="text-ellipsis" title="{{ $course->description }}">
                                             {{ \Illuminate\Support\Str::limit($course->description, 60) }}
                                         </span>
-                                    </td>
+                                    </td> --}}
                                     <td class="course-fee">KES {{ number_format($course->price, 2) }}</td>
                                     <td>
                                         <div class="action-btn">

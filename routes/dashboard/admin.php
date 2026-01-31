@@ -21,6 +21,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('students', 'admin.students.index')->name('students.index');
     Volt::route('students/pending', 'admin.students.pending')->name('students.pending');
     Volt::route('students/enrollments', 'admin.students.enrollments')->name('students.enrollments');
+    Volt::route('students/enrollment-details/{enrollment_id}', 'admin.students.enrollment-details')->name('students.enrollment-details');
     Volt::route('students/view/{student_id}', 'admin.students.view')->name('students.view');
 
     // Route to manage courses
