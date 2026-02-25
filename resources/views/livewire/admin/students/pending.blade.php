@@ -47,6 +47,7 @@ new class extends Component {
     {
         $pending_enrollments = Enrollment::whereIn('status', ['pending', 'rejected'])
             ->join('students', 'enrollments.student_id', '=', 'students.id')
+            ->select('enrollments.*')
             ->with(['student.user', 'course', 'intake'])
             ->when(
                 !empty($this->search),
@@ -120,6 +121,28 @@ new class extends Component {
             Log::error('Failed to update enrollment status: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to update enrollment status!')->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    public function deleteEnrollment($id)
+    {
+        DB::beginTransaction();
+        try {
+            $enrollment = Enrollment::findOrFail($id);
+            $student = Student::findOrFail($enrollment->student_id);
+            $user = User::findOrFail($student->user_id);
+            $student->delete();
+            $user->delete();
+            $enrollment->delete();
+
+            DB::commit();
+
+            LivewireAlert::text('Enrollment deleted successfully!')->success()->toast()->position('top-end')->show();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete enrollment: ' . $e->getMessage());
+
+            LivewireAlert::text('Failed to delete enrollment!')->error()->toast()->position('top-end')->show();
         }
     }
 
@@ -271,7 +294,7 @@ new class extends Component {
                                             {{ ucfirst($enrollment->status) }}
                                         </span>
                                     </td>
-                                    <td class="text-muted">{{ $enrollment->remarks ?? 'Awaiting Approval' }}</td>
+                                    <td class="text-muted">{{ $enrollment->remarks }}</td>
                                     <td>
                                         <div class="action-btn dropdown">
                                             <a href="#" class="text-blue" id="studentActions"
@@ -285,6 +308,16 @@ new class extends Component {
                                                             wire:click="editStatus({{ $enrollment->id }})"
                                                             class="dropdown-item">
                                                             <i class="ti ti-pencil fs-5 me-2"></i> Edit
+                                                        </a>
+                                                    </li>
+                                                @endcan
+                                                @can('delete-students')
+                                                    <li>
+                                                        <a href="javascript:void(0)"
+                                                            wire:click="deleteEnrollment({{ $enrollment->id }})"
+                                                            wire:confirm="Are you sure you want to delete this enrollment?"
+                                                            class="dropdown-item text-danger">
+                                                            <i class="ti ti-trash fs-5 me-2"></i> Delete
                                                         </a>
                                                     </li>
                                                 @endcan
