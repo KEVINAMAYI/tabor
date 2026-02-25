@@ -119,7 +119,7 @@ new class extends Component {
             DB::rollBack();
             Log::error('Failed to update enrollment status: ' . $e->getMessage());
 
-            LivewireAlert::text('Failed to update enrollment status.!')->error()->toast()->position('top-end')->show();
+            LivewireAlert::text('Failed to update enrollment status!')->error()->toast()->position('top-end')->show();
         }
     }
 

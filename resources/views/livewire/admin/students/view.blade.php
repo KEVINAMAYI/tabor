@@ -216,6 +216,12 @@ new class extends Component {
 
         $this->dispatch('show-enrollment-payments-modal');
     }
+
+    public function printStatement($enrollmentId)
+    {
+        $url = route('statements.show', ['enrollment' => $enrollmentId]);
+        $this->dispatch('openNewTab', url: $url);
+    }
 }; ?>
 @push('styles')
     <style>
@@ -486,6 +492,14 @@ new class extends Component {
                                                             width="16" height="16"></iconify-icon>
                                                     </button>
                                                 @endcan
+                                                {{-- @can('delete-enrollments')
+                                                    <button style="border:0;"
+                                                        wire:click="printStatement({{ $enrollment->id }})"
+                                                        class="btn btn-sm btn-outline-danger" title="Print Statement">
+                                                        <iconify-icon style="font-weight:bold;" icon="mdi:printer"
+                                                            width="16" height="16"></iconify-icon>
+                                                    </button>
+                                                @endcan --}}
                                             </div>
                                         </div>
 
@@ -604,6 +618,10 @@ new class extends Component {
                                                 </li>
                                             @endif
                                         </ul>
+                                        <button type="button" class="btn btn-outline-primary ms-2"
+                                            wire:click="printStatement({{ $enrollment->id }})">
+                                            <i class="ti ti-printer fs-5"></i> Print Statement
+                                        </button>
 
                                     </div>
                                 </div>
@@ -1225,6 +1243,10 @@ new class extends Component {
         });
         window.addEventListener('hide-enrollment-payments-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('paymentModal'))?.hide();
+        });
+
+        window.addEventListener('openNewTab', (e) => {
+            window.open(e.detail.url, '_blank');
         });
 
         function printReceipt(course, amount, method, date, reference, firstName, lastName, studentId, receiptNumber, level,
