@@ -7,10 +7,13 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 new class extends Component {
-
     use WithPagination, WithFileUploads;
 
-    public $name, $title, $description, $image, $editId = null;
+    public $name,
+        $title,
+        $description,
+        $image,
+        $editId = null;
     public $search = '';
 
     protected $rules = [
@@ -19,7 +22,6 @@ new class extends Component {
         'description' => 'nullable|string',
         'image' => 'nullable|image|max:2048',
     ];
-
 
     #[On('search')]
     public function getTeamsProperty()
@@ -34,15 +36,13 @@ new class extends Component {
     {
         $this->validate();
 
-        $imagePath = $this->image
-            ? $this->image->store('team', 'public')
-            : null;
+        $imagePath = $this->image ? $this->image->store('team', 'public') : null;
 
         Team::create([
             'name' => $this->name,
             'title' => $this->title,
             'description' => $this->description,
-            'image' => $imagePath
+            'image' => $imagePath,
         ]);
 
         $this->resetForm();
@@ -64,22 +64,29 @@ new class extends Component {
     public function update()
     {
         $this->validate();
+        try {
+            DB::beginTransaction();
+            $team = Team::findOrFail($this->editId);
 
-        $team = Team::findOrFail($this->editId);
+            $imagePath = $team->image;
 
-        $imagePath = $team->image;
+            if ($this->image) {
+                $imagePath = $this->image->store('team', 'public');
+            }
 
-        if ($this->image) {
-            $imagePath = $this->image->store('team', 'public');
+            $team->update([
+                'name' => $this->name,
+                'title' => $this->title,
+                'description' => $this->description,
+                'image' => $imagePath,
+            ]);
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::error('Error updating team member: ' . $th->getMessage());
+            //throw $th;
         }
-
-        $team->update([
-            'name' => $this->name,
-            'title' => $this->title,
-            'description' => $this->description,
-            'image' => $imagePath
-        ]);
-
         $this->resetForm();
         $this->dispatch('hide-team-modal');
     }
@@ -95,7 +102,6 @@ new class extends Component {
         $this->image = null;
         $this->editId = null;
     }
-
 };
 ?>
 
@@ -103,11 +109,13 @@ new class extends Component {
     <style>
         td.description-cell {
             max-width: 300px;
-            max-height: 4.5em; /* roughly 3 lines */
+            max-height: 4.5em;
+            /* roughly 3 lines */
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
-            -webkit-line-clamp: 3; /* number of lines to show */
+            -webkit-line-clamp: 3;
+            /* number of lines to show */
             -webkit-box-orient: vertical;
             white-space: normal;
             word-wrap: break-word;
@@ -122,20 +130,17 @@ new class extends Component {
             <div class="col-md-4 col-xl-3">
                 <form class="position-relative">
                     <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                           class="form-control product-search ps-5" placeholder="Search Team Member..."
-                           wire:model="search"/>
-                    <i
-                        class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
+                        class="form-control product-search ps-5" placeholder="Search Team Member..." wire:model="search" />
+                    <i class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
                 </form>
             </div>
-            <div
-                class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
+            <div class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
 
                 <div class="action-btn">
                 </div>
 
                 <a href="javascript:void(0)" wire:click="$dispatch('show-team-modal')"
-                   class="btn btn-primary d-flex align-items-center">
+                    class="btn btn-primary d-flex align-items-center">
                     <i class="ti ti-users text-white me-1 fs-5"></i> Add Team Member
                 </a>
             </div>
@@ -173,73 +178,73 @@ new class extends Component {
             <!-- Team Members Table -->
             <table class="table search-table align-middle text-nowrap">
                 <thead class="header-item">
-                <tr>
-                    <th class="text-center align-middle" style="width: 50px;">#</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Role / Title</th>
-                    <th>Description</th>
-                    <th>Action</th>
-                </tr>
+                    <tr>
+                        <th class="text-center align-middle" style="width: 50px;">#</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Role / Title</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
                 <tbody>
-                @forelse ($this->teams as $index => $member)
-                    <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
-                        <!-- Index -->
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <!-- Image -->
-                        <td>
-                            @if($member->image)
-                                <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
-                                     class="rounded-circle" width="50" height="50">
-                            @else
-                                <span class="text-muted">No Image</span>
-                            @endif
-                        </td>
+                    @forelse ($this->teams as $index => $member)
+                        <tr class="search-items align-middle" style="border-bottom: 1px solid #e5e7eb;">
+                            <!-- Index -->
+                            <td class="text-center">{{ $index + 1 }}</td>
+                            <!-- Image -->
+                            <td>
+                                @if ($member->image)
+                                    <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
+                                        class="rounded-circle" width="50" height="50">
+                                @else
+                                    <span class="text-muted">No Image</span>
+                                @endif
+                            </td>
 
-                        <!-- Name -->
-                        <td class="fw-semibold">{{ $member->name }}</td>
+                            <!-- Name -->
+                            <td class="fw-semibold">{{ $member->name }}</td>
 
-                        <!-- Role / Title -->
-                        <td>{{ $member->title ?? '-' }}</td>
+                            <!-- Role / Title -->
+                            <td>{{ $member->title ?? '-' }}</td>
 
-                        <td style="cursor:pointer;" class="text-muted small description-cell"
-                            title="{{ $member->description }}">
-                            {{ $member->description ?? '-' }}
-                        </td>
-                        <!-- Actions -->
-                        <td>
-                            <div class="dropdown dropstart">
-                                <a href="javascript:void(0)" class="link" id="team-actions-{{ $member->id }}"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="ti ti-dots-vertical fs-6" style="color: #0e334f;"></i>
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="team-actions-{{ $member->id }}">
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                           href="javascript:void(0)" wire:click="edit({{ $member->id }})">
-                                            <iconify-icon icon="mdi:pencil-outline"
-                                                          class="text-warning w-4 h-4"></iconify-icon>
-                                            <span>Edit</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
-                                           href="javascript:void(0)" wire:click="delete({{ $member->id }})">
-                                            <iconify-icon icon="mdi:delete-outline"
-                                                          class="text-danger w-4 h-4"></iconify-icon>
-                                            <span>Delete</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">No team members found.</td>
-                    </tr>
-                @endforelse
+                            <td style="cursor:pointer;" class="text-muted small description-cell"
+                                title="{{ $member->description }}">
+                                {{ $member->description ?? '-' }}
+                            </td>
+                            <!-- Actions -->
+                            <td>
+                                <div class="dropdown dropstart">
+                                    <a href="javascript:void(0)" class="link" id="team-actions-{{ $member->id }}"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ti ti-dots-vertical fs-6" style="color: #0e334f;"></i>
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="team-actions-{{ $member->id }}">
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="javascript:void(0)" wire:click="edit({{ $member->id }})">
+                                                <iconify-icon icon="mdi:pencil-outline"
+                                                    class="text-warning w-4 h-4"></iconify-icon>
+                                                <span>Edit</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                href="javascript:void(0)" wire:click="delete({{ $member->id }})">
+                                                <iconify-icon icon="mdi:delete-outline"
+                                                    class="text-danger w-4 h-4"></iconify-icon>
+                                                <span>Delete</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No team members found.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
 
@@ -263,35 +268,36 @@ new class extends Component {
                     <!-- Name -->
                     <div class="mb-3">
                         <input type="text" class="form-control @error('name') is-invalid @enderror"
-                               placeholder="Full Name" wire:model="name">
+                            placeholder="Full Name" wire:model="name">
                         @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Title -->
                     <div class="mb-3">
                         <input type="text" class="form-control @error('title') is-invalid @enderror"
-                               placeholder="Title" wire:model="title">
+                            placeholder="Title" wire:model="title">
                         @error('title')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Description -->
                     <div class="mb-3">
-                    <textarea class="form-control @error('description') is-invalid @enderror" rows="5"
-                              placeholder="Description" wire:model="description"></textarea>
+                        <textarea class="form-control @error('description') is-invalid @enderror" rows="5" placeholder="Description"
+                            wire:model="description"></textarea>
                         @error('description')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Image -->
                     <div class="mb-3">
-                        <input type="file" class="form-control @error('image') is-invalid @enderror" wire:model="image">
+                        <input type="file" class="form-control @error('image') is-invalid @enderror"
+                            wire:model="image">
                         @error('image')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -318,4 +324,3 @@ new class extends Component {
         bootstrap.Modal.getInstance(document.getElementById('teamModal'))?.hide();
     });
 </script>
-
