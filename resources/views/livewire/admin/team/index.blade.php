@@ -5,6 +5,7 @@ use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
     use WithPagination, WithFileUploads;
@@ -26,24 +27,36 @@ new class extends Component {
     #[On('search')]
     public function getTeamsProperty()
     {
-        return Team::where('name', 'like', "%{$this->search}%")
+        $teams = Team::where('name', 'like', "%{$this->search}%")
             ->orWhere('title', 'like', "%{$this->search}%")
             ->orderBy('id', 'asc')
             ->paginate(10);
+        // dd($teams);
+        return $teams;
     }
 
     public function add()
     {
         $this->validate();
+        DB::beginTransaction();
+        try {
+            $imagePath = $this->image ? $this->image->store('team', 'public') : null;
 
-        $imagePath = $this->image ? $this->image->store('team', 'public') : null;
+            Team::create([
+                'name' => $this->name,
+                'title' => $this->title,
+                'description' => $this->description,
+                'image' => $imagePath,
+            ]);
+            DB::commit();
+           LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::error('Error adding team member: ' . $th->getMessage());
+            LivewireAlert::text('Failed to add team member. Please try again.')->error()->toast()->position('top-end')->show();
+             //throw $th;
 
-        Team::create([
-            'name' => $this->name,
-            'title' => $this->title,
-            'description' => $this->description,
-            'image' => $imagePath,
-        ]);
+        }
 
         $this->resetForm();
         $this->dispatch('hide-team-modal');
@@ -82,10 +95,11 @@ new class extends Component {
             ]);
 
             DB::commit();
+            LivewireAlert::text('Team member updated successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollback();
             Log::error('Error updating team member: ' . $th->getMessage());
-            //throw $th;
+            LivewireAlert::text('Failed to update team member. Please try again.')->error()->toast()->position('top-end')->show();
         }
         $this->resetForm();
         $this->dispatch('hide-team-modal');
