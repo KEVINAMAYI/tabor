@@ -8,6 +8,8 @@ use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 new class extends Component {
     use WithPagination, WithFileUploads;
@@ -72,7 +74,6 @@ new class extends Component {
         $this->name = $team->name;
         $this->title = $team->title;
         $this->description = $team->description;
-        $this->image = null;
 
         $this->dispatch('show-team-modal');
     }
