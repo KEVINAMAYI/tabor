@@ -53,13 +53,12 @@ new class extends Component {
                 'image' => $imagePath,
             ]);
             DB::commit();
-           LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
+            LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollback();
             Log::error('Error adding team member: ' . $th->getMessage());
             LivewireAlert::text('Failed to add team member. Please try again.')->error()->toast()->position('top-end')->show();
-             //throw $th;
-
+            //throw $th;
         }
 
         $this->resetForm();
@@ -74,6 +73,7 @@ new class extends Component {
         $this->name = $team->name;
         $this->title = $team->title;
         $this->description = $team->description;
+        $this->image = null;
 
         $this->dispatch('show-team-modal');
     }
@@ -87,10 +87,10 @@ new class extends Component {
 
             $imagePath = $team->image;
 
-            if ($this->image) {
+            if ($this->image && $team->image) {
                 Storage::disk('public')->delete($team->image);
-                $imagePath = $this->image->store('team', 'public');
             }
+            $imagePath = $this->image->store('team', 'public');
 
             $team->update([
                 'name' => $this->name,
