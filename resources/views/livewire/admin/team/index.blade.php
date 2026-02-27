@@ -6,6 +6,8 @@ use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 new class extends Component {
     use WithPagination, WithFileUploads;
@@ -70,6 +72,7 @@ new class extends Component {
         $this->name = $team->name;
         $this->title = $team->title;
         $this->description = $team->description;
+        $this->image = null;
 
         $this->dispatch('show-team-modal');
     }
@@ -84,6 +87,7 @@ new class extends Component {
             $imagePath = $team->image;
 
             if ($this->image) {
+                Storage::disk('public')->delete($team->image);
                 $imagePath = $this->image->store('team', 'public');
             }
 
