@@ -112,7 +112,20 @@ new class extends Component {
 
     public function delete($id)
     {
-        Team::findOrFail($id)->delete();
+        try {
+            DB::beginTransaction();
+            $team = Team::findOrFail($id);
+            if ($team->image) {
+                Storage::disk('public')->delete($team->image);
+            }
+            $team->delete();
+            DB::commit();
+            LivewireAlert::text('Team member deleted successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::error('Error deleting team member: ' . $th->getMessage());
+            LivewireAlert::text('Failed to delete team member. Please try again.')->error()->toast()->position('top-end')->show();
+        }
     }
 
     private function resetForm()
@@ -249,7 +262,8 @@ new class extends Component {
                                         </li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
-                                                href="javascript:void(0)" wire:click="delete({{ $member->id }})">
+                                                href="javascript:void(0)" wire:click="delete({{ $member->id }})"
+                                                onclick="return confirm('Are you sure you want to delete this team member?')">
                                                 <iconify-icon icon="mdi:delete-outline"
                                                     class="text-danger w-4 h-4"></iconify-icon>
                                                 <span>Delete</span>
