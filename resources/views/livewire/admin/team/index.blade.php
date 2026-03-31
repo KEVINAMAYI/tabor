@@ -92,7 +92,6 @@ new class extends Component {
 
                 $imagePath = $this->image->store('team', 'public');
             }
-            // dd($imagePath);
 
             $team->update([
                 'name' => $this->name,
@@ -247,7 +246,7 @@ new class extends Component {
                             <!-- Image -->
                             <td>
                                 @if ($member->image)
-                                    <img src="{{ url('team-image/' . basename($member->image)) }}" alt="{{ $member->name }}"
+                                    <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
                                         class="rounded-circle" width="50" height="50">
                                 @else
                                     <span class="text-muted">No Image</span>
