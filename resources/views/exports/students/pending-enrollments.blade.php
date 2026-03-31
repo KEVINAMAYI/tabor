@@ -116,7 +116,7 @@
                 <th>Intake</th>
                 <th>Phone Number</th>
                 <th>Status</th>
-                <th>Remarks</th>
+                <th>Applied On</th>
             </tr>
         </thead>
         <tbody>
@@ -136,7 +136,7 @@
                             {{ ucfirst($enrollment->status) }}
                         </span>
                     </td>
-                    <td>{{ $enrollment->remarks }}</td>
+                    <td>{{ $enrollment->created_at->format('d-m-Y') }}</td>
                 </tr>
             @empty
                 <tr>
