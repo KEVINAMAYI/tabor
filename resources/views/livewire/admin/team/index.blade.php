@@ -246,7 +246,7 @@ new class extends Component {
                             <!-- Image -->
                             <td>
                                 @if ($member->image)
-                                    <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
+                                    <img src="{{ url('team-image/' . basename($member->image)) }}" alt="{{ $member->name }}"
                                         class="rounded-circle" width="50" height="50">
                                 @else
                                     <span class="text-muted">No Image</span>
