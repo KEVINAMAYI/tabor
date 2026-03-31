@@ -60,7 +60,7 @@ new class extends Component {
                         ->orWhere('students.admission_number', 'like', "%{$this->search}%");
                 }),
             )
-            ->orderBy('students.first_name', 'asc')
+            ->orderBy('enrollments.created_at', 'desc')
             ->paginate($this->perPage ?? 10);
 
         return [
