@@ -42,9 +42,15 @@ new class extends Component {
     public function add()
     {
         $this->validate();
+
         DB::beginTransaction();
+
         try {
-            $imagePath = $this->image ? $this->image->store('team', 'public') : null;
+            $imagePath = null;
+
+            if ($this->image) {
+                $imagePath = $this->image->store('team', 'public');
+            }
 
             Team::create([
                 'name' => $this->name,
@@ -52,13 +58,58 @@ new class extends Component {
                 'description' => $this->description,
                 'image' => $imagePath,
             ]);
+
             DB::commit();
+
             LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollback();
-            Log::error('Error adding team member: ' . $th->getMessage());
+            Log::error('Error adding team member',[
+                'message' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+            ]);
             LivewireAlert::text('Failed to add team member. Please try again.')->error()->toast()->position('top-end')->show();
-            //throw $th;
+        }
+
+        $this->resetForm();
+        $this->dispatch('hide-team-modal');
+    }
+
+    public function update()
+    {
+        $this->validate();
+
+        try {
+            DB::beginTransaction();
+
+            $team = Team::findOrFail($this->editId);
+            $imagePath = $team->image;
+
+            if ($this->image) {
+                if ($team->image && Storage::disk('public')->exists($team->image)) {
+                    Storage::disk('public')->delete($team->image);
+                }
+
+                $imagePath = $this->image->store('team', 'public');
+            }
+
+            $team->update([
+                'name' => $this->name,
+                'title' => $this->title,
+                'description' => $this->description,
+                'image' => $imagePath,
+            ]);
+
+            DB::commit();
+
+            LivewireAlert::text('Team member updated successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::error('Error updating team member',[
+                'message' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+            LivewireAlert::text('Failed to update team member. Please try again.')->error()->toast()->position('top-end')->show();
         }
 
         $this->resetForm();
@@ -76,38 +127,6 @@ new class extends Component {
         $this->image = null;
 
         $this->dispatch('show-team-modal');
-    }
-
-    public function update()
-    {
-        $this->validate();
-        try {
-            DB::beginTransaction();
-            $team = Team::findOrFail($this->editId);
-
-            $imagePath = $team->image;
-
-            if ($this->image && $team->image) {
-                Storage::disk('public')->delete($team->image);
-            }
-            $imagePath = $this->image->store('team', 'public');
-
-            $team->update([
-                'name' => $this->name,
-                'title' => $this->title,
-                'description' => $this->description,
-                'image' => $imagePath,
-            ]);
-
-            DB::commit();
-            LivewireAlert::text('Team member updated successfully.')->success()->toast()->position('top-end')->show();
-        } catch (\Throwable $th) {
-            DB::rollback();
-            Log::error('Error updating team member: ' . $th->getMessage());
-            LivewireAlert::text('Failed to update team member. Please try again.')->error()->toast()->position('top-end')->show();
-        }
-        $this->resetForm();
-        $this->dispatch('hide-team-modal');
     }
 
     public function delete($id)
