@@ -92,7 +92,7 @@ new class extends Component {
 
                 $imagePath = $this->image->store('team', 'public');
             }
-            dd($imagePath);
+            // dd($imagePath);
 
             $team->update([
                 'name' => $this->name,
