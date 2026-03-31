@@ -59,9 +59,7 @@ new class extends Component {
                 'image' => $imagePath,
             ]);
 
-
             DB::commit();
-
 
             LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
@@ -74,7 +72,7 @@ new class extends Component {
                 'trace' => $th->getTraceAsString(),
             ]);
 
-            Log::error('Error adding team member',[
+            Log::error('Error adding team member', [
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
@@ -83,61 +81,6 @@ new class extends Component {
 
         $this->resetForm();
         $this->dispatch('hide-team-modal');
-    }
-
-    public function update()
-    {
-        $this->validate();
-
-        try {
-            DB::beginTransaction();
-
-            $team = Team::findOrFail($this->editId);
-            $imagePath = $team->image;
-
-            if ($this->image) {
-                if ($team->image && Storage::disk('public')->exists($team->image)) {
-                    Storage::disk('public')->delete($team->image);
-                }
-
-                $imagePath = $this->image->store('team', 'public');
-            }
-            // dd($imagePath);
-
-            $team->update([
-                'name' => $this->name,
-                'title' => $this->title,
-                'description' => $this->description,
-                'image' => $imagePath,
-            ]);
-
-            DB::commit();
-
-            LivewireAlert::text('Team member updated successfully.')->success()->toast()->position('top-end')->show();
-        } catch (\Throwable $th) {
-            DB::rollback();
-            Log::error('Error updating team member',[
-                'message' => $th->getMessage(),
-                'trace' => $th->getTraceAsString(),
-            ]);
-            LivewireAlert::text('Failed to update team member. Please try again.')->error()->toast()->position('top-end')->show();
-        }
-
-        $this->resetForm();
-        $this->dispatch('hide-team-modal');
-    }
-
-    public function edit($id)
-    {
-        $team = Team::findOrFail($id);
-
-        $this->editId = $team->id;
-        $this->name = $team->name;
-        $this->title = $team->title;
-        $this->description = $team->description;
-        $this->image = null;
-
-        $this->dispatch('show-team-modal');
     }
 
     public function update()
@@ -183,6 +126,19 @@ new class extends Component {
 
         $this->resetForm();
         $this->dispatch('hide-team-modal');
+    }
+
+    public function edit($id)
+    {
+        $team = Team::findOrFail($id);
+
+        $this->editId = $team->id;
+        $this->name = $team->name;
+        $this->title = $team->title;
+        $this->description = $team->description;
+        $this->image = null;
+
+        $this->dispatch('show-team-modal');
     }
 
     public function delete($id)
@@ -302,8 +258,8 @@ new class extends Component {
                             <!-- Image -->
                             <td>
                                 @if ($member->image)
-                                    <img src="{{ url('team-image/' . basename($member->image)) }}" alt="{{ $member->name }}"
-                                        class="rounded-circle" width="50" height="50">
+                                    <img src="{{ url('team-image/' . basename($member->image)) }}"
+                                        alt="{{ $member->name }}" class="rounded-circle" width="50" height="50">
                                 @else
                                     <span class="text-muted">No Image</span>
                                 @endif
