@@ -52,6 +52,16 @@ Route::get('/migrate', function () {
     return 'Database migrated!';
 });
 
+Route::get('/team-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/team/' . $filename);
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path);
+});
+
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
 require __DIR__ . '/dashboard/student.php';
