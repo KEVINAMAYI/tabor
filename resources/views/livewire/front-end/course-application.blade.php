@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\NewEnrollmentSubmitted;
 
 new #[Layout('components.layouts.app.frontend')]
 class extends Component {
@@ -102,14 +104,19 @@ class extends Component {
             // Ensure the course relationship is loaded
             $enrollment->load('course');
 
-            if ($user) {
+            // Send email notification to the student about their enrollment status
+            /* if ($user) {
                 $notification = new EnrollmentStatus(
                     $this->status,
                     $enrollment->course->title ?? 'Unknown Program'
                 );
 
                 $user->notify($notification);
-            }
+            } */
+
+            //notify admins about new enrollment
+            Notification::route('mail', 'office@tabor.ac.ke')
+            ->notify(new NewEnrollmentSubmitted($enrollment));
 
             $this->resetForm();
 

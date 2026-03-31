@@ -60,7 +60,7 @@ new class extends Component {
                         ->orWhere('students.admission_number', 'like', "%{$this->search}%");
                 }),
             )
-            ->orderBy('students.first_name', 'asc')
+            ->orderBy('enrollments.created_at', 'desc')
             ->paginate($this->perPage ?? 10);
 
         return [
@@ -271,7 +271,7 @@ new class extends Component {
                                 <th>Intake</th>
                                 <th>Phone Number</th>
                                 <th>Status</th>
-                                <th>Remarks</th>
+                                <th>Applied On</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -294,7 +294,7 @@ new class extends Component {
                                             {{ ucfirst($enrollment->status) }}
                                         </span>
                                     </td>
-                                    <td class="text-muted">{{ $enrollment->remarks }}</td>
+                                    <td class="text-muted">{{ $enrollment->created_at->format('d-m-Y') }}</td>
                                     <td>
                                         <div class="action-btn dropdown">
                                             <a href="#" class="text-blue" id="studentActions"
