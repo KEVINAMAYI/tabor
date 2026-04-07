@@ -33,9 +33,8 @@ new class extends Component {
     {
         $teams = Team::where('name', 'like', "%{$this->search}%")
             ->orWhere('title', 'like', "%{$this->search}%")
-            ->orderBy('id', 'asc')
+            ->orderBy('title', 'asc')
             ->paginate(10);
-        // dd($teams);
         return $teams;
     }
 
