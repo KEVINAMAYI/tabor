@@ -367,7 +367,7 @@ new class extends Component {
 
                     <!-- Buttons aligned to the right -->
                     <div class="text-end mt-3">
-                        <button class="btn btn-success me-2">
+                        <button class="btn btn-success me-2" wire:loading.attr="disabled">
                             {{ $editId ? 'Update' : 'Save' }}
                         </button>
                         <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
