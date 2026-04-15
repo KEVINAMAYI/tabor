@@ -33,9 +33,8 @@ new class extends Component {
     {
         $teams = Team::where('name', 'like', "%{$this->search}%")
             ->orWhere('title', 'like', "%{$this->search}%")
-            ->orderBy('id', 'asc')
+            ->orderBy('title', 'asc')
             ->paginate(10);
-        // dd($teams);
         return $teams;
     }
 
@@ -64,7 +63,15 @@ new class extends Component {
             LivewireAlert::text('Team member added successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollback();
-            Log::error('Error adding team member',[
+
+            Log::error('Error adding team member', [
+                'message' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+
+            Log::error('Error adding team member', [
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
@@ -105,10 +112,14 @@ new class extends Component {
             LivewireAlert::text('Team member updated successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollback();
-            Log::error('Error updating team member',[
+
+            Log::error('Error updating team member', [
                 'message' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
                 'trace' => $th->getTraceAsString(),
             ]);
+
             LivewireAlert::text('Failed to update team member. Please try again.')->error()->toast()->position('top-end')->show();
         }
 
@@ -246,8 +257,8 @@ new class extends Component {
                             <!-- Image -->
                             <td>
                                 @if ($member->image)
-                                    <img src="{{ asset('storage/' . $member->image) }}" alt="{{ $member->name }}"
-                                        class="rounded-circle" width="50" height="50">
+                                    <img src="{{ url('team-image/' . basename($member->image)) }}"
+                                        alt="{{ $member->name }}" class="rounded-circle" width="50" height="50">
                                 @else
                                     <span class="text-muted">No Image</span>
                                 @endif
@@ -355,7 +366,7 @@ new class extends Component {
 
                     <!-- Buttons aligned to the right -->
                     <div class="text-end mt-3">
-                        <button class="btn btn-success me-2">
+                        <button class="btn btn-success me-2" wire:loading.attr="disabled">
                             {{ $editId ? 'Update' : 'Save' }}
                         </button>
                         <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>

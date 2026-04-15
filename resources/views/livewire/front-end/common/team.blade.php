@@ -60,9 +60,11 @@
     $team = \App\Models\Team::all();
 
     // Detect "special" members using LIKE filtering
-    $special = $team->filter(function ($t) {
-        return Str::contains(strtolower($t->name), ['dr. jotham mukundi', 'anne ngumo']);
-    });
+    $special = $team
+        ->filter(function ($t) {
+            return Str::contains(strtolower($t->name), ['dr. jotham mukundi', 'anne ngumo']);
+        })
+        ->sortByDesc('name'); // Optional: order special members by name
 
     // All others
     $others = $team->reject(function ($t) use ($special) {
