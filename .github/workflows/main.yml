@@ -1,25 +1,42 @@
-name: 🚀 Deploy website to cpanel on push
+name: 🚀 Deploy website to cPanel
 
 on:
   push:
     branches:
       - master
+      - feature/finance-module
 
 jobs:
-  web-deploy:
-    name: 🎉 Deploy website
+  deploy-master:
+    name: 🎉 Deploy website to production
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
-      # Sync files via FTP
       - name: 📂 Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          
+          server-dir: /public_html/
+
+  deploy-finance:
+    name: 💰 Deploy finance branch
+    if: github.ref == 'refs/heads/feature/finance-module'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 📂 Sync files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /uat.tabor.ac.ke/
