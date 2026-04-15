@@ -88,10 +88,10 @@
                 @can('view-intakes')
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('intakes.index') ? 'active' : '' }}"
-                           href="{{ route('intakes.index') }}"
+                           href="#"
                            aria-expanded="false">
                             <iconify-icon icon="solar:download-line-duotone" width="24" height="24"></iconify-icon>
-                            <span class="hide-menu">Intakes</span>
+                            <span class="hide-menu">Academic Years</span>
                         </a>
                     </li>
                 @endcan
