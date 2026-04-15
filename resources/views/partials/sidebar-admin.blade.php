@@ -91,7 +91,7 @@
                            href="#"
                            aria-expanded="false">
                             <iconify-icon icon="solar:download-line-duotone" width="24" height="24"></iconify-icon>
-                            <span class="hide-menu">Academic Years</span>
+                            <span class="hide-menu">Academic Calendar</span>
                         </a>
                     </li>
                 @endcan
