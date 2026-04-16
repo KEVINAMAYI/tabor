@@ -85,16 +85,16 @@
                     </li>
                 @endcan
 
-                @can('view-intakes')
+                {{-- @can('view-academic-calendar') --}}
                     <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->routeIs('intakes.index') ? 'active' : '' }}"
-                           href="#"
+                        <a class="sidebar-link {{ request()->routeIs('settings.academic-calendar') ? 'active' : '' }}"
+                           href="{{ route('settings.academic-calendar') }}"
                            aria-expanded="false">
-                            <iconify-icon icon="solar:download-line-duotone" width="24" height="24"></iconify-icon>
+                            <i class="ti ti-calendar" height="24" width="24"></i>
                             <span class="hide-menu">Academic Calendar</span>
                         </a>
                     </li>
-                @endcan
+                {{-- @endcan --}}
 
                 @can('view-class-groups')
                     <li class="sidebar-item">

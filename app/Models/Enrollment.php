@@ -14,6 +14,14 @@ class Enrollment extends Model
      */
     protected $guarded = ['id'];
 
+    protected $casts = [
+    'include_registration_fee' => 'boolean',
+    'include_student_id_fee' => 'boolean',
+    'include_stationery_fee' => 'boolean',
+    'include_caution_fee' => 'boolean',
+    'admission_date' => 'date',
+];
+
     /* -----------------------------------------------------------------
      |  Direct relationships
      |------------------------------------------------------------------
@@ -34,10 +42,25 @@ class Enrollment extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function intake()
+    public function intake()  // to delete after replacing code with the below two trimester relationships
     {
         return $this->belongsTo(Intake::class);
     }
+
+    public function intakeTrimester()
+    {
+        return $this->belongsTo(Trimester::class, 'intake_trimester_id');
+    }
+
+    public function assignedStartTrimester()
+    {
+        return $this->belongsTo(Trimester::class, 'assigned_start_trimester_id');
+    }
+
+    public function feeItems()
+{
+    return $this->hasMany(StudentFeeItem::class);
+}
 
     public function payments()
     {

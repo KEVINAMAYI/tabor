@@ -16,7 +16,8 @@ class Payment extends Model
      |------------------------------------------------------------------
      */
     protected $casts = [
-        // 'paid_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'payment_date' => 'date',
     ];
 
     /* -----------------------------------------------------------------
@@ -31,16 +32,14 @@ class Payment extends Model
 
     // Convenience hops
     public function student()
-    {
-        return $this->hasOneThrough(
-            Student::class,
-            Enrollment::class,
-            'id',          // PK on enrolments
-            'id',          // PK on students
-            'enrollment_id',
-            'student_id'   // FK on enrolments
-        );
-    }
+{
+    return $this->belongsTo(Student::class);
+}
+
+public function allocations()
+{
+    return $this->hasMany(PaymentAllocation::class);
+}
 
     public function course()
     {

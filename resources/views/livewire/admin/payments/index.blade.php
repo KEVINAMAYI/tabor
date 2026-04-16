@@ -384,9 +384,9 @@ new class extends Component {
                                                             $course = $enrollment->course;
                                                             $intake = $enrollment->intake;
                                                             $displayText =
-                                                                $student->first_name .
+                                                                $student?->first_name .
                                                                 ' ' .
-                                                                $student->last_name .
+                                                                $student?->last_name .
                                                                 ' — ' .
                                                                 $course?->title .
                                                                 ' (Intake: ' .
@@ -398,10 +398,10 @@ new class extends Component {
                                                                     $wire.selectEnrollment({{ $enrollment->id }});
                                                                     studentSearch = '{{ $displayText }}';
                                                                     open = false;" style="cursor: pointer;">
-                                                            <strong>{{ $student->first_name }}
-                                                                {{ $student->last_name }}</strong><br>
+                                                            <strong>{{ $student?->first_name }}
+                                                                {{ $student?->last_name }}</strong><br>
                                                             <span class="text-muted">{{ $course?->title }} — Intake:
-                                                                {{ $intake->name ?? 'N/A' }}</span>
+                                                                {{ $intake?->name ?? 'N/A' }}</span>
                                                         </div>
                                                     @endforeach
                                                 @else

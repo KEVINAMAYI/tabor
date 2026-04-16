@@ -51,6 +51,11 @@ Route::get('/migrate', function () {
     Artisan::call('migrate');
     return 'Database migrated!';
 });
+//for the finance module
+Route::get('/migrate-finance', function () {
+    Artisan::call('migrate --path=database/migrations/finance-module');
+    return 'finance tables migrated successfully!';
+});
 
 /* Route::get('/team-image/{filename}', function ($filename) {
     $path = storage_path('app/public/team/' . $filename);

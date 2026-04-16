@@ -20,7 +20,7 @@ class CourseTrimesterService
 
 
 
-        $feePerTrimester = round($course->price / $course->number_of_trimesters / 100) * 100;
+        $feePerTrimester = $course->price;
         $durationPerTrimester = self::toMonths($course->duration) / $course->number_of_trimesters;
 
         // 1️⃣ Create / Update required trimesters

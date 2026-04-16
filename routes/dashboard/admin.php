@@ -25,7 +25,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('students/enrollment-details/{enrollment_id}', 'admin.students.enrollment-details')->name('students.enrollment-details');
     Volt::route('students/view/{student_id}', 'admin.students.view')->name('students.view');
     Route::get('/statements/enrollment/{enrollment}', [StatementController::class, 'show'])
-    ->name('statements.show');
+        ->name('statements.show');
 
     // Route to manage courses
     Volt::route('courses', 'admin.courses.index')->name('courses.index');
@@ -62,6 +62,9 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
 
     //Routes to manage teams
     Volt::route('team', 'admin.team.index')->name('team.index');
+
+    // Route to manage settings
+    Volt::route('settings/academic-calendar', 'admin.settings.academic-calendar.index')->name('settings.academic-calendar');
 
 
 });
