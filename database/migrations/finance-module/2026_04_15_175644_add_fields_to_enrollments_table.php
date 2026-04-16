@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->foreignId('assigned_start_trimester_id')->after('intake_trimester_id')->nullable()->constrained('trimesters')->nullOnDelete();
-            $table->date('admission_date')->nullable()->after('intake_trimester_id');
+            $table->foreignId('assigned_start_trimester_id')->after('student_id')->nullable()->constrained('trimesters')->nullOnDelete();
+            $table->date('admission_date')->nullable()->after('assigned_start_trimester_id');
         });
     }
 

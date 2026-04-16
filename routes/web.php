@@ -60,6 +60,14 @@ Route::get('/migrate-finance', function () {
 
     return nl2br(Artisan::output());
 });
+Route::get('/migrate-finance-rollback', function () {
+   Artisan::call('migrate:rollback', [
+        '--path' => 'database/migrations/finance-module',
+        '--force' => true,
+    ]);
+
+    return nl2br(Artisan::output());
+});
 
 /* Route::get('/team-image/{filename}', function ($filename) {
     $path = storage_path('app/public/team/' . $filename);
