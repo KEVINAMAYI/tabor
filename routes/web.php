@@ -53,8 +53,12 @@ Route::get('/migrate', function () {
 });
 //for the finance module
 Route::get('/migrate-finance', function () {
-    Artisan::call('migrate --path=database/migrations/finance-module');
-    return 'finance tables migrated successfully!';
+   Artisan::call('migrate', [
+        '--path' => 'database/migrations/finance-module',
+        '--force' => true,
+    ]);
+
+    return nl2br(Artisan::output());
 });
 
 /* Route::get('/team-image/{filename}', function ($filename) {
