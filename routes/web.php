@@ -68,6 +68,10 @@ Route::get('/migrate-finance-rollback', function () {
 
     return nl2br(Artisan::output());
 });
+Route::get('/composer-install', function () {
+   $output = shell_exec('composer install 2>&1');
+return nl2br($output);
+});
 
 /* Route::get('/team-image/{filename}', function ($filename) {
     $path = storage_path('app/public/team/' . $filename);

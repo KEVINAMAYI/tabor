@@ -15,6 +15,7 @@ return new class extends Migration
             $table->boolean('apply_exam_fee')->default(false);
 
             $table->boolean('apply_attachment_fee')->default(false);
+            $table->unsignedBigInteger('attachment_trimester_sequence')->nullable()->after('apply_attachment_fee');
 
             $table->boolean('apply_graduation_fee')->default(false);
             $table->decimal('graduation_fee', 10, 2)->default(0.00);

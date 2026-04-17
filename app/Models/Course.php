@@ -34,6 +34,10 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function feePlans()
+    {
+        return $this->hasMany(\App\Models\CourseFeePlan::class);
+    }
     /* -----------------------------------------------------------------
      |  Indirect / convenience relationships
      |------------------------------------------------------------------

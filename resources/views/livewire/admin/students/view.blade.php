@@ -4,11 +4,14 @@ use App\Models\Student;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Trimester;
+use App\Models\PaymentAllocation;
+use App\Models\StudentFeeItem;
 use Livewire\Volt\Component;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
-use App\Services\Finance\FeeGenerationService;
+use App\Services\FeeGenerationService;
 use App\Services\TrimesterAssignmentService;
-use App\Services\Finance\PaymentPostingService;
+use App\Services\PaymentPostingService;
+use App\Services\StudentStatementService;
 use Carbon\Carbon;
 
 new class extends Component {
@@ -20,13 +23,13 @@ new class extends Component {
     // Enroll modal
     public $course_id = '';
     public $admission_date = '';
-    public $enrollment_status = 'active';
+    public $enrollment_status = 'approved';
 
     // Edit modal
     public $editEnrollmentId = null;
     public $edit_course_id = '';
     public $edit_admission_date = '';
-    public $edit_enrollment_status = 'active';
+    public $edit_enrollment_status = 'approved';
 
     // Payment modal
     public $payment_enrollment_id = null;
@@ -39,8 +42,13 @@ new class extends Component {
 
     // Generate charges modal
     public $generateChargesEnrollmentId = null;
+    public array $chargePreview = [];
 
-    // Statement modal
+    //statement items
+    public $statement_trimester_id = '';
+    public $statement_enrollment_id = '';
+    public $statementData = null;
+
     public $statementEnrollmentId = null;
 
     public function rules()
@@ -48,11 +56,11 @@ new class extends Component {
         return [
             'course_id' => ['nullable', 'exists:courses,id'],
             'admission_date' => ['nullable', 'date'],
-            'enrollment_status' => ['nullable', 'in:active,completed,deferred,cancelled'],
+            // 'enrollment_status' => ['nullable', 'in:approved,completed,deferred,cancelled'],
 
             'edit_course_id' => ['nullable', 'exists:courses,id'],
             'edit_admission_date' => ['nullable', 'date'],
-            'edit_enrollment_status' => ['nullable', 'in:active,completed,deferred,cancelled'],
+            // 'edit_enrollment_status' => ['nullable', 'in:approved,completed,deferred,cancelled'],
 
             'payment_date' => ['nullable', 'date'],
             'payment_amount' => ['nullable', 'numeric', 'min:1'],
@@ -85,20 +93,45 @@ new class extends Component {
             $this->selectedEnrollmentId = $selectedEnrollment->id;
         }
 
-        $totalCharges = $selectedEnrollment?->feeItems?->sum('amount') ?? 0;
-        $totalPaid = $selectedEnrollment?->payments?->sum('amount') ?? 0;
-        $balance = $totalCharges - $totalPaid;
+        $totalCharges = StudentFeeItem::query()
+            ->where('student_id', $student->id)
+            ->where(function ($q) use ($selectedEnrollment) {
+                $q->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
+            })
+            ->sum('amount');
 
-        $studentCharges = $student->enrollments->flatMap->feeItems->sum('amount');
-        $studentPaid = $student->enrollments->flatMap->payments->sum('amount');
-        $studentBalance = $studentCharges - $studentPaid;
+        $totalPaid = PaymentAllocation::query()
+            ->whereHas('studentFeeItem', function ($q) use ($student, $selectedEnrollment) {
+                $q->where('student_id', $student->id)->where(function ($sub) use ($selectedEnrollment) {
+                    $sub->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
+                });
+            })
+            ->sum('amount_allocated');
 
-        $activeEnrollments = $student->enrollments->where('status', 'active')->count();
+        $balance = StudentFeeItem::query()
+            ->where('student_id', $student->id)
+            ->where(function ($q) use ($selectedEnrollment) {
+                $q->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
+            })
+            ->sum('balance');
+
+        $studentCharges = StudentFeeItem::query()->where('student_id', $student->id)->sum('amount');
+
+        $studentBalance = StudentFeeItem::query()->where('student_id', $student->id)->sum('balance');
+
+        $studentPaid = PaymentAllocation::query()
+            ->whereHas('studentFeeItem', function ($q) use ($student) {
+                $q->where('student_id', $student->id);
+            })
+            ->sum('amount_allocated');
+
+        $activeEnrollments = $student->enrollments->where('status', 'approved')->count();
         $completedEnrollments = $student->enrollments->where('status', 'completed')->count();
 
         $statementEnrollment = $this->statementEnrollmentId ? $enrollments->firstWhere('id', $this->statementEnrollmentId) : null;
 
         $courses = Course::query()->where('active', true)->orderBy('title')->get();
+        $trimesters = Trimester::orderBy('start_date')->get();
 
         return [
             'enrollments' => $enrollments,
@@ -113,13 +146,9 @@ new class extends Component {
             'studentBalance' => $studentBalance,
             'activeEnrollments' => $activeEnrollments,
             'completedEnrollments' => $completedEnrollments,
+            'trimesters' => $trimesters,
         ];
     }
-
-    /* public function setTab(string $tab): void
-    {
-        $this->activeTab = $tab;
-    } */
 
     public function selectEnrollment(int $enrollmentId): void
     {
@@ -137,28 +166,50 @@ new class extends Component {
         $this->validate([
             'course_id' => ['required', 'exists:courses,id'],
             'admission_date' => ['required', 'date'],
-            'enrollment_status' => ['required', 'in:active,completed,deferred,cancelled'],
+            // 'enrollment_status' => ['required', 'in:approved,completed,deferred,cancelled'],
         ]);
 
-        $course = Course::findOrFail($this->course_id);
+        DB::beginTransaction();
 
-        $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->admission_date), $course);
+        try {
+            $course = Course::findOrFail($this->course_id);
 
-        $enrollment = Enrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course_id,
-            'admission_date' => $this->admission_date,
-            'status' => $this->enrollment_status,
-            'intake_trimester_id' => $assignment['intake_trimester_id'],
-            'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
-        ]);
+            $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->admission_date), $course);
 
-        $this->selectedEnrollmentId = $enrollment->id;
+            if (empty($assignment['assigned_start_trimester_id']) || empty($assignment['intake_trimester_id'])) {
+                Log::error('Unable to assign trimester due to missing start trimester or intake trimester. Please check course setup and trimester setup.');
+                LivewireAlert::text('Error assigning trimester. Please check course setup and trimester setup.')->error()->toast()->position('top-end')->show();
+                return;
+            }
 
-        $this->resetEnrollForm();
-        $this->dispatch('hide-enroll-modal');
+            $enrollment = Enrollment::create([
+                'student_id' => $this->student->id,
+                'course_id' => $this->course_id,
+                'admission_date' => $this->admission_date,
+                'status' => $this->enrollment_status,
+                'intake_trimester_id' => $assignment['intake_trimester_id'],
+                'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
+            ]);
 
-        LivewireAlert::text('Enrollment created successfully.')->success()->toast()->position('top-end')->show();
+            $this->selectedEnrollmentId = $enrollment->id;
+
+            $this->resetEnrollForm();
+            $this->dispatch('hide-enroll-modal');
+
+            app(FeeGenerationService::class)->generateInitialCharges($enrollment);
+
+            DB::commit();
+
+            LivewireAlert::text('Enrollment created successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Log::error('Error creating enrollment: ' . $th->getMessage());
+            LivewireAlert::text('Error creating enrollment: ' . $th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
     }
 
     public function openEditEnrollmentModal(int $enrollmentId): void
@@ -178,28 +229,44 @@ new class extends Component {
         $this->validate([
             'edit_course_id' => ['required', 'exists:courses,id'],
             'edit_admission_date' => ['required', 'date'],
-            'edit_enrollment_status' => ['required', 'in:active,completed,deferred,cancelled'],
+            // 'edit_enrollment_status' => ['required', 'in:approved,completed,deferred,cancelled'],
         ]);
 
-        $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($this->editEnrollmentId);
-        $course = Course::findOrFail($this->edit_course_id);
+        try {
+            DB::beginTransaction();
 
-        $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->edit_admission_date), $course);
+            $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($this->editEnrollmentId);
+            $course = Course::findOrFail($this->edit_course_id);
 
-        $enrollment->update([
-            'course_id' => $this->edit_course_id,
-            'admission_date' => $this->edit_admission_date,
-            'status' => $this->edit_enrollment_status,
-            'intake_trimester_id' => $assignment['intake_trimester_id'],
-            'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
-        ]);
+            $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->edit_admission_date), $course);
 
-        $this->selectedEnrollmentId = $enrollment->id;
+            $enrollment->update([
+                'course_id' => $this->edit_course_id,
+                'admission_date' => $this->edit_admission_date,
+                'status' => $this->edit_enrollment_status,
+                'intake_trimester_id' => $assignment['intake_trimester_id'],
+                'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
+            ]);
 
-        $this->resetEditForm();
-        $this->dispatch('hide-edit-enrollment-modal');
+            $this->selectedEnrollmentId = $enrollment->id;
 
-        LivewireAlert::text('Enrollment updated successfully.')->success()->toast()->position('top-end')->show();
+            $this->resetEditForm();
+            $this->dispatch('hide-edit-enrollment-modal');
+
+            app(FeeGenerationService::class)->generateInitialCharges($enrollment);
+
+            DB::commit();
+
+            LivewireAlert::text('Enrollment updated successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            LivewireAlert::text('Error updating enrollment: ' . $th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
     }
 
     public function deleteEnrollment(int $enrollmentId): void
@@ -216,7 +283,12 @@ new class extends Component {
 
     public function confirmGenerateCharges(int $enrollmentId): void
     {
+        $enrollment = Enrollment::with('course')->findOrFail($enrollmentId);
+
         $this->generateChargesEnrollmentId = $enrollmentId;
+
+        $this->chargePreview = app(FeeGenerationService::class)->previewInitialCharges($enrollment);
+
         $this->dispatch('show-generate-charges-modal');
     }
 
@@ -246,7 +318,6 @@ new class extends Component {
             'payment_amount' => ['required', 'numeric', 'min:1'],
             'payment_method' => ['nullable', 'string', 'max:255'],
             'payment_reference_no' => ['nullable', 'string', 'max:255'],
-            'payment_receipt_no' => ['nullable', 'string', 'max:255'],
             'payment_notes' => ['nullable', 'string'],
         ]);
 
@@ -270,14 +341,44 @@ new class extends Component {
     public function openStatementModal(int $enrollmentId): void
     {
         $this->statementEnrollmentId = $enrollmentId;
+        $this->statement_enrollment_id = $enrollmentId;
+
+        if (!$this->statement_trimester_id) {
+            $enrollment = Enrollment::with('assignedStartTrimester')->find($enrollmentId);
+
+            $this->statement_trimester_id = $enrollment?->assigned_start_trimester_id;
+        }
+
+        $this->loadStatement();
         $this->dispatch('show-statement-modal');
+    }
+
+    public function loadStatement(): void
+    {
+        if (!$this->statement_trimester_id) {
+            $this->statementData = null;
+            return;
+        }
+
+        $trimester = Trimester::findOrFail($this->statement_trimester_id);
+
+        $this->statementData = app(StudentStatementService::class)->buildTrimesterStatement(student: $this->student, trimester: $trimester, enrollmentId: $this->statement_enrollment_id ?: null);
+    }
+    public function updatedStatementTrimesterId(): void
+    {
+        $this->loadStatement();
+    }
+
+    public function updatedStatementEnrollmentId(): void
+    {
+        $this->loadStatement();
     }
 
     protected function resetEnrollForm(): void
     {
         $this->course_id = '';
         $this->admission_date = now()->toDateString();
-        $this->enrollment_status = 'active';
+        $this->enrollment_status = 'approved';
     }
 
     protected function resetEditForm(): void
@@ -285,7 +386,7 @@ new class extends Component {
         $this->editEnrollmentId = null;
         $this->edit_course_id = '';
         $this->edit_admission_date = '';
-        $this->edit_enrollment_status = 'active';
+        $this->edit_enrollment_status = 'approved';
     }
 
     protected function resetPaymentForm(): void
@@ -496,7 +597,7 @@ new class extends Component {
                 </div>
             </div>
 
-            
+
             <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
                 id="pills-tab" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -569,18 +670,13 @@ new class extends Component {
                                     };
                                 @endphp
 
-                                <div
+                                <div wire:click="selectEnrollment({{ $enrollment->id }})"
                                     class="enrollment-select-card {{ (int) $selectedEnrollmentId === (int) $enrollment->id ? 'active' : '' }}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div class="pe-3 cursor-pointer flex-grow-1"
-                                            wire:click="selectEnrollment({{ $enrollment->id }})">
+                                        <div class="pe-3 cursor-pointer flex-grow-1">
                                             <h6 class="mb-1 fw-semibold text-dark">
                                                 {{ $enrollment->course->title . ' - ' . $enrollment->course->level }}
                                             </h6>
-
-                                            <div class="small text-muted">
-                                                {{ ucfirst($enrollment->course->course_type ?? '—') }} course
-                                            </div>
                                         </div>
 
                                         <span class="badge {{ $statusClasses }}">
@@ -588,43 +684,24 @@ new class extends Component {
                                         </span>
                                     </div>
 
-                                    <div class="row g-2 small mt-1 cursor-pointer"
-                                        wire:click="selectEnrollment({{ $enrollment->id }})">
-
-
-                                        <div class="col-12">
+                                    <div class="row g-2 small mt-1 cursor-pointer">
+                                        <div class="col-12 justify-content-between d-flex">
+                                            <span class="text-muted">Enrollment ID:</span>
+                                            <div>
+                                                <span class="fw-semibold text-primary">TTI/</span>
+                                                <span
+                                                    class="fw-semibold text-danger">{{ $enrollment->student->admission_number . '/' . $enrollment->course->code . '/' }}</span>
+                                                <span
+                                                    class="fw-semibold text-primary">{{ $enrollment->created_at->format('Y') }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 small mt-1 cursor-pointer">
+                                        <div class="col-12 justify-content-between d-flex">
                                             <span class="text-muted">Balance:</span>
                                             <span class="fw-semibold text-danger">
                                                 KES {{ number_format($itemBalance, 2) }}
                                             </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-                                        <div class="small text-muted cursor-pointer"
-                                            wire:click="selectEnrollment({{ $enrollment->id }})">
-                                            Admitted
-                                            {{ optional($enrollment->admission_date)->format('d M Y') ?? '—' }}
-                                        </div>
-
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn btn-icon-action text-primary"
-                                                wire:click="selectEnrollment({{ $enrollment->id }})" title="View">
-                                                <i class="ti ti-eye"></i>
-                                            </button>
-
-                                            <button type="button" class="btn btn-icon-action text-warning"
-                                                wire:click="openEditEnrollmentModal({{ $enrollment->id }})"
-                                                title="Edit">
-                                                <i class="ti ti-pencil"></i>
-                                            </button>
-
-                                            <button type="button" class="btn btn-icon-action text-danger"
-                                                wire:click="deleteEnrollment({{ $enrollment->id }})"
-                                                wire:confirm="Are you sure you want to delete this enrollment?"
-                                                title="Delete">
-                                                <i class="ti ti-trash"></i>
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -665,7 +742,6 @@ new class extends Component {
 
                             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                                 <div>
-                                    <div class="text-muted small mb-1">Selected Enrollment</div>
                                     <h4 class="mb-1 fw-semibold">
                                         {{ $selectedEnrollment->course->title . ' - ' . $selectedEnrollment->course->level }}
                                     </h4>
@@ -717,11 +793,10 @@ new class extends Component {
                                     </div>
                                 </div>
                             </div>
-
+                            <hr>
                             <div class="finance-summary-box mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h6 class="mb-0 fw-semibold">Finance Snapshot</h6>
-                                    <span class="text-muted small">Enrollment-linked totals</span>
                                 </div>
 
                                 <div class="row g-3">
@@ -770,10 +845,14 @@ new class extends Component {
                                 </div>
 
                                 <div class="col-md-4">
-                                    <button type="button" class="btn btn-outline-secondary w-100 rounded-3"
-                                        wire:click="openStatementModal({{ $selectedEnrollment->id }})">
+                                    <a href="{{ route('students.statement', [
+                                        'student' => $student->id,
+                                        'trimester_id' => $selectedEnrollment->assigned_start_trimester_id,
+                                        'enrollment_id' => $selectedEnrollment->id,
+                                    ]) }}"
+                                        target="_blank" class="btn btn-outline-secondary w-100 rounded-3">
                                         <i class="ti ti-printer me-1"></i> Statement
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         @else
@@ -849,7 +928,8 @@ new class extends Component {
                     <div class="mb-3">
                         <label class="form-label">Status</label>
                         <select class="form-select" wire:model="enrollment_status">
-                            <option value="active">Active</option>
+                            <option value="approved">Active</option>
+                            <option value="pending">Pending</option>
                             <option value="completed">Completed</option>
                             <option value="deferred">Deferred</option>
                             <option value="cancelled">Cancelled</option>
@@ -907,6 +987,7 @@ new class extends Component {
                         <label class="form-label">Status</label>
                         <select class="form-select" wire:model="edit_enrollment_status">
                             <option value="approved">Active</option>
+                            <option value="pending">Pending</option>
                             <option value="completed">Completed</option>
                             <option value="deferred">Deferred</option>
                             <option value="cancelled">Cancelled</option>
@@ -922,6 +1003,373 @@ new class extends Component {
                     <button type="button" class="btn btn-primary" wire:click="updateEnrollment">
                         Update Enrollment
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- GENERATE CHARGES MODAL --}}
+    <div class="modal fade" id="generateChargesModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Generate Initial Charges</h5>
+                        <small class="text-muted">This will post starting charges for the selected enrollment.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if ($selectedEnrollment)
+                        <div class="p-3 rounded-3 bg-light mb-3">
+                            <div class="small text-muted mb-1">Enrollment</div>
+                            <div class="fw-semibold text-dark">
+                                {{ $selectedEnrollment->course->title }} - {{ $selectedEnrollment->course->level }}
+                            </div>
+                            <div class="small text-muted mt-1">
+                                {{ optional($selectedEnrollment->admission_date)->format('d M Y') ?? '—' }}
+                                •
+                                {{ $selectedEnrollment->assignedStartTrimester->name ?? '—' }}
+                                {{ $selectedEnrollment->assignedStartTrimester?->academicYear?->name }}
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="alert alert-warning border-0 rounded-3 mb-0">
+                        <div class="fw-semibold mb-2">Charges to be generated</div>
+
+                        @if (count($chargePreview))
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr class="text-muted small">
+                                            <th>Scope</th>
+                                            <th>Fee</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($chargePreview as $item)
+                                            <tr>
+                                                <td class="small text-muted">{{ $item['type'] }}</td>
+                                                <td class="fw-medium">{{ $item['name'] }}</td>
+                                                <td class="text-end fw-semibold">
+                                                    KES {{ number_format($item['amount'], 2) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="2" class="text-end">Total</th>
+                                            <th class="text-end">
+                                                KES {{ number_format(collect($chargePreview)->sum('amount'), 2) }}
+                                            </th>
+                                        </tr>
+                                    </tfoot>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="text-muted small">
+                                No new charges will be generated. All applicable fees already exist.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary rounded-3" wire:click="generateInitialCharges"
+                        wire:loading.attr="disabled">
+
+                        {{-- Normal state --}}
+                        <span wire:loading.remove wire:target="generateInitialCharges">
+                            <i class="ti ti-receipt me-1"></i> Generate Charges
+                        </span>
+
+                        {{-- Loading state --}}
+                        <span wire:loading wire:target="generateInitialCharges">
+                            <i class="ti ti-loader animate-spin me-1"></i> Processing...
+                        </span>
+
+                    </button>
+
+                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- POST PAYMENT MODAL --}}
+    <div class="modal fade" id="paymentModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Post Payment</h5>
+                        <small class="text-muted">Record a payment for this student and allocate it to outstanding
+                            charges.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form wire:submit.prevent="savePayment">
+                    <div class="modal-body">
+                        @if ($selectedEnrollment)
+                            <div class="p-3 rounded-3 bg-light mb-4">
+                                <div class="fw-semibold text-dark">
+                                    {{ $selectedEnrollment->course->title }} -
+                                    {{ $selectedEnrollment->course->level }}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    {{ $student->first_name }} {{ $student->last_name }}
+                                    •
+                                    {{ 'TTI/' . $student->admission_number . '/' . $selectedEnrollment->course->code . '/' . $student->created_at->format('Y') }}
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Payment Date</label>
+                                <input type="date" class="form-control rounded-3" wire:model="payment_date">
+                                @error('payment_date')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Amount</label>
+                                <input type="number" step="0.01" min="0" class="form-control rounded-3"
+                                    wire:model="payment_amount" placeholder="0.00">
+                                @error('payment_amount')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Method</label>
+                                <select class="form-select rounded-3" wire:model="payment_method">
+                                    <option value="">Select method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="mpesa">M-PESA</option>
+                                    <option value="bank">Bank</option>
+                                    <option value="card">Card</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                @error('payment_method')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Reference No</label>
+                                <input type="text" class="form-control rounded-3"
+                                    wire:model="payment_reference_no" placeholder="Transaction reference">
+                                @error('payment_reference_no')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Receipt No</label>
+                                <input type="text" class="form-control rounded-3" wire:model="payment_receipt_no"
+                                    placeholder="Receipt number">
+                                @error('payment_receipt_no')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Notes</label>
+                            <textarea class="form-control rounded-3" rows="3" wire:model="payment_notes" placeholder="Optional notes"></textarea>
+                            @error('payment_notes')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="alert alert-info border-0 rounded-3 mb-0">
+                            Payment will be allocated to the oldest outstanding fee items first.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary rounded-3">
+                            <i class="ti ti-cash me-1"></i> Save Payment
+                        </button>
+
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Statement Modal --}}
+    <div class="modal fade" id="statementModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Student Trimester Statement</h5>
+                        <small class="text-muted">Statement by trimester and enrollment context</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Trimester</label>
+                            <select class="form-select rounded-3" wire:model="statement_trimester_id">
+                                <option value="">Select trimester</option>
+                                @foreach ($trimesters as $trimester)
+                                    <option value="{{ $trimester->id }}">
+                                        {{ $trimester->name }} {{ $trimester->academicYear?->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Enrollment Scope</label>
+                            <select class="form-select rounded-3" wire:model="statement_enrollment_id">
+                                <option value="">All student items</option>
+                                @foreach ($enrollments as $enrollment)
+                                    <option value="{{ $enrollment->id }}">
+                                        {{ $enrollment->course->title ?? ($enrollment->course->name ?? 'Course') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    @if ($statementData)
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="finance-metric-card">
+                                    <div class="finance-metric-label">Opening Balance</div>
+                                    <div class="finance-metric-value">
+                                        KES {{ number_format($statementData['opening_balance'], 2) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="finance-metric-card">
+                                    <div class="finance-metric-label">Charges This Trimester</div>
+                                    <div class="finance-metric-value">
+                                        KES {{ number_format($statementData['charge_total'], 2) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="finance-metric-card">
+                                    <div class="finance-metric-label">Closing Balance</div>
+                                    <div class="finance-metric-value text-danger">
+                                        KES {{ number_format($statementData['closing_balance'], 2) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-semibold mb-3">Charges</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Trimester</th>
+                                            <th class="text-end">Amount</th>
+                                            <th class="text-end">Paid</th>
+                                            <th class="text-end">Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($statementData['charges'] as $charge)
+                                            <tr>
+                                                <td>{{ optional($charge->charge_date)->format('d M Y') ?? '—' }}</td>
+                                                <td>{{ $charge->description }}</td>
+                                                <td>{{ $charge->trimester?->name ?? '—' }}</td>
+                                                <td class="text-end">KES {{ number_format($charge->amount, 2) }}</td>
+                                                <td class="text-end">KES {{ number_format($charge->amount_paid, 2) }}
+                                                </td>
+                                                <td class="text-end">KES {{ number_format($charge->balance, 2) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-3">
+                                                    No charges found for this trimester.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h6 class="fw-semibold mb-3">Payments Applied This Trimester</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Receipt No</th>
+                                            <th>Reference</th>
+                                            <th>Applied To</th>
+                                            <th class="text-end">Allocated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($statementData['allocations'] as $allocation)
+                                            <tr>
+                                                <td>{{ optional($allocation->payment?->payment_date)->format('d M Y') ?? '—' }}
+                                                </td>
+                                                <td>{{ $allocation->payment?->receipt_no ?? '—' }}</td>
+                                                <td>{{ $allocation->payment?->reference_no ?? '—' }}</td>
+                                                <td>{{ $allocation->studentFeeItem?->description ?? '—' }}</td>
+                                                <td class="text-end">KES
+                                                    {{ number_format($allocation->amount_allocated, 2) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-3">
+                                                    No payments applied in this trimester.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="4" class="text-end">Total Payments</th>
+                                            <th class="text-end">
+                                                KES {{ number_format($statementData['payment_total'], 2) }}
+                                            </th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    @else
+                        <div class="alert alert-light border rounded-3 mb-0">
+                            Select a trimester to load the statement.
+                        </div>
+                    @endif
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

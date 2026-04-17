@@ -8,10 +8,8 @@ use Carbon\Carbon;
 
 class TrimesterAssignmentService
 {
-    public function assign(Carbon $admissionDate, $course_id): array
+    public function assign(Carbon $admissionDate, Course $course): array
     {
-        $course = Course::findOrFail($course_id);
-
         $currentTrimester = Trimester::query()
             ->whereDate('start_date', '<=', $admissionDate)
             ->whereDate('end_date', '>=', $admissionDate)

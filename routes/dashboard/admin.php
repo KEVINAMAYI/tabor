@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use App\Http\Controllers\StatementController;
+use App\Http\Controllers\StudentStatementController;
 
 // Group all admin routes under the 'admin' prefix
 Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->group(function () {
@@ -65,6 +66,12 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
 
     // Route to manage settings
     Volt::route('settings/academic-calendar', 'admin.settings.academic-calendar.index')->name('settings.academic-calendar');
+    Volt::route('settings/fee-definitions', 'admin.settings.fee-definitions.index')->name('settings.fee-definitions');
+    Volt::route('settings/course-fee-plans', 'admin.settings.course-fee-plans')->name('settings.course-fee-plans');
+    Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
+
+    Route::get('/students/{student}/statement', [StudentStatementController::class, 'show'])
+    ->name('students.statement');
 
 
 });

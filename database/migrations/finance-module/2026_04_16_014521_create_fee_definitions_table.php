@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('fee_category_id')->constrained()->cascadeOnDelete();
             $table->string('name');
+            $table->string('slug')->unique()->nullable();
             $table->enum('scope', ['student', 'enrollment', 'trimester']);
             $table->boolean('applies_once')->default(false);
             $table->boolean('mandatory')->default(true);

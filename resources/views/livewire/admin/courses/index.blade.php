@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\CourseFeePlanSyncService;
 
 new class extends Component {
     use WithFileUploads, WithPagination;
@@ -220,7 +221,9 @@ new class extends Component {
                 $course->lecturers()->attach($this->lecturer_ids);
             }
 
-            CourseTrimesterService::syncCourseTrimesters($course);
+            // CourseTrimesterService::syncCourseTrimesters($course);
+
+            app(CourseFeePlanSyncService::class)->syncDefaultsForCourse($course);
 
             $this->dispatch('hide-course-modal');
             DB::commit();
@@ -335,7 +338,9 @@ new class extends Component {
                 $course->lecturers()->detach();
             }
 
-            CourseTrimesterService::syncCourseTrimesters($course);
+            // CourseTrimesterService::syncCourseTrimesters($course);
+
+            app(CourseFeePlanSyncService::class)->syncDefaultsForCourse($course);
 
             DB::commit();
 
@@ -732,8 +737,10 @@ new class extends Component {
 
                                         <div class="section-card">
                                             <div class="d-flex justify-content-center align-items-center">
-                                                <p class="section-title text-center mb-0 mx-1 text-primary">Payments</p>
-                                                <small class="text-muted"> (Tick what applies, enter the amounts)</small>
+                                                <p class="section-title text-center mb-0 mx-1 text-primary">Payments
+                                                </p>
+                                                <small class="text-muted"> (Tick what applies, enter the
+                                                    amounts)</small>
                                             </div>
                                             <hr class="section-hr">
 
