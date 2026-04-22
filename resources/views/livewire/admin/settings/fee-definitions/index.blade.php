@@ -44,7 +44,7 @@ new class extends Component {
     public function saveFeeDefinition()
     {
         $this->validate([
-            'fee_category_id' => ['required', 'exists:fee_categories,id'],
+            // 'fee_category_id' => ['required', 'exists:fee_categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'scope' => ['required', 'in:student,enrollment,trimester'],
             'default_amount' => ['required', 'numeric', 'min:0'],
@@ -56,7 +56,7 @@ new class extends Component {
         FeeDefinition::updateOrCreate(
             ['id' => $this->feeDefinitionId],
             [
-                'fee_category_id' => $this->fee_category_id,
+                // 'fee_category_id' => $this->fee_category_id,
                 'name' => $this->name,
                 'slug' => Str::slug($this->name),
                 'scope' => $this->scope,
@@ -125,7 +125,7 @@ new class extends Component {
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Category</th>
+                        {{-- <th>Category</th> --}}
                         <th>Scope</th>
                         <th>Default Amount</th>
                         <th>Once?</th>
@@ -138,7 +138,7 @@ new class extends Component {
                     @forelse($feeDefinitions as $fee)
                         <tr>
                             <td class="fw-semibold">{{ $fee->name }}</td>
-                            <td>{{ $fee->category->name ?? '—' }}</td>
+                            {{-- <td>{{ $fee->category->name ?? '—' }}</td> --}}
                             <td>{{ ucfirst($fee->scope) }}</td>
                             <td>KES {{ number_format($fee->default_amount, 2) }}</td>
                             <td>{{ $fee->applies_once ? 'Yes' : 'No' }}</td>
@@ -172,7 +172,7 @@ new class extends Component {
                 <form wire:submit.prevent="saveFeeDefinition">
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">Category</label>
                                 <select class="form-select" wire:model="fee_category_id">
                                     <option value="">Select category</option>
@@ -183,7 +183,7 @@ new class extends Component {
                                 @error('fee_category_id')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
-                            </div>
+                            </div> --}}
 
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Name</label>
@@ -239,16 +239,6 @@ new class extends Component {
                                     <option value="1">Yes</option>
                                     <option value="0">No</option>
                                 </select>
-                            </div>
-
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Effective From</label>
-                                <input type="date" class="form-control" wire:model="effective_from">
-                            </div>
-
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Effective To</label>
-                                <input type="date" class="form-control" wire:model="effective_to">
                             </div>
                         </div>
                     </div>

@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('fee_definitions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('fee_category_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('fee_category_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('slug')->unique()->nullable();
             $table->enum('scope', ['student', 'enrollment', 'trimester']);
