@@ -1,4 +1,4 @@
-name: Deploy website to cPanel
+name: 🚀 Deploy website to cPanel
 
 on:
   push:
@@ -8,77 +8,35 @@ on:
 
 jobs:
   deploy-master:
-    name: Deploy website to production
+    name: 🎉 Deploy website to production
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, intl, pdo_mysql
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
-
-      - name: Sync files via FTP
+      - name: 📂 Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            **/.env
-            **/.env.*
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
 
   deploy-finance:
-    name: Deploy finance branch
+    name: 💰 Deploy finance branch
     if: github.ref == 'refs/heads/feature/finance-module'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, intl, pdo_mysql
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
-
-      - name: Sync files via FTP
+      - name: 📂 Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /uat.tabor.ac.ke/
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            **/.env
-            **/.env.*
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
