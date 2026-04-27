@@ -542,6 +542,7 @@ new class extends Component {
                                 <th>#</th>
                                 <th>Trans ID</th>
                                 <th>Student</th>
+                                <th>Student ID</th>
                                 <th>Course/Ref</th>
                                 <th>Amount</th>
                                 <th>Status</th>
@@ -581,6 +582,10 @@ new class extends Component {
                                                 : 'N/A' }}
                                         </td>
                                     @endif
+                                    <td>
+                                        <span
+                                            class="badge bg-light text-dark">{{ 'TTI/'.$payment->enrollment?->student?->admission_number . '/' . $payment->enrollment?->course?->code. '/' . $payment->enrollment?->created_at->format('Y') }}</span>
+                                    </td>
                                     <td>
                                         <span
                                             class="badge bg-light text-dark">{{ !empty($payment->enrollment) ? $payment->enrollment->course->title . ' - ' . $payment->enrollment->course->level : 'N/A' }}</span>

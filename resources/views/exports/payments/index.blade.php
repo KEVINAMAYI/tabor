@@ -108,6 +108,7 @@
     <tr>
         <th>Trans ID</th>
         <th>Student</th>
+        <th>Student ID</th>
         <th>Course</th>
         <th>Amount</th>
         <th>Status</th>
@@ -123,7 +124,8 @@
             <td>
                 <span class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
             </td>
-            <td><span class="">{{ $payment->enrollment?->student->first_name . ' ' . $payment->enrollment?->student->last_name }}</span></td>
+            <td><span class="">{{ $payment->enrollment?->student?->first_name . ' ' . $payment->enrollment?->student?->last_name }}</span></td>
+            <td><span class="">{{ 'TTI/'.$payment->enrollment?->student?->admission_number . '/' . $payment->enrollment?->course?->code. '/' . $payment->enrollment?->created_at->format('Y') }}</span></td>
             <td><span class="">{{ !empty($payment->enrollment)?$payment->enrollment->course->title ." - ". $payment->enrollment->course->level : 'N/A' }}</span></td>
             <td>{{ number_format($payment->amount, 2) }}</td>
             <td>
