@@ -105,6 +105,8 @@ new class extends Component {
             abort(403, 'Unauthorized action.');
         }
 
+        
+
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
     }

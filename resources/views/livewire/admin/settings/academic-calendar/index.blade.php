@@ -191,7 +191,7 @@ new class extends Component {
         ]);
 
         try {
-            Trimester::updateOrCreate(
+            $trimester = Trimester::updateOrCreate(
                 ['id' => $this->trimesterId],
                 [
                     'academic_year_id' => $this->trimester_academic_year_id,
@@ -205,10 +205,10 @@ new class extends Component {
                 ],
             );
 
-            $latest = Trimester::query()->where('academic_year_id', $this->trimester_academic_year_id)->where('trimester_number', $this->trimester_number)->first();
+            // $latest = Trimester::query()->where('academic_year_id', $this->trimester_academic_year_id)->where('trimester_number', $this->trimester_number)->first();
 
             $this->selectedAcademicYearId = $this->trimester_academic_year_id;
-            $this->selectedTrimesterId = $latest?->id;
+            $this->selectedTrimesterId = $trimester->id;
 
             $this->resetTrimesterForm();
             $this->dispatch('hide-trimester-modal');

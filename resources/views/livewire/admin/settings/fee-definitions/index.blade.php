@@ -4,8 +4,10 @@ use App\Models\FeeCategory;
 use App\Models\FeeDefinition;
 use Livewire\Volt\Component;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithPagination;
 
 new class extends Component {
+    use WithPagination;
     public $feeDefinitionId = null;
     public $fee_category_id = '';
     public $name = '';
@@ -16,6 +18,7 @@ new class extends Component {
     public $effective_from = '';
     public $effective_to = '';
     public $active = 1;
+    public $perPage = 10;
 
     public function openFeeDefinitionModal()
     {
@@ -31,7 +34,7 @@ new class extends Component {
         $this->fee_category_id = $fee->fee_category_id;
         $this->name = $fee->name;
         $this->scope = $fee->scope;
-        $this->applies_once =  $fee->applies_once;
+        $this->applies_once = $fee->applies_once? 1 : 0;
         $this->mandatory = $fee->mandatory;
         $this->default_amount = $fee->default_amount;
         $this->effective_from = optional($fee->effective_from)->format('Y-m-d');
@@ -87,7 +90,7 @@ new class extends Component {
         $this->feeDefinitionId = null;
         $this->fee_category_id = '';
         $this->name = '';
-        $this->scope = 'student';
+        $this->scope = 'trimester';
         $this->applies_once = false;
         $this->mandatory = true;
         $this->default_amount = '';
@@ -99,8 +102,7 @@ new class extends Component {
     public function with()
     {
         return [
-            'feeDefinitions' => FeeDefinition::with('category')->latest()->get(),
-            'feeCategories' => FeeCategory::orderBy('name')->get(),
+            'feeDefinitions' => FeeDefinition::with('category')->orderBy('name')->latest()->paginate($this->perPage),
         ];
     }
 };
@@ -120,15 +122,29 @@ new class extends Component {
             </button>
         </div>
 
+
         <div class="table-responsive">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
+                <div class="d-flex align-items-center">
+                    <label for="perPage" class="form-label me-2">Show</label>
+                    <select wire:model.live="perPage" id="perPage" class="form-select form-select-sm">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="ms-2">entries</span>
+                </div>
+            </div>
             <table class="table align-middle">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Name</th>
                         {{-- <th>Category</th> --}}
                         <th>Scope</th>
                         <th>Default Amount</th>
-                        <th>Once?</th>
+                        <th>Frequency</th>
                         <th>Mandatory</th>
                         <th>Active</th>
                         <th>Actions</th>
@@ -137,18 +153,23 @@ new class extends Component {
                 <tbody>
                     @forelse($feeDefinitions as $fee)
                         <tr>
-                            <td class="fw-semibold">{{ $fee->name }}</td>
+                            <td>{{ $loop->iteration + ($feeDefinitions->currentPage() - 1) * $feeDefinitions->perPage() }}
+                            </td>
+                            <td>{{ $fee->name }}</td>
                             {{-- <td>{{ $fee->category->name ?? '—' }}</td> --}}
                             <td>{{ ucfirst($fee->scope) }}</td>
                             <td>KES {{ number_format($fee->default_amount, 2) }}</td>
-                            <td>{{ $fee->applies_once ? 'Yes' : 'No' }}</td>
+                            <td>{{ $fee->applies_once ? 'Once' : 'Every Trimester' }}</td>
                             <td>{{ $fee->mandatory ? 'Yes' : 'No' }}</td>
                             <td>{{ $fee->active ? 'Yes' : 'No' }}</td>
                             <td class="text-end">
                                 <button class="btn btn-light btn-sm"
                                     wire:click="editFeeDefinition({{ $fee->id }})">Edit</button>
                                 <button class="btn btn-light btn-sm text-danger" onclick=""
-                                    wire:click="deleteFeeDefinition({{ $fee->id }})">Delete</button>
+                                    wire:click="deleteFeeDefinition({{ $fee->id }})"
+                                    onclick="confirm('Are you sure you want to delete this Item?') || event.stopImmediatePropagation();">
+                                    Delete
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -158,6 +179,9 @@ new class extends Component {
                     @endforelse
                 </tbody>
             </table>
+            <div class="d-flex justify-content-center">
+                {{ $feeDefinitions->links() }}
+            </div>
         </div>
     </div>
 
@@ -192,10 +216,7 @@ new class extends Component {
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Scope</label>
                                 <select class="form-select" wire:model="scope">
                                     <option value="student">Student</option>
@@ -206,8 +227,10 @@ new class extends Component {
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
+                        </div>
 
-                            <div class="col-md-4 mb-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Default Amount</label>
                                 <input type="number" step="0.01" class="form-control" wire:model="default_amount">
                                 @error('default_amount')
@@ -215,7 +238,7 @@ new class extends Component {
                                 @enderror
                             </div>
 
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Active</label>
                                 <select class="form-select" wire:model="active">
                                     <option value="1">Yes</option>
@@ -225,15 +248,15 @@ new class extends Component {
                         </div>
 
                         <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Applies Once</label>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Frequency Once</label>
                                 <select class="form-select" wire:model="applies_once">
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Once</option>
+                                    <option value="0">Every Trimester</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Mandatory</label>
                                 <select class="form-select" wire:model="mandatory">
                                     <option value="1">Yes</option>

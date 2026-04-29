@@ -6,20 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentFeeItem extends Model
 {
-    protected $fillable = [
-        'student_id',
-        'enrollment_id',
-        'trimester_id',
-        'fee_definition_id',
-        'course_fee_plan_id',
-        'description',
-        'amount',
-        'amount_paid',
-        'balance',
-        'charge_date',
-        'due_date',
-        'status',
-    ];
+    protected $guarded = ['id'];
 
     protected $casts = [
         'charge_date' => 'date',
@@ -55,4 +42,8 @@ class StudentFeeItem extends Model
     {
         return $this->hasMany(PaymentAllocation::class);
     }
+    public function progression()
+{
+    return $this->belongsTo(\App\Models\EnrollmentProgression::class, 'enrollment_progression_id');
+}
 }

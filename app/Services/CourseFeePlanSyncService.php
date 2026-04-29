@@ -51,8 +51,8 @@ class CourseFeePlanSyncService
         }
 
         $tuitionFee = FeeDefinition::query()
-            ->where('name', 'Tuition Fee')
-            ->where('scope', 'enrollment')
+            ->where('slug', 'tuition_fee')
+            ->where('scope', 'trimester')
             ->where('active', true)
             ->first();
 

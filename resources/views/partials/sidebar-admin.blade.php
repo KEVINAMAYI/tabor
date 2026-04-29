@@ -94,7 +94,7 @@
                         <ul class="collapse first-level {{ request()->routeIs('settings.*') ? 'show' : '' }}"
                             id="settingsMenu">
                             <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('settings.academic-calendar') ? 'active' : '' }}"
+                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.academic-calendar') ? 'active' : '' }}"
                                     href="{{ route('settings.academic-calendar') }}">
                                     <i class="ti ti-calendar-event"></i>
                                     <span class="hide-menu">Academic Calendar</span>
@@ -102,7 +102,7 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('settings.fee-definitions') ? 'active' : '' }}"
+                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.fee-definitions') ? 'active' : '' }}"
                                     href="{{ route('settings.fee-definitions') }}">
                                     <i class="ti ti-file-invoice"></i>
                                     <span class="hide-menu">Fee Definitions</span>
@@ -110,7 +110,7 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('settings.course-fee-plans') ? 'active' : '' }}"
+                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.course-fee-plans') ? 'active' : '' }}"
                                     href="{{ route('settings.course-fee-plans') }}">
                                     <i class="ti ti-report-money"></i>
                                     <span class="hide-menu">Course Fee Plans</span>
@@ -118,7 +118,7 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a class="sidebar-link {{ request()->routeIs('settings.student-fee-items') ? 'active' : '' }}"
+                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.student-fee-items') ? 'active' : '' }}"
                                     href="{{ route('settings.student-fee-items') }}">
                                     <i class="ti ti-file-invoice"></i>
                                     <span class="hide-menu">Student Fee Items</span>

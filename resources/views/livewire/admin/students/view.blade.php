@@ -272,6 +272,8 @@ new class extends Component {
     public function deleteEnrollment(int $enrollmentId): void
     {
         $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($enrollmentId);
+        // $enrollment->payments()->delete();
+        $enrollment->feeItems()->delete();
         $enrollment->delete();
 
         if ((int) $this->selectedEnrollmentId === (int) $enrollmentId) {
@@ -751,13 +753,13 @@ new class extends Component {
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <span class="badge {{ $selectedStatusClasses }}">
-                                        {{ $selectedEnrollment->status == 'approved' ? 'Active' : ucfirst($selectedEnrollment->status) }}
-                                    </span>
-
-                                    <button type="button" class="btn btn-light btn-sm rounded-3"
+                                    <button type="button" class="btn btn-primary btn-sm rounded-3"
                                         wire:click="openEditEnrollmentModal({{ $selectedEnrollment->id }})">
                                         <i class="ti ti-pencil me-1"></i> Edit
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm rounded-3"
+                                        wire:click="deleteEnrollment({{ $selectedEnrollment->id }})">
+                                        <i class="ti ti-trash me-1"></i> Delete
                                     </button>
                                 </div>
                             </div>
