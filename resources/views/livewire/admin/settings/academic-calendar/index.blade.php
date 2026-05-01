@@ -68,7 +68,7 @@ new class extends Component {
             ->get();
 
         if (!$this->selectedAcademicYearId && $academicYears->count()) {
-            $this->selectedAcademicYearId = $academicYears->first()->id;
+            $this->selectedAcademicYearId = $academicYears->where('name', now()->year)->first()->id;
         }
 
         $trimesters = Trimester::query()

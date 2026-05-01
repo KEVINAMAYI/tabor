@@ -4,6 +4,8 @@ use App\Models\Student;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Trimester;
+use App\Models\Payment;
+use App\Models\EnrollmentProgression;
 use App\Models\PaymentAllocation;
 use App\Models\StudentFeeItem;
 use Livewire\Volt\Component;
@@ -12,6 +14,7 @@ use App\Services\FeeGenerationService;
 use App\Services\TrimesterAssignmentService;
 use App\Services\PaymentPostingService;
 use App\Services\StudentStatementService;
+use App\Services\EnrollmentProgressionService;
 use Carbon\Carbon;
 
 new class extends Component {
@@ -50,6 +53,7 @@ new class extends Component {
     public $statementData = null;
 
     public $statementEnrollmentId = null;
+    public $statementEnrollmentFilter = '';
 
     public function rules()
     {
@@ -133,6 +137,60 @@ new class extends Component {
         $courses = Course::query()->where('active', true)->orderBy('title')->get();
         $trimesters = Trimester::orderBy('start_date')->get();
 
+        $payments = Payment::query()
+            ->with(['allocations.studentFeeItem'])
+            ->where('student_id', $student->id)
+            ->latest('payment_date')
+            ->latest('id')
+            ->get();
+
+        $statementProgressions = EnrollmentProgression::query()
+            ->with(['trimester.academicYear', 'enrollment.course'])
+            ->where('student_id', $student->id)
+            ->whereIn('status', ['active', 'completed'])
+            ->when(filled($this->statementEnrollmentFilter), function ($q) {
+                $q->where('enrollment_id', $this->statementEnrollmentFilter);
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        $currentProgression = EnrollmentProgression::query()->where('student_id', $student->id)->where('status', 'active')->with('trimester.academicYear')->first();
+
+        $currentCharges = 0;
+        $currentPaid = 0;
+        $currentBalance = 0;
+
+        if ($currentProgression) {
+            $currentCharges = StudentFeeItem::query()
+                ->where('student_id', $student->id)
+                ->where(function ($q) use ($currentProgression) {
+                    $q->where('enrollment_progression_id', $currentProgression->id)->orWhere(function ($sub) use ($currentProgression) {
+                        $sub->whereNull('enrollment_id')
+                            ->whereNull('enrollment_progression_id')
+                            ->whereBetween('charge_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
+                    });
+                })
+                ->sum('amount');
+
+            $currentPaid = PaymentAllocation::query()
+                ->whereHas('studentFeeItem', function ($q) use ($student, $currentProgression) {
+                    $q->where('student_id', $student->id)->where(function ($sub) use ($currentProgression) {
+                        $sub->where('enrollment_progression_id', $currentProgression->id)->orWhere(function ($nested) use ($currentProgression) {
+                            $nested
+                                ->whereNull('enrollment_id')
+                                ->whereNull('enrollment_progression_id')
+                                ->whereBetween('charge_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
+                        });
+                    });
+                })
+                ->whereHas('payment', function ($q) use ($currentProgression) {
+                    $q->whereBetween('payment_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
+                })
+                ->sum('amount_allocated');
+
+            $currentBalance = $currentCharges - $currentPaid;
+        }
+
         return [
             'enrollments' => $enrollments,
             'selectedEnrollment' => $selectedEnrollment,
@@ -147,6 +205,14 @@ new class extends Component {
             'activeEnrollments' => $activeEnrollments,
             'completedEnrollments' => $completedEnrollments,
             'trimesters' => $trimesters,
+            'payments' => $payments,
+            'statementProgressions' => $statementProgressions,
+            'statementEnrollments' => $enrollments,
+
+            'currentProgression' => $currentProgression,
+            'currentCharges' => $currentCharges,
+            'currentPaid' => $currentPaid,
+            'currentBalance' => $currentBalance,
         ];
     }
 
@@ -196,6 +262,7 @@ new class extends Component {
             $this->resetEnrollForm();
             $this->dispatch('hide-enroll-modal');
 
+            app(EnrollmentProgressionService::class)->generateForEnrollment($enrollment);
             app(FeeGenerationService::class)->generateInitialCharges($enrollment);
 
             DB::commit();
@@ -572,69 +639,86 @@ new class extends Component {
 
     {{-- Main student summary card --}}
     <div class="card border-0 shadow-sm student-hero-card mb-4">
-        <div class="card-body p-0">
-            <div class="student-hero-body px-4 py-5">
+    <div class="card-body p-0">
+        <div class="student-hero-body px-4 py-5">
 
-                <div class="row g-3 mb-4 justify-content-center">
-                    <div class="col-lg-3 col-md-6">
-                        <div class="student-summary-pill primary-pill">
-                            <div class="student-summary-label">Total Charges</div>
-                            <div class="student-summary-value">KES {{ number_format($studentCharges, 2) }}</div>
-                        </div>
+            {{-- Trimester label --}}
+            <div class="text-center mb-4">
+                @if($currentProgression)
+                    <div class="fw-semibold">
+                        {{ $currentProgression->trimester?->name }}
+                        ({{ $currentProgression->trimester?->academicYear?->name }})
                     </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <div class="student-summary-pill success-pill">
-                            <div class="student-summary-label">Total Paid</div>
-                            <div class="student-summary-value">KES {{ number_format($studentPaid, 2) }}</div>
-                        </div>
+                    <div class="text-muted small">
+                        Current Trimester Summary
                     </div>
+                @else
+                    <div class="text-muted">
+                        No active trimester
+                    </div>
+                @endif
+            </div>
 
-                    <div class="col-lg-3 col-md-6">
-                        <div class="student-summary-pill danger-pill">
-                            <div class="student-summary-label">Balance</div>
-                            <div class="student-summary-value">KES {{ number_format($studentBalance, 2) }}</div>
+            <div class="row g-3 mb-4 justify-content-center">
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="student-summary-pill primary-pill">
+                        <div class="student-summary-label">Charges</div>
+                        <div class="student-summary-value">
+                            KES {{ number_format($currentCharges, 2) }}
                         </div>
                     </div>
                 </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="student-summary-pill success-pill">
+                        <div class="student-summary-label">Paid</div>
+                        <div class="student-summary-value">
+                            KES {{ number_format($currentPaid, 2) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="student-summary-pill danger-pill">
+                        <div class="student-summary-label">Balance</div>
+                        <div class="student-summary-value">
+                            KES {{ number_format($currentBalance, 2) }}
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-
-            <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
-                id="pills-tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link hstack gap-2 rounded-0 fs-12 py-6
-    {{ $activeTab === 'enrollments' ? 'active' : '' }}"
-                        wire:click="$set('activeTab', 'enrollments')" id="enrollments-tab" data-bs-toggle="pill"
-                        data-bs-target="#enrollments" type="button" role="tab">
-                        <i class="ti ti-book fs-5"></i>
-                        Enrollments
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link hstack gap-2 rounded-0 fs-12 py-6
-    {{ $activeTab === 'payments' ? 'active' : '' }}"
-                        wire:click="$set('activeTab', 'payments')" id="payments-tab" data-bs-toggle="pill"
-                        data-bs-target="#payments" type="button" role="tab">
-                        <i class="ti ti-credit-card fs-5"></i>
-                        Payments
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link hstack gap-2 rounded-0 fs-12 py-6
-    {{ $activeTab === 'statements' ? 'active' : '' }}"
-                        wire:click="$set('activeTab', 'statements')" id="statements-tab" data-bs-toggle="pill"
-                        data-bs-target="#statements" type="button" role="tab">
-                        <i class="ti ti-credit-card fs-5"></i>
-                        Statements
-                    </button>
-                </li>
-            </ul>
         </div>
+
+        {{-- Tabs (unchanged) --}}
+        <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
+            id="pills-tab" role="tablist">
+
+            <li class="nav-item">
+                <button class="nav-link {{ $activeTab === 'enrollments' ? 'active' : '' }}"
+                        wire:click="$set('activeTab', 'enrollments')">
+                    <i class="ti ti-book fs-5"></i> Enrollments
+                </button>
+            </li>
+
+            <li class="nav-item">
+                <button class="nav-link {{ $activeTab === 'payments' ? 'active' : '' }}"
+                        wire:click="$set('activeTab', 'payments')">
+                    <i class="ti ti-credit-card fs-5"></i> Payments
+                </button>
+            </li>
+
+            <li class="nav-item">
+                <button class="nav-link {{ $activeTab === 'statements' ? 'active' : '' }}"
+                        wire:click="$set('activeTab', 'statements')">
+                    <i class="ti ti-file-invoice fs-5"></i> Statements
+                </button>
+            </li>
+
+        </ul>
     </div>
+</div>
 
     @if ($activeTab === 'enrollments')
         <div class="row g-4 mt-1">
@@ -847,14 +931,29 @@ new class extends Component {
                                 </div>
 
                                 <div class="col-md-4">
-                                    <a href="{{ route('students.statement', [
-                                        'student' => $student->id,
-                                        'trimester_id' => $selectedEnrollment->assigned_start_trimester_id,
-                                        'enrollment_id' => $selectedEnrollment->id,
-                                    ]) }}"
-                                        target="_blank" class="btn btn-outline-secondary w-100 rounded-3">
-                                        <i class="ti ti-printer me-1"></i> Statement
-                                    </a>
+                                    @php
+                                        $statementProgression = $selectedEnrollment
+                                            ? $selectedEnrollment
+                                                ->progressions()
+                                                ->where('status', 'active')
+                                                ->orderBy('trimester_sequence')
+                                                ->first()
+                                            : null;
+                                    @endphp
+
+                                    @if ($statementProgression)
+                                        <a href="{{ route('students.statement', [
+                                            'student' => $student->id,
+                                            'progression' => $statementProgression->id,
+                                        ]) }}"
+                                            target="_blank" class="btn btn-outline-secondary w-100 rounded-3">
+                                            <i class="ti ti-printer me-1"></i> Statement
+                                        </a>
+                                    @else
+                                        <button class="btn btn-outline-secondary w-100 rounded-3" disabled>
+                                            <i class="ti ti-printer me-1"></i> No Statement
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         @else
@@ -876,20 +975,207 @@ new class extends Component {
 
     @if ($activeTab === 'payments')
         <div class="card border-0 shadow-sm">
-            <div class="card-body p-5 text-center">
-                <i class="ti ti-credit-card fs-1 text-muted mb-3"></i>
-                <h5 class="fw-semibold">Payments tab</h5>
-                <p class="text-muted mb-0">This will show payment history and posting UI next.</p>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-semibold mb-1">Payment History</h5>
+                        <p class="text-muted small mb-0">All payments posted for this student.</p>
+                    </div>
+
+                    @if ($selectedEnrollment)
+                        <button type="button" class="btn btn-primary btn-sm rounded-3"
+                            wire:click="openPaymentModal({{ $selectedEnrollment->id }})">
+                            <i class="ti ti-plus me-1"></i> Post Payment
+                        </button>
+                    @endif
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Receipt</th>
+                                <th>Reference</th>
+                                <th>Method</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-end">Allocated</th>
+                                <th class="text-end">Unallocated</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($payments as $payment)
+                                @php
+                                    $allocated = $payment->allocations->sum('amount_allocated');
+                                    $unallocated = $payment->amount - $allocated;
+                                @endphp
+
+                                <tr>
+                                    <td>{{ optional($payment->payment_date)->format('d M Y') ?? '—' }}</td>
+                                    <td>{{ $payment->receipt_no ?? '—' }}</td>
+                                    <td>{{ $payment->reference_no ?? '—' }}</td>
+                                    <td>{{ strtoupper($payment->method ?? '—') }}</td>
+                                    <td class="text-end fw-semibold">
+                                        KES {{ number_format($payment->amount, 2) }}
+                                    </td>
+                                    <td class="text-end text-success">
+                                        KES {{ number_format($allocated, 2) }}
+                                    </td>
+                                    <td
+                                        class="text-end {{ $unallocated > 0 ? 'text-warning fw-semibold' : 'text-muted' }}">
+                                        KES {{ number_format($unallocated, 2) }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success">
+                                            {{ ucfirst($payment->status ?? 'completed') }}
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                @if ($payment->allocations->count())
+                                    <tr>
+                                        <td colspan="8" class="bg-light">
+                                            <div class="small text-muted mb-2">Allocation breakdown</div>
+
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <tbody>
+                                                        @foreach ($payment->allocations as $allocation)
+                                                            <tr>
+                                                                <td>
+                                                                    {{ $allocation->studentFeeItem->description ?? 'Fee Item' }}
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    KES
+                                                                    {{ number_format($allocation->amount_allocated, 2) }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-5">
+                                        <i class="ti ti-credit-card fs-1 d-block mb-2"></i>
+                                        No payments posted yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     @endif
 
     @if ($activeTab === 'statements')
         <div class="card border-0 shadow-sm">
-            <div class="card-body p-5 text-center">
-                <i class="ti ti-file-invoice fs-1 text-muted mb-3"></i>
-                <h5 class="fw-semibold">Statements tab</h5>
-                <p class="text-muted mb-0">This will show trimester-based statements next.</p>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div>
+                        <h5 class="fw-semibold mb-1">Trimester Statements</h5>
+                        <p class="text-muted small mb-0">
+                            Active and completed trimester statements only.
+                        </p>
+                    </div>
+
+                    <div style="min-width: 280px;">
+                        <select class="form-select rounded-3" wire:model.live="statementEnrollmentFilter">
+                            <option value="">All enrollments</option>
+
+                            @foreach ($statementEnrollments as $enrollment)
+                                <option value="{{ $enrollment->id }}">
+                                    {{ $enrollment->course?->title ?? ($enrollment->course?->name ?? 'Course') }}
+                                    @if ($enrollment->course?->level)
+                                        - {{ $enrollment->course->level }}
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Trimester</th>
+                                <th>Sequence</th>
+                                <th>Period</th>
+                                <th>Status</th>
+                                <th class="text-end">Statement</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse ($statementProgressions as $progression)
+                                @php
+                                    $statusClass = match ($progression->status) {
+                                        'active' => 'bg-primary-subtle text-primary',
+                                        'completed' => 'bg-success-subtle text-success',
+                                        default => 'bg-light text-muted',
+                                    };
+                                @endphp
+
+                                <tr>
+                                    <td class="fw-semibold">
+                                        {{ $progression->enrollment?->course?->title ?? ($progression->enrollment?->course?->name ?? '—') }}
+
+                                        @if ($progression->enrollment?->course?->level)
+                                            <div class="small text-muted">
+                                                {{ $progression->enrollment->course->level }}
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        {{ $progression->trimester?->name ?? '—' }}
+                                        <div class="small text-muted">
+                                            {{ $progression->trimester?->academicYear?->name ?? '—' }}
+                                        </div>
+                                    </td>
+
+                                    <td>T{{ $progression->trimester_sequence }}</td>
+
+                                    <td>
+                                        {{ optional($progression->started_at ?? $progression->trimester?->start_date)->format('d M Y') ?? '—' }}
+                                        -
+                                        {{ optional($progression->completed_at ?? $progression->trimester?->end_date)->format('d M Y') ?? '—' }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge {{ $statusClass }}">
+                                            {{ ucfirst($progression->status) }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <a href="{{ route('students.statement', [
+                                            'student' => $student->id,
+                                            'progression' => $progression->id,
+                                        ]) }}"
+                                            target="_blank" class="btn btn-outline-secondary btn-sm rounded-3">
+                                            <i class="ti ti-printer me-1"></i> Open
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-5">
+                                        <i class="ti ti-file-invoice fs-1 d-block mb-2"></i>
+                                        No active or completed statements found.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     @endif
@@ -1306,7 +1592,8 @@ new class extends Component {
                                                 <td class="text-end">KES {{ number_format($charge->amount, 2) }}</td>
                                                 <td class="text-end">KES {{ number_format($charge->amount_paid, 2) }}
                                                 </td>
-                                                <td class="text-end">KES {{ number_format($charge->balance, 2) }}</td>
+                                                <td class="text-end">KES {{ number_format($charge->balance, 2) }}
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>

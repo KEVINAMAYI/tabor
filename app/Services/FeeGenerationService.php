@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Enrollment;
+use App\Models\EnrollmentProgression;
 use App\Models\FeeDefinition;
 use App\Models\CourseFeePlan;
 use App\Models\StudentFeeItem;
@@ -12,69 +13,58 @@ class FeeGenerationService
 {
     public function generateInitialCharges(Enrollment $enrollment): void
     {
-        
+
         DB::transaction(function () use ($enrollment) {
             $this->generateStudentOnceFees($enrollment);
 
-            $this->generateChargesForTrimester(
-                enrollment: $enrollment,
-                trimesterId: $enrollment->assigned_start_trimester_id,
-                trimesterSequence: $enrollment->assigned_start_trimester_id
-            );
+            $this->generateChargesForProgression($enrollment->progressions()->where('status', 'active')->orderBy('trimester_sequence')->first());
         });
     }
 
-    public function generateChargesForTrimester(
-        Enrollment $enrollment,
-        int $trimesterId,
-        int $trimesterSequence
-    ): void {
+    public function generateChargesForProgression(EnrollmentProgression $progression): void
+    {
+        $enrollment = $progression->enrollment;
+
         $plans = CourseFeePlan::query()
             ->where('course_id', $enrollment->course_id)
-            ->where(function ($q) use ($trimesterSequence) {
+            ->where(function ($q) use ($progression) {
                 $q->where('charge_timing', 'every_trimester')
-                    ->orWhere(function ($sub) use ($trimesterSequence) {
+                    ->orWhere(function ($sub) use ($progression) {
                         $sub->where('charge_timing', 'specific_trimester')
-                            ->where('trimester_sequence', $trimesterSequence);
+                            ->where('trimester_sequence', $progression->trimester_sequence);
                     })
-                    ->orWhere(function ($sub) use ($trimesterSequence) {
+                    ->orWhere(function ($sub) use ($progression) {
                         $sub->where('charge_timing', 'on_enrollment')
-                            ->where($trimesterSequence === 1 ? fn($q) => $q : fn($q) => $q->whereRaw('1 = 0'));
+                            ->whereRaw($progression->trimester_sequence === 1 ? '1 = 1' : '1 = 0');
                     });
             })
             ->with('feeDefinition')
             ->get();
 
         foreach ($plans as $plan) {
-            $alreadyExists = StudentFeeItem::query()
-                ->where('student_id', $enrollment->student_id)
-                ->where('enrollment_id', $enrollment->id)
-                ->where('course_fee_plan_id', $plan->id)
-                ->where('trimester_id', $trimesterId)
-                ->exists();
-
-            if ($alreadyExists) {
-                continue;
-            }
-
-            StudentFeeItem::create([
-                'student_id' => $enrollment->student_id,
-                'enrollment_id' => $enrollment->id,
-                'trimester_id' => $trimesterId,
-                'fee_definition_id' => $plan->fee_definition_id,
-                'course_fee_plan_id' => $plan->id,
-                'description' => $plan->feeDefinition?->name ?? 'Course Fee',
-                'amount' => $plan->amount,
-                'amount_paid' => 0,
-                'balance' => $plan->amount,
-                'charge_date' => now()->toDateString(),
-                'due_date' => now()->toDateString(),
-                'status' => 'pending',
-            ]);
+            StudentFeeItem::firstOrCreate(
+                [
+                    'student_id' => $progression->student_id,
+                    'enrollment_id' => $progression->enrollment_id,
+                    'enrollment_progression_id' => $progression->id,
+                    'course_fee_plan_id' => $plan->id,
+                ],
+                [
+                    'trimester_id' => $progression->trimester_id,
+                    'fee_definition_id' => $plan->fee_definition_id,
+                    'description' => $plan->feeDefinition?->name ?? 'Course Fee',
+                    'amount' => $plan->amount,
+                    'amount_paid' => 0,
+                    'balance' => $plan->amount,
+                    'charge_date' => $progression->started_at ?? now()->toDateString(),
+                    'due_date' => $progression->started_at ?? now()->toDateString(),
+                    'status' => 'pending',
+                ]
+            );
         }
     }
 
-    protected function generateStudentOnceFees(Enrollment $enrollment): void
+    public function generateStudentOnceFees(Enrollment $enrollment): void
     {
         $definitions = FeeDefinition::query()
             ->where('scope', 'student')
@@ -83,29 +73,25 @@ class FeeGenerationService
             ->get();
 
         foreach ($definitions as $definition) {
-            $alreadyExists = StudentFeeItem::query()
-                ->where('student_id', $enrollment->student_id)
-                ->where('fee_definition_id', $definition->id)
-                ->exists();
-
-            if ($alreadyExists) {
-                continue;
-            }
-
-            StudentFeeItem::create([
-                'student_id' => $enrollment->student_id,
-                'enrollment_id' => null,
-                'trimester_id' => null,
-                'fee_definition_id' => $definition->id,
-                'course_fee_plan_id' => null,
-                'description' => $definition->name,
-                'amount' => $definition->default_amount,
-                'amount_paid' => 0,
-                'balance' => $definition->default_amount,
-                'charge_date' => now()->toDateString(),
-                'due_date' => now()->toDateString(),
-                'status' => 'pending',
-            ]);
+            StudentFeeItem::firstOrCreate(
+                [
+                    'student_id' => $enrollment->student_id,
+                    'fee_definition_id' => $definition->id,
+                    'enrollment_id' => null,
+                    'enrollment_progression_id' => null,
+                    'course_fee_plan_id' => null,
+                ],
+                [
+                    'trimester_id' => null,
+                    'description' => $definition->name,
+                    'amount' => $definition->default_amount,
+                    'amount_paid' => 0,
+                    'balance' => $definition->default_amount,
+                    'charge_date' => $enrollment->admission_date ?? now()->toDateString(),
+                    'due_date' => $enrollment->admission_date ?? now()->toDateString(),
+                    'status' => 'pending',
+                ]
+            );
         }
     }
 

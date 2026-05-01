@@ -86,87 +86,78 @@ class PaymentPostingService
 
     public function allocateExistingPayment(Payment $payment): void
     {
-        DB::transaction(function () use ($payment) {
+        if ($payment->allocations()->exists()) {
+            return;
+        }
 
-            $remaining = (float) $payment->amount;
+        $remaining = (float) $payment->amount;
 
+        if ($remaining <= 0) {
+            return;
+        }
+
+        $feeItemsQuery = StudentFeeItem::query()
+            ->where('student_id', $payment->student_id)
+            ->whereIn('status', ['pending', 'partial']);
+
+        if (!empty($payment->enrollment_id)) {
+            $feeItemsQuery->where(function ($q) use ($payment) {
+                $q->whereNull('enrollment_id') // student-once fees
+                    ->orWhere('enrollment_id', $payment->enrollment_id);
+            });
+        }
+
+        $feeItems = $feeItemsQuery
+            ->orderByRaw("
+            CASE
+                WHEN enrollment_id IS NULL THEN 0
+                ELSE 1
+            END
+        ")
+            ->orderBy('charge_date')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($feeItems as $item) {
             if ($remaining <= 0) {
-                return;
+                break;
             }
 
-            // 🔴 Lock fee items to prevent race conditions
-            $feeItemsQuery = StudentFeeItem::query()
-                ->where('student_id', $payment->student_id)
-                ->whereIn('status', ['pending', 'partial'])
-                ->orderBy('charge_date')
-                ->orderBy('id')
-                ->lockForUpdate();
+            $itemBalance = (float) $item->balance;
 
-            // ✅ Respect enrollment scope
-            if (!empty($payment->enrollment_id)) {
-                $feeItemsQuery->where(function ($q) use ($payment) {
-                    $q->where('enrollment_id', $payment->enrollment_id)
-                        ->orWhereNull('enrollment_id'); // include student-once
-                });
+            if ($itemBalance <= 0) {
+                continue;
             }
 
-            $feeItems = $feeItemsQuery->get();
+            $allocatable = min($remaining, $itemBalance);
 
-            foreach ($feeItems as $item) {
+            PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'student_fee_item_id' => $item->id,
+                'amount_allocated' => $allocatable,
+            ]);
 
-                if ($remaining <= 0) {
-                    break;
-                }
+            $newAmountPaid = (float) $item->amount_paid + $allocatable;
+            $newBalance = max(0, (float) $item->amount - $newAmountPaid);
 
-                $itemBalance = (float) $item->balance;
+            $item->update([
+                'amount_paid' => $newAmountPaid,
+                'balance' => $newBalance,
+                'status' => $newBalance <= 0
+                    ? 'paid'
+                    : ($newAmountPaid > 0 ? 'partial' : 'pending'),
+            ]);
 
-                if ($itemBalance <= 0) {
-                    continue;
-                }
+            $remaining -= $allocatable;
+        }
 
-                $allocatable = min($remaining, $itemBalance);
-
-                // ✅ Create allocation
-                PaymentAllocation::create([
-                    'payment_id' => $payment->id,
-                    'student_fee_item_id' => $item->id,
-                    'amount_allocated' => $allocatable,
-                ]);
-
-                // ✅ Update fee item
-                $newAmountPaid = (float) $item->amount_paid + $allocatable;
-                $newBalance = (float) $item->amount - $newAmountPaid;
-
-                // Prevent float issues
-                if ($newBalance < 0) {
-                    $newBalance = 0;
-                }
-
-                $item->update([
-                    'amount_paid' => $newAmountPaid,
-                    'balance' => $newBalance,
-                    'status' => $newBalance == 0.0
-                        ? 'paid'
-                        : ($newAmountPaid > 0 ? 'partial' : 'pending'),
-                ]);
-
-                $remaining -= $allocatable;
-            }
-
-            // 🟡 Optional: handle overpayment (important for real systems)
-            if ($remaining > 0) {
-                // You can:
-                // 1. leave as unallocated
-                // 2. store in payment.unallocated_amount
-                
-                // 3. log it
-
-                \Log::warning('Unallocated payment amount detected', [
-                    'payment_id' => $payment->id,
-                    'student_id' => $payment->student_id,
-                    'remaining_amount' => $remaining,
-                ]);
-            }
-        });
+        if ($remaining > 0) {
+            \Log::warning('Payment has unallocated amount', [
+                'payment_id' => $payment->id,
+                'student_id' => $payment->student_id,
+                'remaining_amount' => $remaining,
+            ]);
+        }
     }
 }

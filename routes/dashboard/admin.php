@@ -70,7 +70,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('settings/course-fee-plans', 'admin.settings.course-fee-plans')->name('settings.course-fee-plans');
     Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
 
-    Route::get('/students/{student}/statement', [StudentStatementController::class, 'show'])
+    Route::get('/students/{student}/statements/{progression}', [StudentStatementController::class, 'show'])
     ->name('students.statement');
 
 
