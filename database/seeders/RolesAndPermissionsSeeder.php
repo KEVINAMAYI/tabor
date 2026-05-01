@@ -81,6 +81,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit-enrollments',
             'delete-enrollments',
 
+            //settings
+            'manage-settings',
+
         ];
 
         // Create all permissions

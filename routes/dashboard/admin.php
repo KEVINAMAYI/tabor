@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use App\Http\Controllers\StatementController;
+use App\Http\Controllers\StudentStatementController;
 
 // Group all admin routes under the 'admin' prefix
 Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->group(function () {
@@ -25,7 +26,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('students/enrollment-details/{enrollment_id}', 'admin.students.enrollment-details')->name('students.enrollment-details');
     Volt::route('students/view/{student_id}', 'admin.students.view')->name('students.view');
     Route::get('/statements/enrollment/{enrollment}', [StatementController::class, 'show'])
-    ->name('statements.show');
+        ->name('statements.show');
 
     // Route to manage courses
     Volt::route('courses', 'admin.courses.index')->name('courses.index');
@@ -62,6 +63,15 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
 
     //Routes to manage teams
     Volt::route('team', 'admin.team.index')->name('team.index');
+
+    // Route to manage settings
+    Volt::route('settings/academic-calendar', 'admin.settings.academic-calendar.index')->name('settings.academic-calendar');
+    Volt::route('settings/fee-definitions', 'admin.settings.fee-definitions.index')->name('settings.fee-definitions');
+    Volt::route('settings/course-fee-plans', 'admin.settings.course-fee-plans')->name('settings.course-fee-plans');
+    Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
+
+    Route::get('/students/{student}/statements/{progression}', [StudentStatementController::class, 'show'])
+    ->name('students.statement');
 
 
 });
