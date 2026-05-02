@@ -1012,10 +1012,10 @@ new class extends Component {
                                 @endphp
 
                                 <tr>
-                                    <td>{{ optional($payment->payment_date)->format('d M Y') ?? '—' }}</td>
+                                    <td>{{ optional($payment->paid_at)->format('d M Y') ?? '—' }}</td>
                                     <td>{{ $payment->receipt_no ?? '—' }}</td>
-                                    <td>{{ $payment->reference_no ?? '—' }}</td>
-                                    <td>{{ strtoupper($payment->method ?? '—') }}</td>
+                                    <td>{{ $payment->reference ?? '—' }}</td>
+                                    <td>{{ strtoupper($payment->payment_method ?? '—') }}</td>
                                     <td class="text-end fw-semibold">
                                         KES {{ number_format($payment->amount, 2) }}
                                     </td>

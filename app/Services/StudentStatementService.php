@@ -148,7 +148,7 @@ class StudentStatementService
                 return [
                     'payment_id' => $payment->id,
                     'date' => $payment->paid_at??$payment->created_at,
-                    'reference' => $payment->receipt_no ?: ($payment->reference_no ?: 'PAY-' . $payment->id),
+                    'reference' => $payment->transaction_id ?: ($payment->reference ?? 'PAY-' . $payment->id),
                     'description' => 'Payment Received',
                     'dr' => 0.00,
                     'cr' => (float) $payment->amount,

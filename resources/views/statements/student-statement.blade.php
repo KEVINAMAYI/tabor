@@ -235,13 +235,13 @@
                     <td>{{ optional($entry['date'])->format('d M Y') ?? '—' }}</td>
                     <td>{{ $entry['reference'] }}</td>
                     <td>{{ $entry['description'] }}</td>
-                    <td class="text-end">
+                    <td>
                         {{ $entry['dr'] > 0 ? number_format($entry['dr'], 2) : '—' }}
                     </td>
-                    <td class="text-end">
+                    <td>
                         {{ $entry['cr'] > 0 ? number_format($entry['cr'], 2) : '—' }}
                     </td>
-                    <td class="text-end">
+                    <td>
                         {{ number_format($entry['balance'], 2) }}
                     </td>
                 </tr>
@@ -254,8 +254,8 @@
                             <td style="padding-left: 24px; color: #6b7280;">
                                 ↳ Allocated to {{ $allocation['description'] }}
                             </td>
-                            <td class="text-end">—</td>
-                            <td class="text-end" style="color: #6b7280;">
+                            <td>—</td>
+                            <td style="color: #6b7280;">
                                 {{ number_format($allocation['amount'], 2) }}
                             </td>
                             <td></td>
@@ -271,10 +271,10 @@
             @endforelse
 
             <tr>
-                <th colspan="3" class="text-end">Totals</th>
-                <th class="text-end">{{ number_format($statement['total_debits'], 2) }}</th>
-                <th class="text-end">{{ number_format($statement['total_credits'], 2) }}</th>
-                <th class="text-end">{{ number_format($statement['closing_balance'], 2) }}</th>
+                <th colspan="3">Totals</th>
+                <th>{{ number_format($statement['total_debits'], 2) }}</th>
+                <th>{{ number_format($statement['total_credits'], 2) }}</th>
+                <th>{{ number_format($statement['closing_balance'], 2) }}</th>
             </tr>
         </tbody>
     </table>
