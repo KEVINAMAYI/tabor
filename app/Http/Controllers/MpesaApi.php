@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
 use App\Models\Enrollment;
+use App\Services\PaymentPostingService;
 use App\Models\Course;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class MpesaApi extends Controller
         $curl_response = curl_exec($curl);
         $access_token = json_decode($curl_response);
         curl_close($curl);
-        return $access_token->access_token??'QPDiAAOkroM9KADBIOTsElQGf1hW';
+        return $access_token->access_token ?? 'QPDiAAOkroM9KADBIOTsElQGf1hW';
     }
 
     private function makeHttp($url, $body)
@@ -127,7 +128,7 @@ class MpesaApi extends Controller
     }
 
     //FUNCTION TO RECEIVE RESPONSES FOR BOTH STK PUSH AND C2B TRANSACTIONS
-    public function c2bConfirmation(Request $request)
+    /* public function c2bConfirmation(Request $request)
     {
         DB::beginTransaction();
         try {
@@ -143,23 +144,10 @@ class MpesaApi extends Controller
             $name = $response['FirstName'];
             $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
 
-            //save the transaction in database
+
             if (!empty($mpesa_transaction_id)) {
-                $transaction = Payment::create([
-                    'payer' => $payer,
-                    'transaction_id' => $mpesa_transaction_id,
-                    'reference' => $account,
-                    'amount' => $amount,
-                    'phone' => $phone,
-                    'paid_at' => $date_time,
-                    'payment_method' => 'mpesa'
-                ]);
-
-
                 // Extract admission number and course code
                 [$admissionNumber, $courseCode] = explode('/', $account);
-
-                // Fetch related models
                 $student = Student::where('admission_number', $admissionNumber)->first();
                 $course = Course::where('code', $courseCode)->first(); // Adjust column if needed
                 $enrollment = Enrollment::where('course_id', $course->id)
@@ -167,20 +155,152 @@ class MpesaApi extends Controller
                     ->first();
 
                 if ($student && $course && $enrollment) {
-                    // Example: attach to pivot table, update payment record, etc.
-                    $transaction->enrollment_id = $enrollment->id;
-                    $transaction->status = 'completed';
+                    app(PaymentPostingService::class)->post([
+                    'student_id' => $student?->id,
+                    'enrollment_id' => $enrollment?->id,
+                    'payment_date' => now(),
+                    'amount' => $amount,
+                    'method' => 'mpesa',
+                    'reference_no' => $account,
+                    'receipt_no' => $mpesa_transaction_id,
+                    'status' => 'completed',
+                    'payer' => $payer,
+                    'phone' => $phone,
+                    'notes' => "Payment of Ksh {$amount} received via Mpesa for course {$course?->name??'Unknown'} (Enrollment ID: {$enrollment?->id??'Unknown'})",
+                ]);
+                } else {
+                    Log::warning("Student, Course, or Enrollment not found for account reference: " . $account);
+                    // Optionally, you can still save the transaction with a note about the missing data
+                    $transaction = new Payment();
+                    $transaction->payer = $payer;
+                    $transaction->transaction_id = $mpesa_transaction_id;
+                    $transaction->reference = $account;
+                    $transaction->amount = $amount;
+                    $transaction->phone = $phone;
+                    $transaction->paid_at = $date_time;
+                    $transaction->status = 'pending';
                     $transaction->payment_method = 'mpesa';
+                    $transaction->notes = "Payment received but student, course, or enrollment not found for account reference: " . $account;
+                    $transaction->save();
                 }
-                $transaction->status = 'completed';
-                $transaction->payment_method = 'mpesa';
-                $transaction->save();
+
 
             }
             DB::commit();
         } catch (Exception $exception) {
             DB::rollBack();
             Log::info($exception);
+        }
+    } */
+
+    public function c2bConfirmation(Request $request)
+    {
+        $payload = $request->all();
+
+        Log::info('C2B Confirmation received', [
+            'ip' => $request->ip(),
+            'payload' => $payload,
+        ]);
+
+        try {
+            $mpesaTransactionId = $payload['TransID'] ?? null;
+            $amount = $payload['TransAmount'] ?? null;
+            $account = strtoupper(preg_replace('/\s+/', '', $payload['BillRefNumber'] ?? ''));
+            $phone = $payload['MSISDN'] ?? null;
+            $name = $payload['FirstName'] ?? '';
+            $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
+
+            if (blank($mpesaTransactionId) || blank($amount)) {
+                Log::warning('C2B ignored: missing transaction id or amount', [
+                    'payload' => $payload,
+                ]);
+
+                return response()->json([
+                    'ResultCode' => 0,
+                    'ResultDesc' => 'Accepted',
+                ]);
+            }
+
+            $student = null;
+            $course = null;
+            $enrollment = null;
+
+            $parts = explode('/', $account);
+
+            if (count($parts) >= 2) {
+                [$admissionNumber, $courseCode] = $parts;
+
+                $student = Student::where('admission_number', $admissionNumber)->first();
+                $course = Course::where('code', $courseCode)->first();
+
+                if ($student && $course) {
+                    $enrollment = Enrollment::where('student_id', $student->id)
+                        ->where('course_id', $course->id)
+                        ->latest()
+                        ->first();
+                }
+            }
+
+            DB::transaction(function () use ($student, $course, $enrollment, $amount, $account, $phone, $payer, $mpesaTransactionId) {
+                if ($student && $course && $enrollment) {
+                    app(PaymentPostingService::class)->post([
+                        'student_id' => $student->id,
+                        'enrollment_id' => $enrollment->id,
+                        'payment_date' => now()->toDateString(),
+                        'amount' => $amount,
+                        'method' => 'mpesa',
+                        'reference_no' => $account,
+                        'receipt_no' => $mpesaTransactionId,
+                        'status' => 'completed',
+                        'payer' => $payer,
+                        'phone' => $phone,
+                        'notes' => "M-PESA payment of KES {$amount} received for {$course->name}."
+                    ]);
+
+                    return;
+                }
+
+                Payment::create([
+                    'student_id' => $student?->id,
+                    'enrollment_id' => $enrollment?->id,
+                    'payment_date' => now()->toDateString(),
+                    'amount' => $amount,
+                    'payment_method' => 'mpesa',
+                    'reference_no' => $account,
+                    // 'receipt_no' => $mpesaTransactionId,
+                    'status' => 'pending',
+                    'payer' => $payer,
+                    'phone' => $phone,
+                    'notes' => 'M-PESA payment received but could not be matched to a valid student/course/enrollment.',
+                    'transaction_id' => $mpesaTransactionId,
+                    'paid_at' => now()
+                ]);
+
+                Log::warning('C2B payment saved for manual reconciliation', [
+                    'reference_no' => $account,
+                    'receipt_no' => $mpesaTransactionId,
+                    'student_found' => (bool) $student,
+                    'course_found' => (bool) $course,
+                    'enrollment_found' => (bool) $enrollment,
+                ]);
+            });
+
+            return response()->json([
+                'ResultCode' => 0,
+                'ResultDesc' => 'Accepted',
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('C2B confirmation failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'payload' => $payload,
+            ]);
+
+            return response()->json([
+                'ResultCode' => 0,
+                'ResultDesc' => 'Accepted',
+            ]);
         }
     }
 

@@ -23,6 +23,9 @@ class PaymentPostingService
                 'receipt_no' => $data['receipt_no'] ?? null,
                 'status' => $data['status'] ?? 'completed',
                 'notes' => $data['notes'] ?? null,
+                'paid_at' => now(),
+                'payer' => $data['payer'] ?? null,
+                'phone' => $data['phone'] ?? null,
             ]);
 
             $remainingAmount = (float) $payment->amount;

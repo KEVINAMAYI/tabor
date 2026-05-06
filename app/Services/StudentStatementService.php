@@ -147,13 +147,13 @@ class StudentStatementService
 
                 return [
                     'payment_id' => $payment->id,
-                    'date' => $payment->paid_at??$payment->created_at,
+                    'date' => $payment->paid_at ?? $payment->created_at,
                     'reference' => $payment->transaction_id ?: ($payment->reference ?? 'PAY-' . $payment->id),
                     'description' => 'Payment Received',
                     'dr' => 0.00,
                     'cr' => (float) $payment->amount,
                     'source_type' => 'payment',
-                    'sort_date' => optional($payment->paid_at??$payment->created_at)->timestamp ?? 0,
+                    'sort_date' => optional($payment->paid_at ?? $payment->created_at)->timestamp ?? 0,
                     'sort_order' => 3,
                     'sort_id' => $payment->id,
                     'allocations' => $allocations,

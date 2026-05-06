@@ -186,7 +186,7 @@ class BackfillEnrollmentProgressions extends Command
         $processed = 0;
 
         Payment::query()
-            ->orderBy('payment_date')
+            ->orderBy('paid_at','asc')
             ->orderBy('id')
             ->chunkById(100, function ($payments) use (&$processed) {
                 foreach ($payments as $payment) {
