@@ -15,6 +15,7 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\CourseFeePlanSyncService;
+use App\Models\FeeDefinition;
 
 new class extends Component {
     use WithFileUploads, WithPagination;
@@ -54,6 +55,10 @@ new class extends Component {
 
     // lecturers selected ids (used by attach/sync)
     public $lecturer_ids = [];
+
+    public bool $allows_continuous_intake = false;
+    public array $student_once_fee_ids = [];
+    public $studentOnceFees = [];
 
     public function rules()
     {
@@ -96,6 +101,10 @@ new class extends Component {
 
             'apply_certification_fee' => 'boolean',
             'certification_fee' => 'nullable|numeric|min:0',
+
+            'allows_continuous_intake' => ['boolean'],
+            'student_once_fee_ids' => ['array'],
+            'student_once_fee_ids.*' => ['exists:fee_definitions,id'],
         ];
     }
 
@@ -105,10 +114,17 @@ new class extends Component {
             abort(403, 'Unauthorized action.');
         }
 
-        
-
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
+
+        $this->studentOnceFees = FeeDefinition::query()->where('scope', 'student')->where('applies_once', true)->where('active', true)->orderBy('name')->get();
+
+        $this->student_once_fee_ids = $this->defaultStudentOnceFeeIds();
+    }
+
+    private function defaultStudentOnceFeeIds(): array
+    {
+        return $this->studentOnceFees->pluck('id')->map(fn($id) => (string) $id)->toArray();
     }
 
     #[On('search')]
@@ -140,14 +156,6 @@ new class extends Component {
 
     private function normalizeFees()
     {
-        // If checkbox is off, force fee values to 0 (prevents accidental storage)
-        // if (!$this->apply_admin_fee) {
-        //     $this->admin_registration_fee = 0;
-        //     $this->admin_student_id_fee = 0;
-        //     $this->admin_stationery_fee = 0;
-        //     $this->admin_caution_fee = 0;
-        // }
-
         if (!$this->apply_exam_fee) {
             $this->exam_fee = 0;
         }
@@ -186,14 +194,6 @@ new class extends Component {
                 // tuition
                 'price' => $this->price,
 
-                // static fees (NOTE: requires these columns in your courses table)
-                /* 'apply_admin_fee' => (bool) $this->apply_admin_fee,
-                'admin_registration_fee' => $this->admin_registration_fee,
-                'admin_student_id_fee' => $this->admin_student_id_fee,
-                'admin_stationery_fee' => $this->admin_stationery_fee,
-                'admin_caution_fee' => $this->admin_caution_fee,
-                'total_admin_fee' => $this->totalAdminFee, */
-
                 'apply_exam_fee' => (bool) $this->apply_exam_fee,
                 'exam_fee' => $this->exam_fee,
 
@@ -217,6 +217,9 @@ new class extends Component {
 
                 'image_url' => $imagePath,
                 'brochure_url' => $brochurePath,
+
+                'allows_continuous_intake' => (bool) $this->allows_continuous_intake,
+                'chargeable_student_once_fee_definition_ids' => array_values($this->student_once_fee_ids),
             ]);
 
             if (!empty($this->lecturer_ids)) {
@@ -284,6 +287,12 @@ new class extends Component {
         // lecturers
         $this->lecturer_ids = $course->lecturers()->pluck('lecturers.id')->map(fn($id) => (string) $id)->toArray();
 
+        $this->allows_continuous_intake = (bool) $course->allows_continuous_intake;
+
+        $this->allows_continuous_intake = (bool) $course->allows_continuous_intake;
+
+        $this->student_once_fee_ids = array_map('strval', $course->chargeable_student_once_fee_definition_ids ?? []);
+
         $this->dispatch('show-course-modal');
     }
 
@@ -291,7 +300,7 @@ new class extends Component {
     {
         $this->validate();
         $this->normalizeFees();
-
+        // dd($this->student_once_fee_ids, $this->allows_continuous_intake);
         try {
             DB::beginTransaction();
 
@@ -332,6 +341,9 @@ new class extends Component {
 
                 'image_url' => $imagePath,
                 'brochure_url' => $brochurePath,
+
+                'allows_continuous_intake' => (bool) $this->allows_continuous_intake,
+                'chargeable_student_once_fee_definition_ids' => array_values($this->student_once_fee_ids),
             ]);
 
             if (!empty($this->lecturer_ids)) {
@@ -340,9 +352,8 @@ new class extends Component {
                 $course->lecturers()->detach();
             }
 
-            // CourseTrimesterService::syncCourseTrimesters($course);
-
-            app(CourseFeePlanSyncService::class)->syncDefaultsForCourse($course);
+            // Do not auto-sync fee plans on course update.
+            // Course fee plans are the billing source of truth after course creation.
 
             DB::commit();
 
@@ -355,6 +366,30 @@ new class extends Component {
             DB::rollBack();
             Log::error('Error updating course: ' . $e->getMessage());
             LivewireAlert::text('Failed to update Course.!')->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    public function resetBillingTemplate($courseId): void
+    {
+        try {
+            DB::beginTransaction();
+
+            $course = Course::findOrFail($courseId);
+
+            app(CourseFeePlanSyncService::class)->syncDefaultsForCourse($course, overwriteExisting: true);
+
+            DB::commit();
+
+            LivewireAlert::text('Billing template reset from course defaults successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            Log::error('Error resetting course billing template', [
+                'course_id' => $courseId,
+                'message' => $th->getMessage(),
+            ]);
+
+            LivewireAlert::text('Failed to reset billing template.')->error()->toast()->position('top-end')->show();
         }
     }
 
@@ -437,6 +472,9 @@ new class extends Component {
         $this->lecturer_ids = [];
 
         $this->search = null;
+
+        $this->allows_continuous_intake = false;
+        $this->student_once_fee_ids = $this->defaultStudentOnceFeeIds();
 
         $this->dispatch('reset-file-input');
         $this->dispatch('reset-select2');
@@ -725,6 +763,22 @@ new class extends Component {
                                                         wire:model="certification" class="form-control"
                                                         placeholder="Certification (e.g., Certificate of Completion)" />
                                                 </div>
+
+                                                <div class="col-md-4">
+                                                    <div class="form-check mt-4">
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="allows_continuous_intake"
+                                                            wire:model="allows_continuous_intake">
+                                                        <label class="form-check-label fw-semibold"
+                                                            for="allows_continuous_intake">
+                                                            Allow Monthly / Continuous Intake
+                                                        </label>
+                                                        <div class="small text-muted">
+                                                            If enabled, this course can admit students every month
+                                                            instead of only trimester intakes.
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -818,6 +872,44 @@ new class extends Component {
                                                         <input type="number" wire:model="certification_fee"
                                                             class="form-control"
                                                             :disabled="!apply_certification_fee" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="section-card bg-light-subtle">
+                                                        <p class="section-title text-center text-primary">Student Once
+                                                            Fees</p>
+                                                        <small class="text-muted d-block text-center mb-3">
+                                                            These lifetime student fees are selected by default. Untick
+                                                            any fee this course should not charge.
+                                                        </small>
+
+                                                        <div class="row g-2">
+                                                            @forelse ($studentOnceFees as $fee)
+                                                                <div class="col-md-4">
+                                                                    <div class="form-check border rounded p-3 h-100">
+                                                                        <input class="form-check-input"
+                                                                            type="checkbox"
+                                                                            id="student_once_fee_{{ $fee->id }}"
+                                                                            wire:model="student_once_fee_ids"
+                                                                            value="{{ (string) $fee->id }}">
+
+                                                                        <label class="form-check-label fw-semibold"
+                                                                            for="student_once_fee_{{ $fee->id }}">
+                                                                            {{ $fee->name }}
+                                                                        </label>
+
+                                                                        <div class="small text-muted">
+                                                                            KES
+                                                                            {{ number_format($fee->default_amount, 2) }}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @empty
+                                                                <div class="col-12 text-muted text-center">
+                                                                    No active student-once fees defined.
+                                                                </div>
+                                                            @endforelse
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -972,6 +1064,11 @@ new class extends Component {
                                     <td class="course-fee">KES {{ number_format($course->price, 2) }}</td>
                                     <td>
                                         <div class="action-btn">
+                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                                wire:click="resetBillingTemplate({{ $course->id }})"
+                                                onclick="return confirm('This will overwrite this course billing template from the course default fees. Continue?')">
+                                                Reset Billing
+                                            </button>
                                             <a href="{{ route('courses.view', $course->id) }}" class="text-info"
                                                 title="View">
                                                 <i class="ti ti-eye fs-5"></i>

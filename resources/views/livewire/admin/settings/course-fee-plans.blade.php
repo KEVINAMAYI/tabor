@@ -45,9 +45,10 @@ new class extends Component {
         $this->validate([
             'course_id' => ['required', 'exists:courses,id'],
             'fee_definition_id' => ['required', 'exists:fee_definitions,id'],
-            'charge_timing' => ['required', 'in:on_enrollment,every_trimester,specific_trimester,on_completion'],
+            'charge_timing' => ['required', 'in:on_enrollment,every_trimester,every_trimester_after_first,specific_trimester,on_course_completion,on_graduation_processing'],
             'trimester_sequence' => ['nullable', 'integer', 'min:1'],
             'amount' => ['required', 'numeric', 'min:0'],
+            'mandatory' => ['boolean'],
         ]);
 
         if ($this->charge_timing === 'specific_trimester' && blank($this->trimester_sequence)) {
@@ -57,6 +58,19 @@ new class extends Component {
 
         if ($this->charge_timing !== 'specific_trimester') {
             $this->trimester_sequence = null;
+        }
+
+        $duplicateExists = CourseFeePlan::query()
+            ->where('course_id', $this->course_id)
+            ->where('fee_definition_id', $this->fee_definition_id)
+            ->where('charge_timing', $this->charge_timing)
+            ->when($this->trimester_sequence === null, fn($q) => $q->whereNull('trimester_sequence'), fn($q) => $q->where('trimester_sequence', $this->trimester_sequence))
+            ->when($this->courseFeePlanId, fn($q) => $q->where('id', '!=', $this->courseFeePlanId))
+            ->exists();
+
+        if ($duplicateExists) {
+            $this->addError('fee_definition_id', 'This fee plan already exists for the selected course and timing.');
+            return;
         }
 
         CourseFeePlan::updateOrCreate(
@@ -108,7 +122,15 @@ new class extends Component {
             ->with(['course', 'feeDefinition'])
             ->when(filled($this->courseFilter), fn($q) => $q->where('course_id', $this->courseFilter))
             ->when(filled($this->timingFilter), fn($q) => $q->where('charge_timing', $this->timingFilter))
-            ->latest()
+            ->join('courses', 'course_fee_plans.course_id', '=', 'courses.id')
+            ->orderBy('courses.title')
+            ->orderByRaw(
+                "
+        FIELD(charge_timing, 'on_enrollment', 'every_trimester', 'specific_trimester', 'on_completion')
+    ",
+            )
+            ->orderBy('trimester_sequence')
+            ->select('course_fee_plans.*')
             ->get();
 
         return [
@@ -153,11 +175,39 @@ new class extends Component {
                     <option value="">All timings</option>
                     <option value="on_enrollment">On Enrollment</option>
                     <option value="every_trimester">Every Trimester</option>
+                    <option value="every_trimester_after_first">Every Trimester After First</option>
                     <option value="specific_trimester">Specific Trimester</option>
-                    <option value="on_completion">On Completion</option>
+                    <option value="on_graduation_processing">On Graduation Processing</option>
+                    <option value="on_course_completion">On Course Completion</option>
                 </select>
             </div>
         </div>
+
+        @if (filled($courseFilter))
+            @php
+                $selectedCourse = $courses->firstWhere('id', (int) $courseFilter);
+                $selectedPlans = $plans->where('course_id', (int) $courseFilter);
+            @endphp
+
+            <div class="alert alert-light border rounded-3 mb-4">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-semibold">
+                            {{ $selectedCourse?->title }}
+                        </div>
+                        <small class="text-muted">
+                            {{ $selectedPlans->count() }} fee plan(s) configured
+                        </small>
+                    </div>
+
+                    <div class="fw-semibold">
+                        Total recurring trimester fees:
+                        KES
+                        {{ number_format($selectedPlans->where('charge_timing', 'every_trimester')->sum('amount'), 2) }}
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <div class="table-responsive">
             <table class="table align-middle">
@@ -305,15 +355,22 @@ new class extends Component {
                             </select>
                         </div>
 
-                        {{-- <div class="alert alert-light border rounded-3 mb-0">
-                            Use multiple rows for fees that vary by trimester.
-                            Example: Exam Fee can be added as T1, T2, T3 with different amounts.
-                        </div> --}}
+                        <div class="alert alert-light border rounded-3 mb-0">
+                            <div class="fw-semibold mb-1">Timing guide</div>
+                            <ul class="small text-muted mb-0 ps-3">
+                                <li><strong>On Enrollment:</strong> charged only when the student starts.</li>
+                                <li><strong>Every Trimester:</strong> charged in every active progression.</li>
+                                <li><strong>Specific Trimester:</strong> charged only in the selected trimester
+                                    sequence.</li>
+                                <li><strong>On Completion:</strong> reserved for completion/graduation billing.</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="modal-footer">
                         <button class="btn btn-primary rounded-3">Save</button>
-                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-light rounded-3"
+                            data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>

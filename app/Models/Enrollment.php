@@ -20,6 +20,10 @@ class Enrollment extends Model
         'include_stationery_fee' => 'boolean',
         'include_caution_fee' => 'boolean',
         'admission_date' => 'date',
+        'completed_at' => 'datetime',
+        'course_completed_at' => 'datetime',
+        'pending_graduation_at' => 'datetime',
+        'graduated_at' => 'datetime',
     ];
 
     /* -----------------------------------------------------------------
@@ -114,5 +118,9 @@ class Enrollment extends Model
     {
         return $this->hasOne(EnrollmentProgression::class)
             ->where('status', 'active');
+    }
+    public function studentFeeItems()
+    {
+        return $this->hasMany(StudentFeeItem::class);
     }
 }

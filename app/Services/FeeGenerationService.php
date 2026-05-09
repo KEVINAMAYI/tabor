@@ -26,16 +26,18 @@ class FeeGenerationService
         $enrollment = $progression->enrollment;
 
         $plans = CourseFeePlan::query()
-            ->where('course_id', $enrollment->course_id)
+            ->where('course_id', $progression->enrollment->course_id)
             ->where(function ($q) use ($progression) {
                 $q->where('charge_timing', 'every_trimester')
+
+                    ->orWhere(function ($sub) use ($progression) {
+                        $sub->where('charge_timing', 'every_trimester_after_first')
+                            ->whereRaw('? > 1', [$progression->trimester_sequence]);
+                    })
+
                     ->orWhere(function ($sub) use ($progression) {
                         $sub->where('charge_timing', 'specific_trimester')
                             ->where('trimester_sequence', $progression->trimester_sequence);
-                    })
-                    ->orWhere(function ($sub) use ($progression) {
-                        $sub->where('charge_timing', 'on_enrollment')
-                            ->whereRaw($progression->trimester_sequence === 1 ? '1 = 1' : '1 = 0');
                     });
             })
             ->with('feeDefinition')
@@ -66,32 +68,46 @@ class FeeGenerationService
 
     public function generateStudentOnceFees(Enrollment $enrollment): void
     {
+        $course = $enrollment->course;
+
+        $chargeableIds = $enrollment->course?->chargeable_student_once_fee_definition_ids ?? [];
+
+        if (empty($chargeableIds)) {
+            return;
+        }
+
         $definitions = FeeDefinition::query()
+            ->whereIn('id', $chargeableIds)
             ->where('scope', 'student')
             ->where('applies_once', true)
             ->where('active', true)
             ->get();
 
         foreach ($definitions as $definition) {
-            StudentFeeItem::firstOrCreate(
-                [
-                    'student_id' => $enrollment->student_id,
-                    'fee_definition_id' => $definition->id,
-                    'enrollment_id' => null,
-                    'enrollment_progression_id' => null,
-                    'course_fee_plan_id' => null,
-                ],
-                [
-                    'trimester_id' => null,
-                    'description' => $definition->name,
-                    'amount' => $definition->default_amount,
-                    'amount_paid' => 0,
-                    'balance' => $definition->default_amount,
-                    'charge_date' => $enrollment->admission_date ?? now()->toDateString(),
-                    'due_date' => $enrollment->admission_date ?? now()->toDateString(),
-                    'status' => 'pending',
-                ]
-            );
+            $alreadyCharged = StudentFeeItem::query()
+                ->where('student_id', $enrollment->student_id)
+                ->where('fee_definition_id', $definition->id)
+                ->exists();
+
+            if ($alreadyCharged) {
+                continue;
+            }
+
+            StudentFeeItem::create([
+                'student_id' => $enrollment->student_id,
+                'enrollment_id' => $enrollment->id,
+                'enrollment_progression_id' => null,
+                'course_fee_plan_id' => null,
+                'trimester_id' => null,
+                'fee_definition_id' => $definition->id,
+                'description' => $definition->name,
+                'amount' => $definition->default_amount,
+                'amount_paid' => 0,
+                'balance' => $definition->default_amount,
+                'charge_date' => $enrollment->admission_date ?? now()->toDateString(),
+                'due_date' => $enrollment->admission_date ?? now()->toDateString(),
+                'status' => 'pending',
+            ]);
         }
     }
 
@@ -100,14 +116,18 @@ class FeeGenerationService
         $preview = [];
 
         // ✅ Student once fees
+        $course = $enrollment->course;
+
+        $chargeableIds = $course?->chargeable_student_once_fee_definition_ids ?? [];
+
         $definitions = FeeDefinition::query()
+            ->whereIn('id', $chargeableIds)
             ->where('scope', 'student')
             ->where('applies_once', true)
             ->where('active', true)
             ->get();
 
         foreach ($definitions as $definition) {
-
             $alreadyExists = StudentFeeItem::query()
                 ->where('student_id', $enrollment->student_id)
                 ->where('fee_definition_id', $definition->id)

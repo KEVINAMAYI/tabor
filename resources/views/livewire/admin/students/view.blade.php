@@ -11,11 +11,15 @@ use App\Models\StudentFeeItem;
 use Livewire\Volt\Component;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use App\Services\FeeGenerationService;
-use App\Services\TrimesterAssignmentService;
 use App\Services\PaymentPostingService;
 use App\Services\StudentStatementService;
-use App\Services\EnrollmentProgressionService;
-use Carbon\Carbon;
+use App\Services\EnrollmentChargePreviewService;
+use App\Actions\Enrollment\CreateEnrollmentAction;
+use App\Actions\Enrollment\UpdateEnrollmentAction;
+use App\Actions\Enrollment\DeleteEnrollmentAction;
+use App\Actions\Enrollment\MarkCourseCompletedAction;
+use App\Actions\Enrollment\MoveToPendingGraduationAction;
+use App\Actions\Enrollment\MarkGraduatedAction;
 
 new class extends Component {
     public Student $student;
@@ -26,26 +30,27 @@ new class extends Component {
     // Enroll modal
     public $course_id = '';
     public $admission_date = '';
-    public $enrollment_status = 'approved';
+    public $enrollment_status = 'active';
 
     // Edit modal
     public $editEnrollmentId = null;
     public $edit_course_id = '';
     public $edit_admission_date = '';
-    public $edit_enrollment_status = 'approved';
+    public $edit_enrollment_status = 'active';
 
     // Payment modal
     public $payment_enrollment_id = null;
     public $payment_date = '';
     public $payment_amount = '';
     public $payment_method = '';
-    public $payment_reference_no = '';
+    public $payment_reference = '';
     public $payment_receipt_no = '';
     public $payment_notes = '';
 
     // Generate charges modal
     public $generateChargesEnrollmentId = null;
     public array $chargePreview = [];
+    public array $enrollmentChargePreview = [];
 
     //statement items
     public $statement_trimester_id = '';
@@ -60,16 +65,16 @@ new class extends Component {
         return [
             'course_id' => ['nullable', 'exists:courses,id'],
             'admission_date' => ['nullable', 'date'],
-            // 'enrollment_status' => ['nullable', 'in:approved,completed,deferred,cancelled'],
+            'enrollment_status' => ['nullable', 'in:pending,active,deferred,withdrawn,cancelled,course_completed,pending_graduation,graduated'],
 
             'edit_course_id' => ['nullable', 'exists:courses,id'],
             'edit_admission_date' => ['nullable', 'date'],
-            // 'edit_enrollment_status' => ['nullable', 'in:approved,completed,deferred,cancelled'],
+            'edit_enrollment_status' => ['nullable', 'in:pending,active,deferred,withdrawn,cancelled,course_completed,pending_graduation,graduated'],
 
             'payment_date' => ['nullable', 'date'],
             'payment_amount' => ['nullable', 'numeric', 'min:1'],
             'payment_method' => ['nullable', 'string', 'max:255'],
-            'payment_reference_no' => ['nullable', 'string', 'max:255'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
             'payment_receipt_no' => ['nullable', 'string', 'max:255'],
             'payment_notes' => ['nullable', 'string'],
         ];
@@ -97,45 +102,59 @@ new class extends Component {
             $this->selectedEnrollmentId = $selectedEnrollment->id;
         }
 
-        $totalCharges = StudentFeeItem::query()
-            ->where('student_id', $student->id)
-            ->where(function ($q) use ($selectedEnrollment) {
-                $q->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
-            })
-            ->sum('amount');
+        /*
+    |--------------------------------------------------------------------------
+    | Selected Enrollment Finance Summary
+    |--------------------------------------------------------------------------
+    */
 
-        $totalPaid = PaymentAllocation::query()
-            ->whereHas('studentFeeItem', function ($q) use ($student, $selectedEnrollment) {
-                $q->where('student_id', $student->id)->where(function ($sub) use ($selectedEnrollment) {
-                    $sub->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
-                });
-            })
-            ->sum('amount_allocated');
+        $totalCharges = 0;
+        $totalPaid = 0;
+        $balance = 0;
 
-        $balance = StudentFeeItem::query()
-            ->where('student_id', $student->id)
-            ->where(function ($q) use ($selectedEnrollment) {
-                $q->where('enrollment_id', $selectedEnrollment?->id)->orWhereNull('enrollment_id');
-            })
-            ->sum('balance');
+        if ($selectedEnrollment) {
+            $totalCharges = $selectedEnrollment->feeItems->sum('amount');
+            $totalPaid = $selectedEnrollment->feeItems->sum('amount_paid');
+            $balance = $selectedEnrollment->feeItems->sum('balance');
+        }
 
-        $studentCharges = StudentFeeItem::query()->where('student_id', $student->id)->sum('amount');
+        /*
+    |--------------------------------------------------------------------------
+    | Student Overall Finance
+    |--------------------------------------------------------------------------
+    */
 
-        $studentBalance = StudentFeeItem::query()->where('student_id', $student->id)->sum('balance');
+        $studentCharges = $student->enrollments->flatMap(fn($enrollment) => $enrollment->feeItems)->sum('amount');
 
-        $studentPaid = PaymentAllocation::query()
-            ->whereHas('studentFeeItem', function ($q) use ($student) {
-                $q->where('student_id', $student->id);
-            })
-            ->sum('amount_allocated');
+        $studentPaid = $student->enrollments->flatMap(fn($enrollment) => $enrollment->feeItems)->sum('amount_paid');
 
-        $activeEnrollments = $student->enrollments->where('status', 'approved')->count();
-        $completedEnrollments = $student->enrollments->where('status', 'completed')->count();
+        $studentBalance = $student->enrollments->flatMap(fn($enrollment) => $enrollment->feeItems)->sum('balance');
 
-        $statementEnrollment = $this->statementEnrollmentId ? $enrollments->firstWhere('id', $this->statementEnrollmentId) : null;
+        /*
+    |--------------------------------------------------------------------------
+    | Enrollment Stats
+    |--------------------------------------------------------------------------
+    */
+
+        $activeEnrollments = $student->enrollments->where('status', 'active')->count();
+
+        $completedEnrollments = $student->enrollments->whereIn('status', ['course_completed', 'pending_graduation', 'graduated'])->count();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Dropdown Data
+    |--------------------------------------------------------------------------
+    */
 
         $courses = Course::query()->where('active', true)->orderBy('title')->get();
-        $trimesters = Trimester::orderBy('start_date')->get();
+
+        $trimesters = Trimester::query()->orderBy('start_date')->get();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Payments
+    |--------------------------------------------------------------------------
+    */
 
         $payments = Payment::query()
             ->with(['allocations.studentFeeItem'])
@@ -144,6 +163,12 @@ new class extends Component {
             ->latest('id')
             ->get();
 
+        /*
+    |--------------------------------------------------------------------------
+    | Statement Progressions
+    |--------------------------------------------------------------------------
+    */
+
         $statementProgressions = EnrollmentProgression::query()
             ->with(['trimester.academicYear', 'enrollment.course'])
             ->where('student_id', $student->id)
@@ -151,65 +176,74 @@ new class extends Component {
             ->when(filled($this->statementEnrollmentFilter), function ($q) {
                 $q->where('enrollment_id', $this->statementEnrollmentFilter);
             })
-            ->orderByDesc('id')
+            ->orderBy('enrollment_id')
+            ->orderBy('trimester_sequence')
+            ->orderBy('id')
             ->get();
 
-        $currentProgression = EnrollmentProgression::query()->where('student_id', $student->id)->where('status', 'active')->with('trimester.academicYear')->first();
+        /*
+    |--------------------------------------------------------------------------
+    | Current Active Progression
+    |--------------------------------------------------------------------------
+    */
 
+        $currentProgression = EnrollmentProgression::query()
+            ->where('student_id', $student->id)
+            ->where('status', 'active')
+            ->when($selectedEnrollment, function ($q) use ($selectedEnrollment) {
+                $q->where('enrollment_id', $selectedEnrollment->id);
+            })
+            ->with(['trimester.academicYear', 'enrollment.course'])
+            ->orderByDesc('id')
+            ->first();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Current Progression Statement Summary
+    |--------------------------------------------------------------------------
+    */
+
+        $currentStatement = null;
+        $currentOpeningBalance = 0;
         $currentCharges = 0;
         $currentPaid = 0;
         $currentBalance = 0;
 
         if ($currentProgression) {
-            $currentCharges = StudentFeeItem::query()
-                ->where('student_id', $student->id)
-                ->where(function ($q) use ($currentProgression) {
-                    $q->where('enrollment_progression_id', $currentProgression->id)->orWhere(function ($sub) use ($currentProgression) {
-                        $sub->whereNull('enrollment_id')
-                            ->whereNull('enrollment_progression_id')
-                            ->whereBetween('charge_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
-                    });
-                })
-                ->sum('amount');
+            $currentStatement = app(StudentStatementService::class)->buildProgressionStatement($student, $currentProgression);
 
-            $currentPaid = PaymentAllocation::query()
-                ->whereHas('studentFeeItem', function ($q) use ($student, $currentProgression) {
-                    $q->where('student_id', $student->id)->where(function ($sub) use ($currentProgression) {
-                        $sub->where('enrollment_progression_id', $currentProgression->id)->orWhere(function ($nested) use ($currentProgression) {
-                            $nested
-                                ->whereNull('enrollment_id')
-                                ->whereNull('enrollment_progression_id')
-                                ->whereBetween('charge_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
-                        });
-                    });
-                })
-                ->whereHas('payment', function ($q) use ($currentProgression) {
-                    $q->whereBetween('payment_date', [$currentProgression->started_at ?? $currentProgression->trimester->start_date, $currentProgression->completed_at ?? $currentProgression->trimester->end_date]);
-                })
-                ->sum('amount_allocated');
-
-            $currentBalance = $currentCharges - $currentPaid;
+            $currentOpeningBalance = $currentStatement['opening_balance'];
+            $currentCharges = $currentStatement['charge_total'];
+            $currentPaid = $currentStatement['payment_total'];
+            $currentBalance = $currentStatement['closing_balance'];
         }
+
+        $statementEnrollment = $this->statementEnrollmentId ? $enrollments->firstWhere('id', $this->statementEnrollmentId) : null;
 
         return [
             'enrollments' => $enrollments,
             'selectedEnrollment' => $selectedEnrollment,
             'statementEnrollment' => $statementEnrollment,
             'courses' => $courses,
-            'totalCharges' => $totalCharges,
-            'totalPaid' => $totalPaid,
-            'balance' => $balance,
-            'studentCharges' => $studentCharges,
-            'studentPaid' => $studentPaid,
-            'studentBalance' => $studentBalance,
-            'activeEnrollments' => $activeEnrollments,
-            'completedEnrollments' => $completedEnrollments,
             'trimesters' => $trimesters,
             'payments' => $payments,
             'statementProgressions' => $statementProgressions,
             'statementEnrollments' => $enrollments,
 
+            'totalCharges' => $totalCharges,
+            'totalPaid' => $totalPaid,
+            'balance' => $balance,
+
+            'studentCharges' => $studentCharges,
+            'studentPaid' => $studentPaid,
+            'studentBalance' => $studentBalance,
+
+            'activeEnrollments' => $activeEnrollments,
+            'completedEnrollments' => $completedEnrollments,
+
             'currentProgression' => $currentProgression,
+            'currentStatement' => $currentStatement,
+            'currentOpeningBalance' => $currentOpeningBalance,
             'currentCharges' => $currentCharges,
             'currentPaid' => $currentPaid,
             'currentBalance' => $currentBalance,
@@ -232,29 +266,14 @@ new class extends Component {
         $this->validate([
             'course_id' => ['required', 'exists:courses,id'],
             'admission_date' => ['required', 'date'],
-            // 'enrollment_status' => ['required', 'in:approved,completed,deferred,cancelled'],
+            'enrollment_status' => ['required', 'in:pending,active,deferred,withdrawn,cancelled,course_completed,pending_graduation,graduated'],
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $course = Course::findOrFail($this->course_id);
-
-            $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->admission_date), $course);
-
-            if (empty($assignment['assigned_start_trimester_id']) || empty($assignment['intake_trimester_id'])) {
-                Log::error('Unable to assign trimester due to missing start trimester or intake trimester. Please check course setup and trimester setup.');
-                LivewireAlert::text('Error assigning trimester. Please check course setup and trimester setup.')->error()->toast()->position('top-end')->show();
-                return;
-            }
-
-            $enrollment = Enrollment::create([
-                'student_id' => $this->student->id,
+            $enrollment = app(CreateEnrollmentAction::class)->execute($this->student, [
                 'course_id' => $this->course_id,
                 'admission_date' => $this->admission_date,
                 'status' => $this->enrollment_status,
-                'intake_trimester_id' => $assignment['intake_trimester_id'],
-                'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
             ]);
 
             $this->selectedEnrollmentId = $enrollment->id;
@@ -262,21 +281,91 @@ new class extends Component {
             $this->resetEnrollForm();
             $this->dispatch('hide-enroll-modal');
 
-            app(EnrollmentProgressionService::class)->generateForEnrollment($enrollment);
-            app(FeeGenerationService::class)->generateInitialCharges($enrollment);
-
-            DB::commit();
-
             LivewireAlert::text('Enrollment created successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
-            DB::rollBack();
-            Log::error('Error creating enrollment: ' . $th->getMessage());
+            Log::error('Error creating enrollment', [
+                'student_id' => $this->student->id,
+                'message' => $th->getMessage(),
+            ]);
+
             LivewireAlert::text('Error creating enrollment: ' . $th->getMessage())
                 ->error()
                 ->toast()
                 ->position('top-end')
                 ->show();
         }
+    }
+
+    public function markCourseCompleted($enrollmentId): void
+    {
+        try {
+            $enrollment = $this->student->enrollments()->findOrFail($enrollmentId);
+
+            app(MarkCourseCompletedAction::class)->execute($enrollment);
+
+            $this->loadStudentData();
+
+            LivewireAlert::text('Course marked as completed.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    public function moveToPendingGraduation($enrollmentId): void
+    {
+        try {
+            $enrollment = $this->student->enrollments()->findOrFail($enrollmentId);
+
+            app(MoveToPendingGraduationAction::class)->execute($enrollment);
+
+            $this->loadStudentData();
+
+            LivewireAlert::text('Moved to pending graduation and graduation fees generated.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    public function markGraduated($enrollmentId): void
+    {
+        try {
+            $enrollment = $this->student->enrollments()->findOrFail($enrollmentId);
+
+            app(MarkGraduatedAction::class)->execute($enrollment);
+
+            $this->loadStudentData();
+
+            LivewireAlert::text('Student marked as graduated.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    public function loadStudentData(): void
+    {
+        $this->student = Student::findOrFail($this->student->id);
+    }
+
+    public function updatedCourseId($value): void
+    {
+        $this->loadEnrollmentChargePreview();
+    }
+
+    public function loadEnrollmentChargePreview(): void
+    {
+        $this->enrollmentChargePreview = [];
+
+        if (blank($this->course_id)) {
+            return;
+        }
+
+        $course = Course::find($this->course_id);
+
+        if (!$course) {
+            return;
+        }
+
+        $this->enrollmentChargePreview = app(EnrollmentChargePreviewService::class)->preview($this->student, $course);
     }
 
     public function openEditEnrollmentModal(int $enrollmentId): void
@@ -296,23 +385,16 @@ new class extends Component {
         $this->validate([
             'edit_course_id' => ['required', 'exists:courses,id'],
             'edit_admission_date' => ['required', 'date'],
-            // 'edit_enrollment_status' => ['required', 'in:approved,completed,deferred,cancelled'],
+            'edit_enrollment_status' => ['required', 'in:pending,active,deferred,withdrawn,cancelled,course_completed,pending_graduation,graduated'],
         ]);
 
         try {
-            DB::beginTransaction();
-
             $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($this->editEnrollmentId);
-            $course = Course::findOrFail($this->edit_course_id);
 
-            $assignment = app(TrimesterAssignmentService::class)->assign(Carbon::parse($this->edit_admission_date), $course);
-
-            $enrollment->update([
+            $enrollment = app(UpdateEnrollmentAction::class)->execute($enrollment, [
                 'course_id' => $this->edit_course_id,
                 'admission_date' => $this->edit_admission_date,
                 'status' => $this->edit_enrollment_status,
-                'intake_trimester_id' => $assignment['intake_trimester_id'],
-                'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
             ]);
 
             $this->selectedEnrollmentId = $enrollment->id;
@@ -320,14 +402,8 @@ new class extends Component {
             $this->resetEditForm();
             $this->dispatch('hide-edit-enrollment-modal');
 
-            app(FeeGenerationService::class)->generateInitialCharges($enrollment);
-
-            DB::commit();
-
             LivewireAlert::text('Enrollment updated successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
-            DB::rollBack();
-
             LivewireAlert::text('Error updating enrollment: ' . $th->getMessage())
                 ->error()
                 ->toast()
@@ -338,16 +414,23 @@ new class extends Component {
 
     public function deleteEnrollment(int $enrollmentId): void
     {
-        $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($enrollmentId);
-        // $enrollment->payments()->delete();
-        $enrollment->feeItems()->delete();
-        $enrollment->delete();
+        try {
+            $enrollment = Enrollment::where('student_id', $this->student->id)->findOrFail($enrollmentId);
 
-        if ((int) $this->selectedEnrollmentId === (int) $enrollmentId) {
-            $this->selectedEnrollmentId = $this->student->enrollments()->latest()->value('id');
+            app(DeleteEnrollmentAction::class)->execute($enrollment);
+
+            if ((int) $this->selectedEnrollmentId === (int) $enrollmentId) {
+                $this->selectedEnrollmentId = $this->student->enrollments()->latest()->value('id');
+            }
+
+            LivewireAlert::text('Enrollment deleted successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text('Error deleting enrollment: ' . $th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
-
-        LivewireAlert::text('Enrollment deleted successfully.')->success()->toast()->position('top-end')->show();
     }
 
     public function confirmGenerateCharges(int $enrollmentId): void
@@ -386,7 +469,7 @@ new class extends Component {
             'payment_date' => ['required', 'date'],
             'payment_amount' => ['required', 'numeric', 'min:1'],
             'payment_method' => ['nullable', 'string', 'max:255'],
-            'payment_reference_no' => ['nullable', 'string', 'max:255'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
             'payment_notes' => ['nullable', 'string'],
         ]);
 
@@ -396,7 +479,7 @@ new class extends Component {
             'payment_date' => $this->payment_date,
             'amount' => $this->payment_amount,
             'method' => $this->payment_method,
-            'reference_no' => $this->payment_reference_no,
+            'reference' => $this->payment_reference,
             'receipt_no' => $this->payment_receipt_no,
             'notes' => $this->payment_notes,
         ]);
@@ -447,7 +530,8 @@ new class extends Component {
     {
         $this->course_id = '';
         $this->admission_date = now()->toDateString();
-        $this->enrollment_status = 'approved';
+        $this->enrollment_status = 'active';
+        $this->enrollmentChargePreview = [];
     }
 
     protected function resetEditForm(): void
@@ -455,7 +539,7 @@ new class extends Component {
         $this->editEnrollmentId = null;
         $this->edit_course_id = '';
         $this->edit_admission_date = '';
-        $this->edit_enrollment_status = 'approved';
+        $this->edit_enrollment_status = 'active';
     }
 
     protected function resetPaymentForm(): void
@@ -464,7 +548,7 @@ new class extends Component {
         $this->payment_date = now()->toDateString();
         $this->payment_amount = '';
         $this->payment_method = '';
-        $this->payment_reference_no = '';
+        $this->payment_reference = '';
         $this->payment_receipt_no = '';
         $this->payment_notes = '';
     }
@@ -639,86 +723,99 @@ new class extends Component {
 
     {{-- Main student summary card --}}
     <div class="card border-0 shadow-sm student-hero-card mb-4">
-    <div class="card-body p-0">
-        <div class="student-hero-body px-4 py-5">
+        <div class="card-body p-0">
+            <div class="student-hero-body px-4 py-5">
 
-            {{-- Trimester label --}}
-            <div class="text-center mb-4">
-                @if($currentProgression)
-                    <div class="fw-semibold">
-                        {{ $currentProgression->trimester?->name }}
-                        ({{ $currentProgression->trimester?->academicYear?->name }})
+                {{-- Trimester label --}}
+                <div class="text-center mb-4">
+                    @if ($currentProgression)
+                        <div class="fw-semibold">
+                            {{ $currentProgression->trimester?->name }}
+                            ({{ $currentProgression->trimester?->academicYear?->name }})
+                        </div>
+                        <div class="text-muted small">
+                            Current Trimester Ledger Summary
+                        </div>
+                    @else
+                        <div class="text-muted">
+                            No active trimester
+                        </div>
+                    @endif
+                </div>
+
+                <div class="row g-3 mb-4 justify-content-center">
+
+                    <div class="row g-3 mb-4 justify-content-center">
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="student-summary-pill primary-pill">
+                                <div class="student-summary-label">Opening Balance</div>
+                                <div class="student-summary-value">
+                                    KES {{ number_format($currentOpeningBalance, 2) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="student-summary-pill primary-pill">
+                                <div class="student-summary-label">Trimester Charges</div>
+                                <div class="student-summary-value">
+                                    KES {{ number_format($currentCharges, 2) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="student-summary-pill success-pill">
+                                <div class="student-summary-label">Paid This Trimester</div>
+                                <div class="student-summary-value">
+                                    KES {{ number_format($currentPaid, 2) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="student-summary-pill danger-pill">
+                                <div class="student-summary-label">Current Balance</div>
+                                <div class="student-summary-value">
+                                    KES {{ number_format($currentBalance, 2) }}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                    <div class="text-muted small">
-                        Current Trimester Summary
-                    </div>
-                @else
-                    <div class="text-muted">
-                        No active trimester
-                    </div>
-                @endif
+
+                </div>
             </div>
 
-            <div class="row g-3 mb-4 justify-content-center">
+            {{-- Tabs (unchanged) --}}
+            <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
+                id="pills-tab" role="tablist">
 
-                <div class="col-lg-3 col-md-6">
-                    <div class="student-summary-pill primary-pill">
-                        <div class="student-summary-label">Charges</div>
-                        <div class="student-summary-value">
-                            KES {{ number_format($currentCharges, 2) }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="student-summary-pill success-pill">
-                        <div class="student-summary-label">Paid</div>
-                        <div class="student-summary-value">
-                            KES {{ number_format($currentPaid, 2) }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="student-summary-pill danger-pill">
-                        <div class="student-summary-label">Balance</div>
-                        <div class="student-summary-value">
-                            KES {{ number_format($currentBalance, 2) }}
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        {{-- Tabs (unchanged) --}}
-        <ul class="nav nav-pills user-profile-tab justify-content-start mt-2 bg-primary-subtle rounded-2 rounded-top-0"
-            id="pills-tab" role="tablist">
-
-            <li class="nav-item">
-                <button class="nav-link {{ $activeTab === 'enrollments' ? 'active' : '' }}"
+                <li class="nav-item">
+                    <button class="nav-link {{ $activeTab === 'enrollments' ? 'active' : '' }}"
                         wire:click="$set('activeTab', 'enrollments')">
-                    <i class="ti ti-book fs-5"></i> Enrollments
-                </button>
-            </li>
+                        <i class="ti ti-book fs-5"></i> Enrollments
+                    </button>
+                </li>
 
-            <li class="nav-item">
-                <button class="nav-link {{ $activeTab === 'payments' ? 'active' : '' }}"
+                <li class="nav-item">
+                    <button class="nav-link {{ $activeTab === 'payments' ? 'active' : '' }}"
                         wire:click="$set('activeTab', 'payments')">
-                    <i class="ti ti-credit-card fs-5"></i> Payments
-                </button>
-            </li>
+                        <i class="ti ti-credit-card fs-5"></i> Payments
+                    </button>
+                </li>
 
-            <li class="nav-item">
-                <button class="nav-link {{ $activeTab === 'statements' ? 'active' : '' }}"
+                <li class="nav-item">
+                    <button class="nav-link {{ $activeTab === 'statements' ? 'active' : '' }}"
                         wire:click="$set('activeTab', 'statements')">
-                    <i class="ti ti-file-invoice fs-5"></i> Statements
-                </button>
-            </li>
+                        <i class="ti ti-file-invoice fs-5"></i> Statements
+                    </button>
+                </li>
 
-        </ul>
+            </ul>
+        </div>
     </div>
-</div>
 
     @if ($activeTab === 'enrollments')
         <div class="row g-4 mt-1">
@@ -748,9 +845,12 @@ new class extends Component {
                                     $itemBalance = $charges - $paid;
 
                                     $statusClasses = match ($enrollment->status) {
-                                        'approved' => 'bg-primary-subtle text-primary',
-                                        'completed' => 'bg-success-subtle text-success',
+                                        'active' => 'bg-primary-subtle text-primary',
+                                        'course_completed' => 'bg-success-subtle text-success',
+                                        'pending_graduation' => 'bg-warning-subtle text-warning',
+                                        'graduated' => 'bg-dark-subtle text-dark',
                                         'deferred' => 'bg-warning-subtle text-warning',
+                                        'withdrawn' => 'bg-secondary-subtle text-secondary',
                                         'cancelled' => 'bg-danger-subtle text-danger',
                                         default => 'bg-light text-muted',
                                     };
@@ -766,7 +866,7 @@ new class extends Component {
                                         </div>
 
                                         <span class="badge {{ $statusClasses }}">
-                                            {{ $enrollment->status == 'approved' ? 'Active' : ucfirst($enrollment->status) }}
+                                            {{ str_replace('_', ' ', ucfirst($enrollment->status)) }}
                                         </span>
                                     </div>
 
@@ -786,7 +886,7 @@ new class extends Component {
                                         <div class="col-12 justify-content-between d-flex">
                                             <span class="text-muted">Balance:</span>
                                             <span class="fw-semibold text-danger">
-                                                KES {{ number_format($itemBalance, 2) }}
+                                                KES {{ number_format($currentBalance, 2) }}
                                             </span>
                                         </div>
                                     </div>
@@ -818,9 +918,12 @@ new class extends Component {
                         @if ($selectedEnrollment)
                             @php
                                 $selectedStatusClasses = match ($selectedEnrollment->status) {
-                                    'approved' => 'bg-primary-subtle text-primary',
-                                    'completed' => 'bg-success-subtle text-success',
+                                    'active' => 'bg-primary-subtle text-primary',
+                                    'course_completed' => 'bg-success-subtle text-success',
+                                    'pending_graduation' => 'bg-warning-subtle text-warning',
+                                    'graduated' => 'bg-dark-subtle text-dark',
                                     'deferred' => 'bg-warning-subtle text-warning',
+                                    'withdrawn' => 'bg-secondary-subtle text-secondary',
                                     'cancelled' => 'bg-danger-subtle text-danger',
                                     default => 'bg-light text-muted',
                                 };
@@ -837,6 +940,29 @@ new class extends Component {
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    @if ($selectedEnrollment->status === 'active')
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            wire:click="markCourseCompleted({{ $selectedEnrollment->id }})"
+                                            onclick="return confirm('Mark this course as completed?')">
+                                            Course Completed
+                                        </button>
+                                    @endif
+
+                                    @if ($selectedEnrollment->status === 'course_completed')
+                                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                            wire:click="moveToPendingGraduation({{ $selectedEnrollment->id }})"
+                                            onclick="return confirm('Move to pending graduation and generate graduation fees?')">
+                                            Pending Graduation
+                                        </button>
+                                    @endif
+
+                                    @if ($selectedEnrollment->status === 'pending_graduation')
+                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                            wire:click="markGraduated({{ $selectedEnrollment->id }})"
+                                            onclick="return confirm('Mark this student as graduated?')">
+                                            Graduated
+                                        </button>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-sm rounded-3"
                                         wire:click="openEditEnrollmentModal({{ $selectedEnrollment->id }})">
                                         <i class="ti ti-pencil me-1"></i> Edit
@@ -880,24 +1006,39 @@ new class extends Component {
                                 </div>
                             </div>
                             <hr>
-                            <div class="finance-summary-box mb-4">
+                            {{-- <div class="finance-summary-box mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0 fw-semibold">Finance Snapshot</h6>
+                                    <div>
+                                        <h6 class="mb-0 fw-semibold">Enrollment Financial Summary</h6>
+                                        <small class="text-muted">
+                                            Total charges, allocations, and balance for this selected enrollment.
+                                        </small>
+                                    </div>
+
+                                    @if ($balance <= 0)
+                                        <span class="badge bg-success-subtle text-success rounded-pill">
+                                            Cleared
+                                        </span>
+                                    @else
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill">
+                                            Balance Due
+                                        </span>
+                                    @endif
                                 </div>
 
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <div class="finance-metric-card">
-                                            <div class="finance-metric-label">Total Charges</div>
-                                            <div class="finance-metric-value">
+                                        <div class="finance-metric-card bg-primary-subtle">
+                                            <div class="finance-metric-label text-primary">Enrollment Charges</div>
+                                            <div class="finance-metric-value text-primary">
                                                 KES {{ number_format($totalCharges, 2) }}
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <div class="finance-metric-card">
-                                            <div class="finance-metric-label">Total Paid</div>
+                                        <div class="finance-metric-card bg-success-subtle">
+                                            <div class="finance-metric-label text-success">Allocated Payments</div>
                                             <div class="finance-metric-value text-success">
                                                 KES {{ number_format($totalPaid, 2) }}
                                             </div>
@@ -905,23 +1046,23 @@ new class extends Component {
                                     </div>
 
                                     <div class="col-md-4">
-                                        <div class="finance-metric-card">
-                                            <div class="finance-metric-label">Balance</div>
+                                        <div class="finance-metric-card bg-danger-subtle">
+                                            <div class="finance-metric-label text-danger">Enrollment Balance</div>
                                             <div class="finance-metric-value text-danger">
                                                 KES {{ number_format($balance, 2) }}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                {{--  <div class="col-md-4">
                                     <button type="button" class="btn btn-primary w-100 rounded-3"
                                         wire:click="confirmGenerateCharges({{ $selectedEnrollment->id }})">
                                         <i class="ti ti-receipt me-1"></i> Generate Charges
                                     </button>
-                                </div>
+                                </div> --}}
 
                                 <div class="col-md-4">
                                     <button type="button" class="btn btn-outline-primary w-100 rounded-3"
@@ -995,7 +1136,6 @@ new class extends Component {
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Receipt</th>
                                 <th>Reference</th>
                                 <th>Method</th>
                                 <th class="text-end">Amount</th>
@@ -1008,14 +1148,13 @@ new class extends Component {
                             @forelse ($payments as $payment)
                                 @php
                                     $allocated = $payment->allocations->sum('amount_allocated');
-                                    $unallocated = $payment->amount - $allocated;
+                                    $unallocated = $payment->unallocated_balance;
                                 @endphp
 
                                 <tr>
-                                    <td>{{ optional($payment->paid_at)->format('d M Y') ?? '—' }}</td>
-                                    <td>{{ $payment->receipt_no ?? '—' }}</td>
+                                    <td>{{ optional($payment->payment_date)->format('d M Y') ?? '—' }}</td>
                                     <td>{{ $payment->reference ?? '—' }}</td>
-                                    <td>{{ strtoupper($payment->payment_method ?? '—') }}</td>
+                                    <td>{{ strtoupper($payment->method ?? '—') }}</td>
                                     <td class="text-end fw-semibold">
                                         KES {{ number_format($payment->amount, 2) }}
                                     </td>
@@ -1151,7 +1290,7 @@ new class extends Component {
 
                                     <td>
                                         <span class="badge {{ $statusClass }}">
-                                            {{ ucfirst($progression->status) }}
+                                            {{ str_replace('_', ' ', ucfirst($progression->status)) }}
                                         </span>
                                     </td>
 
@@ -1192,7 +1331,7 @@ new class extends Component {
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Course</label>
-                        <select class="form-select" wire:model="course_id">
+                        <select class="form-select" wire:model.live="course_id">
                             <option value="">Select course</option>
                             @foreach ($courses as $course)
                                 <option value="{{ $course->id }}">
@@ -1205,6 +1344,46 @@ new class extends Component {
                         @enderror
                     </div>
 
+                    @if (!empty($enrollmentChargePreview))
+                        <div class="alert alert-light border rounded-3 mt-3">
+                            <div class="fw-semibold mb-2">Expected Charges Preview</div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Fee</th>
+                                            <th>Timing</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($enrollmentChargePreview as $item)
+                                            <tr>
+                                                <td>{{ $item['type'] }}</td>
+                                                <td>{{ $item['description'] }}</td>
+                                                <td>{{ $item['timing'] }}</td>
+                                                <td class="text-end">
+                                                    KES {{ number_format($item['amount'], 2) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-semibold">
+                                            <td colspan="3">Preview Total</td>
+                                            <td class="text-end">
+                                                KES
+                                                {{ number_format(collect($enrollmentChargePreview)->sum('amount'), 2) }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="mb-3">
                         <label class="form-label">Admission Date</label>
                         <input type="date" class="form-control" wire:model="admission_date">
@@ -1216,11 +1395,14 @@ new class extends Component {
                     <div class="mb-3">
                         <label class="form-label">Status</label>
                         <select class="form-select" wire:model="enrollment_status">
-                            <option value="approved">Active</option>
+                            <option value="active">Active</option>
                             <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
                             <option value="deferred">Deferred</option>
+                            <option value="withdrawn">Withdrawn</option>
                             <option value="cancelled">Cancelled</option>
+                            <option value="course_completed">Course Completed</option>
+                            <option value="pending_graduation">Pending Graduation</option>
+                            <option value="graduated">Graduated</option>
                         </select>
                         @error('enrollment_status')
                             <small class="text-danger">{{ $message }}</small>
@@ -1262,6 +1444,45 @@ new class extends Component {
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
+                    @if (!empty($enrollmentChargePreview))
+                        <div class="alert alert-light border rounded-3 mt-3">
+                            <div class="fw-semibold mb-2">Expected Charges Preview</div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Fee</th>
+                                            <th>Timing</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($enrollmentChargePreview as $item)
+                                            <tr>
+                                                <td>{{ $item['type'] }}</td>
+                                                <td>{{ $item['description'] }}</td>
+                                                <td>{{ $item['timing'] }}</td>
+                                                <td class="text-end">
+                                                    KES {{ number_format($item['amount'], 2) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-semibold">
+                                            <td colspan="3">Preview Total</td>
+                                            <td class="text-end">
+                                                KES
+                                                {{ number_format(collect($enrollmentChargePreview)->sum('amount'), 2) }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="mb-3">
                         <label class="form-label">Admission Date</label>
@@ -1274,11 +1495,14 @@ new class extends Component {
                     <div class="mb-3">
                         <label class="form-label">Status</label>
                         <select class="form-select" wire:model="edit_enrollment_status">
-                            <option value="approved">Active</option>
+                            <option value="active">Active</option>
                             <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
                             <option value="deferred">Deferred</option>
+                            <option value="withdrawn">Withdrawn</option>
                             <option value="cancelled">Cancelled</option>
+                            <option value="course_completed">Course Completed</option>
+                            <option value="pending_graduation">Pending Graduation</option>
+                            <option value="graduated">Graduated</option>
                         </select>
                         @error('edit_enrollment_status')
                             <small class="text-danger">{{ $message }}</small>
@@ -1456,9 +1680,9 @@ new class extends Component {
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-medium">Reference No</label>
-                                <input type="text" class="form-control rounded-3"
-                                    wire:model="payment_reference_no" placeholder="Transaction reference">
-                                @error('payment_reference_no')
+                                <input type="text" class="form-control rounded-3" wire:model="payment_reference"
+                                    placeholder="Transaction reference">
+                                @error('payment_reference')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>
@@ -1626,7 +1850,7 @@ new class extends Component {
                                                 <td>{{ optional($allocation->payment?->payment_date)->format('d M Y') ?? '—' }}
                                                 </td>
                                                 <td>{{ $allocation->payment?->receipt_no ?? '—' }}</td>
-                                                <td>{{ $allocation->payment?->reference_no ?? '—' }}</td>
+                                                <td>{{ $allocation->payment?->reference ?? '—' }}</td>
                                                 <td>{{ $allocation->studentFeeItem?->description ?? '—' }}</td>
                                                 <td class="text-end">KES
                                                     {{ number_format($allocation->amount_allocated, 2) }}</td>

@@ -8,51 +8,46 @@
     <style>
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 13px;
+            font-size: 12px;
             color: #1f2937;
-            margin: 30px;
-        }
-
-        .no-print {
-            margin-bottom: 20px;
+            margin: 28px;
         }
 
         .institution-header {
             text-align: center;
-            margin-bottom: 22px;
+            margin-bottom: 18px;
         }
 
         .institution-header img {
-            height: 70px;
-            margin-bottom: 8px;
+            height: 100px;
+            margin-bottom: 6px;
         }
 
         .institution-header h1 {
             margin: 0;
-            font-size: 22px;
+            font-size: 20px;
             color: #0e334e;
-            letter-spacing: 0.4px;
         }
 
         .institution-header p {
             margin: 3px 0;
             color: #666;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .document-title {
-            margin-top: 10px;
-            font-size: 15px;
+            margin-top: 6px;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
             color: #111827;
         }
 
         .section-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 18px 0 8px;
+            margin: 16px 0 8px;
             color: #111827;
         }
 
@@ -61,18 +56,14 @@
             border-collapse: collapse;
         }
 
-        .meta-table td {
-            padding: 6px 8px;
-            border: 1px solid #e5e7eb;
-            vertical-align: top;
-        }
-
+        .meta-table td,
         .summary-table th,
         .summary-table td,
         .ledger-table th,
         .ledger-table td {
             border: 1px solid #d1d5db;
-            padding: 8px;
+            padding: 7px;
+            vertical-align: top;
         }
 
         .summary-table th,
@@ -85,6 +76,10 @@
             text-align: right;
         }
 
+        .text-center {
+            text-align: center;
+        }
+
         .muted {
             color: #6b7280;
         }
@@ -94,6 +89,17 @@
             color: #b91c1c;
         }
 
+        .balance-cleared {
+            font-weight: bold;
+            color: #15803d;
+        }
+
+        .allocation-row td {
+            font-size: 10.5px;
+            background: #fafafa;
+            color: #6b7280;
+        }
+
         .footer {
             margin-top: 30px;
             font-size: 11px;
@@ -101,34 +107,35 @@
             display: flex;
             justify-content: space-between;
         }
-
-        .allocation-row td {
-            font-size: 11px;
-            background: #fafafa;
-        }
-
-        @media print {
-            .no-print {
-                display: none;
-            }
-
-            body {
-                margin: 12mm;
-            }
-        }
     </style>
 </head>
 
 <body>
+    @php
+        $student = $statement['student'];
+        $course = $statement['course'];
+        $trimester = $statement['trimester'];
+        $academicYear = $statement['academic_year'];
+        $progression = $statement['progression'];
 
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="{{ public_path('assets/images/logos/tabor_logo.png') }}" alt="Company Logo" style="height: 120px;">
-        <h2 style="margin: 10px 0 4px; color: #0e334e; letter-spacing: 0.4px; font-size: 20px;">
-            <p style="font-size: 13px; color: #666; margin: 0;">Student Fee Statement</p>
-        </h2>
-    </div>
+        $studentName = trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? ''));
+        $studentNumber =
+            'TTI/' .
+            ($student->admission_number ?? '—') .
+            '/' .
+            ($course?->code ?? '—') .
+            '/' .
+            optional($student->created_at)->format('Y');
+
+        $closingBalanceClass = ($statement['closing_balance'] ?? 0) > 0 ? 'balance-due' : 'balance-cleared';
+    @endphp
+
     <div class="institution-header">
-        <p>Phone: +254 798 496129, +254 726 241095 | Email: office@tabor.ac.ke</p>
+        <img src="{{ public_path('assets/images/logos/tabor_logo.png') }}" alt="Tabor Logo">
+
+        <div class="document-title">Student Fee Statement</div>
+
+        <p>Phone: +254 798 496129, +254 726 241095 | Email: office@tabor.ac.ke</p>
         <p>Website: www.tabor.ac.ke | Location: Showbe Plaza, Pangani, Thika Highway, Nairobi, Kenya</p>
     </div>
 
@@ -138,26 +145,26 @@
         <tr>
             <td>
                 <strong>Student Name:</strong>
-                {{ trim(($statement['student']->first_name ?? '') . ' ' . ($statement['student']->last_name ?? '')) ?: $statement['student']->name ?? '—' }}
+                {{ $studentName ?: $student->name ?? '—' }}
             </td>
             <td>
                 <strong>Student No:</strong>
-                {{ 'TTI/' . ($statement['student']->admission_number . '/' . $statement['course']->code . '/' . $statement['student']->created_at->format('Y')) }}
+                {{ $studentNumber }}
             </td>
         </tr>
 
         <tr>
             <td>
                 <strong>Course:</strong>
-                {{ $statement['course']->title . ' - ' . $statement['course']->level }}
+                {{ trim(($course?->title ?? '—') . ' - ' . ($course?->level ?? '')) }}
             </td>
             <td>
                 <strong>Trimester:</strong>
-                {{ $statement['trimester']->name . '/' . $statement['academic_year']->name }}
+                {{ $trimester?->name ?? '—' }}
+                @if ($academicYear)
+                    / {{ $academicYear->name }}
+                @endif
             </td>
-        </tr>
-
-        <tr>
         </tr>
 
         <tr>
@@ -174,13 +181,14 @@
         <tr>
             <td>
                 <strong>Progression:</strong>
-                {{ 'Trimester ' . $statement['progression']->trimester_sequence . ' of ' . $statement['course']->number_of_trimesters }}
+                Trimester {{ $progression->trimester_sequence }}
+                @if ($course?->number_of_trimesters)
+                    of {{ $course->number_of_trimesters }}
+                @endif
             </td>
             <td>
                 <strong>Progression Status:</strong>
-                {{ ucfirst($statement['progression']->status) }}
-            </td>
-            <td>
+                {{ str_replace('_', ' ', ucfirst($progression->status)) }}
             </td>
         </tr>
     </table>
@@ -191,17 +199,19 @@
         <thead>
             <tr>
                 <th>Balance B/F</th>
-                <th>Total DR</th>
-                <th>Total CR</th>
+                <th>Charges This Trimester</th>
+                <th>Payments This Trimester</th>
                 <th>Balance C/F</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td class="text-end">{{ number_format($statement['opening_balance'], 2) }}</td>
-                <td class="text-end">{{ number_format($statement['total_debits'], 2) }}</td>
-                <td class="text-end">{{ number_format($statement['total_credits'], 2) }}</td>
-                <td class="text-end balance-due">{{ number_format($statement['closing_balance'], 2) }}</td>
+                <td class="text-end">{{ number_format($statement['charge_total'], 2) }}</td>
+                <td class="text-end">{{ number_format($statement['payment_total'], 2) }}</td>
+                <td class="text-end {{ $closingBalanceClass }}">
+                    {{ number_format($statement['closing_balance'], 2) }}
+                </td>
             </tr>
         </tbody>
     </table>
@@ -222,27 +232,27 @@
 
         <tbody>
             <tr>
-                <td>{{ optional($statement['start_date'])->format('d M Y') ?? '' }}</td>
+                <td>{{ optional($statement['start_date'])->format('d M Y') ?? '—' }}</td>
                 <td>B/F</td>
-                <td>Balance Brought Forward</td>
-                <td class="text-end"></td>
-                <td class="text-end"></td>
+                <td>Previous Balance Brought Forward</td>
+                <td class="text-end">—</td>
+                <td class="text-end">—</td>
                 <td class="text-end">{{ number_format($statement['opening_balance'], 2) }}</td>
             </tr>
 
             @forelse($statement['ledger'] as $entry)
                 <tr>
                     <td>{{ optional($entry['date'])->format('d M Y') ?? '—' }}</td>
-                    <td>{{ $entry['reference'] }}</td>
-                    <td>{{ $entry['description'] }}</td>
-                    <td>
-                        {{ $entry['dr'] > 0 ? number_format($entry['dr'], 2) : '—' }}
+                    <td>{{ $entry['reference'] ?? '—' }}</td>
+                    <td>{{ $entry['description'] ?? '—' }}</td>
+                    <td class="text-end">
+                        {{ ($entry['dr'] ?? 0) > 0 ? number_format($entry['dr'], 2) : '—' }}
                     </td>
-                    <td>
-                        {{ $entry['cr'] > 0 ? number_format($entry['cr'], 2) : '—' }}
+                    <td class="text-end">
+                        {{ ($entry['cr'] ?? 0) > 0 ? number_format($entry['cr'], 2) : '—' }}
                     </td>
-                    <td>
-                        {{ number_format($entry['balance'], 2) }}
+                    <td class="text-end">
+                        {{ number_format($entry['balance'] ?? 0, 2) }}
                     </td>
                 </tr>
 
@@ -251,12 +261,12 @@
                         <tr class="allocation-row">
                             <td></td>
                             <td></td>
-                            <td style="padding-left: 24px; color: #6b7280;">
-                                ↳ Allocated to {{ $allocation['description'] }}
+                            <td style="padding-left: 24px;">
+                                Allocated to {{ $allocation['description'] ?? 'Fee Item' }}
                             </td>
-                            <td>—</td>
-                            <td style="color: #6b7280;">
-                                {{ number_format($allocation['amount'], 2) }}
+                            <td class="text-end">—</td>
+                            <td class="text-end">
+                                {{ number_format($allocation['amount'] ?? 0, 2) }}
                             </td>
                             <td></td>
                         </tr>
@@ -264,8 +274,8 @@
                 @endif
             @empty
                 <tr>
-                    <td colspan="6" class="text-end muted">
-                        No ledger entries for this trimester.
+                    <td colspan="6" class="text-center muted">
+                        No ledger entries for this progression.
                     </td>
                 </tr>
             @endforelse
@@ -278,11 +288,6 @@
             </tr>
         </tbody>
     </table>
-
-    <div class="footer">
-        <div>Prepared by: __________________________</div>
-        <div>Approved by: __________________________</div>
-    </div>
 </body>
 
 </html>

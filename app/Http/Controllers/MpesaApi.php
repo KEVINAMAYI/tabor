@@ -42,7 +42,7 @@ class MpesaApi extends Controller
         $curl_response = curl_exec($curl);
         $access_token = json_decode($curl_response);
         curl_close($curl);
-        return $access_token->access_token ?? 'QPDiAAOkroM9KADBIOTsElQGf1hW';
+        return $access_token->access_token??'QPDiAAOkroM9KADBIOTsElQGf1hW';
     }
 
     private function makeHttp($url, $body)
@@ -130,66 +130,203 @@ class MpesaApi extends Controller
     //FUNCTION TO RECEIVE RESPONSES FOR BOTH STK PUSH AND C2B TRANSACTIONS
     /* public function c2bConfirmation(Request $request)
     {
-        DB::beginTransaction();
         try {
             $response = $request->all();
-            Log::info('C2B Confirmation: ' . request()->ip());
-            Log::info($response);
 
-            $mpesa_transaction_id = $response['TransID'];
-            $date_time = $response['TransTime'];
-            $amount = $response['TransAmount'];
-            $account = strtoupper(preg_replace('/\s+/', '', $response['BillRefNumber']));
-            $phone = $response['MSISDN'];
-            $name = $response['FirstName'];
-            $payer = preg_replace('!\s+!', ' ', ucwords(strtolower($name)));
+            Log::info('C2B Confirmation received', [
+                'ip' => $request->ip(),
+                'payload' => $response,
+            ]);
 
+            $mpesaTransactionId = $response['TransID'] ?? null;
+            $transTime = $response['TransTime'] ?? null;
+            $amount = $response['TransAmount'] ?? null;
+            $billRefNumber = $response['BillRefNumber'] ?? null;
+            $phone = $response['MSISDN'] ?? null;
+            $firstName = $response['FirstName'] ?? '';
 
-            if (!empty($mpesa_transaction_id)) {
-                // Extract admission number and course code
-                [$admissionNumber, $courseCode] = explode('/', $account);
-                $student = Student::where('admission_number', $admissionNumber)->first();
-                $course = Course::where('code', $courseCode)->first(); // Adjust column if needed
-                $enrollment = Enrollment::where('course_id', $course->id)
-                    ->where('student_id', $student->id)
+            if (
+                blank($mpesaTransactionId) ||
+                blank($amount) ||
+                blank($billRefNumber)
+            ) {
+                Log::warning('Invalid C2B confirmation payload', [
+                    'payload' => $response,
+                ]);
+
+                return response()->json([
+                    'ResultCode' => 0,
+                    'ResultDesc' => 'Accepted',
+                ]);
+            }
+
+            $account = strtoupper(
+                preg_replace('/\s+/', '', $billRefNumber)
+            );
+
+            $payer = preg_replace(
+                '!\s+!',
+                ' ',
+                ucwords(strtolower($firstName))
+            );
+
+            $paymentDate = $this->parseMpesaTransTime($transTime);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Prevent Duplicate M-PESA Transactions
+            |--------------------------------------------------------------------------
+            */
+
+            $existing = Payment::query()
+                ->where('receipt_no', $mpesaTransactionId)
+                ->first();
+
+            if ($existing) {
+                Log::info('Duplicate M-PESA transaction ignored', [
+                    'receipt_no' => $mpesaTransactionId,
+                    'payment_id' => $existing->id,
+                ]);
+
+                return response()->json([
+                    'ResultCode' => 0,
+                    'ResultDesc' => 'Accepted',
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Resolve Student / Course / Enrollment From Account
+            |--------------------------------------------------------------------------
+            |
+            | Expected BillRefNumber format:
+            | ADMISSION/COURSECODE
+            |
+            | Example:
+            | 00102/GLB1
+            |
+            */
+
+            $student = null;
+            $course = null;
+            $enrollment = null;
+
+            $parts = explode('/', $account);
+
+            if (count($parts) >= 2) {
+                $admissionNumber = $parts[0];
+                $courseCode = $parts[1];
+
+                $student = Student::query()
+                    ->where('admission_number', $admissionNumber)
                     ->first();
 
-                if ($student && $course && $enrollment) {
-                    app(PaymentPostingService::class)->post([
-                    'student_id' => $student?->id,
-                    'enrollment_id' => $enrollment?->id,
-                    'payment_date' => now(),
+                $course = Course::query()
+                    ->where('code', $courseCode)
+                    ->first();
+
+                if ($student && $course) {
+                    $enrollment = Enrollment::query()
+                        ->where('student_id', $student->id)
+                        ->where('course_id', $course->id)
+                        ->whereIn('status', [
+                            'active',
+                            'course_completed',
+                            'pending_graduation',
+                            'graduated',
+                        ])
+                        ->latest('id')
+                        ->first();
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | If Enrollment Is Found, Post + Allocate Payment
+            |--------------------------------------------------------------------------
+            */
+
+            if ($student && $enrollment) {
+                app(\App\Services\PaymentPostingService::class)->post([
+                    'student_id' => $student->id,
+                    'enrollment_id' => $enrollment->id,
+                    'payment_date' => $paymentDate,
                     'amount' => $amount,
                     'method' => 'mpesa',
-                    'reference_no' => $account,
-                    'receipt_no' => $mpesa_transaction_id,
+                    'reference' => $account,
+                    'receipt_no' => $mpesaTransactionId,
                     'status' => 'completed',
                     'payer' => $payer,
                     'phone' => $phone,
-                    'notes' => "Payment of Ksh {$amount} received via Mpesa for course {$course?->name??'Unknown'} (Enrollment ID: {$enrollment?->id??'Unknown'})",
+                    'notes' => 'M-PESA C2B payment',
                 ]);
-                } else {
-                    Log::warning("Student, Course, or Enrollment not found for account reference: " . $account);
-                    // Optionally, you can still save the transaction with a note about the missing data
-                    $transaction = new Payment();
-                    $transaction->payer = $payer;
-                    $transaction->transaction_id = $mpesa_transaction_id;
-                    $transaction->reference = $account;
-                    $transaction->amount = $amount;
-                    $transaction->phone = $phone;
-                    $transaction->paid_at = $date_time;
-                    $transaction->status = 'pending';
-                    $transaction->payment_method = 'mpesa';
-                    $transaction->notes = "Payment received but student, course, or enrollment not found for account reference: " . $account;
-                    $transaction->save();
-                }
 
-
+                return response()->json([
+                    'ResultCode' => 0,
+                    'ResultDesc' => 'Accepted',
+                ]);
             }
-            DB::commit();
-        } catch (Exception $exception) {
-            DB::rollBack();
-            Log::info($exception);
+
+            /*
+            |--------------------------------------------------------------------------
+            | If Not Matched, Store As Unallocated Payment
+            |--------------------------------------------------------------------------
+            */
+
+            Payment::create([
+                'student_id' => $student?->id,
+                'enrollment_id' => null,
+                'payment_date' => $paymentDate,
+                'amount' => $amount,
+                'unallocated_balance' => $amount,
+                'method' => 'mpesa',
+                'reference' => $account,
+                'receipt_no' => $mpesaTransactionId,
+                'status' => 'unallocated',
+                'payer' => $payer,
+                'phone' => $phone,
+                'notes' => 'M-PESA C2B payment could not be matched to an active enrollment.',
+                'paid_at' => now(),
+            ]);
+
+            Log::warning('M-PESA payment stored as unallocated', [
+                'receipt_no' => $mpesaTransactionId,
+                'reference' => $account,
+                'student_found' => (bool) $student,
+                'course_found' => (bool) $course,
+                'enrollment_found' => (bool) $enrollment,
+            ]);
+
+            return response()->json([
+                'ResultCode' => 0,
+                'ResultDesc' => 'Accepted',
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('C2B confirmation failed', [
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'ResultCode' => 0,
+                'ResultDesc' => 'Accepted',
+            ]);
+        }
+    }
+
+    protected function parseMpesaTransTime(?string $transTime): string
+    {
+        if (blank($transTime)) {
+            return now()->toDateString();
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat(
+                'YmdHis',
+                $transTime
+            )->toDateString();
+        } catch (\Throwable $th) {
+            return now()->toDateString();
         }
     } */
 

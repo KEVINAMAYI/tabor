@@ -43,7 +43,7 @@ new class extends Component {
 
     public function with()
     {
-        $active_enrollments = Enrollment::where('enrollments.status', 'approved')
+        $active_enrollments = Enrollment::where('enrollments.status', 'active')
             ->join('students', 'enrollments.student_id', '=', 'students.id')
             ->leftJoin('payments', 'enrollments.id', '=', 'payments.enrollment_id') // Optional, if you want search by payment reference
             ->with(['student.user', 'course', 'intake', 'payments'])
@@ -286,7 +286,7 @@ new class extends Component {
                                         <label for="status" class="form-label">Status</label>
                                         <select wire:model="status" id="status" class="form-control" required>
                                             <option value="pending">Pending</option>
-                                            <option value="approved">Approved</option>
+                                            <option value="active">Approved</option>
                                             <option value="rejected">Rejected</option>
                                         </select>
                                     </div>

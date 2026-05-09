@@ -10,6 +10,8 @@ class CourseFeePlan extends Model
 
     protected $casts = [
         'mandatory' => 'boolean',
+        'amount' => 'decimal:2',
+        'trimester_sequence' => 'integer',
     ];
 
     public function course()

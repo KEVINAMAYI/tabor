@@ -16,12 +16,21 @@ return new class extends Migration {
             $table->foreignId('intake_id')->constrained()->onDelete('cascade');
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->string('enrollment_number')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected', 'completed', 'withdrawn'])->default('pending');
+            $table->enum('status', [
+                'pending',
+                'active',
+                'deferred',
+                'withdrawn',
+                'rejected',
+                'cancelled',
+                'course_completed',
+                'pending_graduation',
+                'graduated',
+            ])->default('active');
             $table->text('remarks')->nullable();
             $table->timestamp('enrolled_at')->nullable();
             $table->timestamps();
         });
-
     }
 
     /**

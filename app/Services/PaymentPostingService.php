@@ -3,23 +3,23 @@
 namespace App\Services;
 
 use App\Models\Payment;
-use App\Models\StudentFeeItem;
 use App\Models\PaymentAllocation;
+use App\Models\StudentFeeItem;
 use Illuminate\Support\Facades\DB;
 
 class PaymentPostingService
 {
     public function post(array $data): Payment
     {
-
         return DB::transaction(function () use ($data) {
             $payment = Payment::create([
                 'student_id' => $data['student_id'],
                 'enrollment_id' => $data['enrollment_id'] ?? null,
                 'payment_date' => $data['payment_date'],
                 'amount' => $data['amount'],
+                'unallocated_balance' => $data['amount'],
                 'method' => $data['method'] ?? null,
-                'reference_no' => $data['reference_no'] ?? null,
+                'reference' => $data['reference'] ?? null,
                 'receipt_no' => $data['receipt_no'] ?? null,
                 'status' => $data['status'] ?? 'completed',
                 'notes' => $data['notes'] ?? null,
@@ -28,64 +28,11 @@ class PaymentPostingService
                 'phone' => $data['phone'] ?? null,
             ]);
 
-            $remainingAmount = (float) $payment->amount;
+            $this->allocatePayment($payment);
 
-            $feeItemsQuery = StudentFeeItem::query()
-                ->where('student_id', $payment->student_id)
-                ->whereIn('status', ['pending', 'partial'])
-                ->orderBy('charge_date')
-                ->orderBy('id');
-
-            if (!empty($payment->enrollment_id)) {
-                $feeItemsQuery->where(function ($query) use ($payment) {
-                    $query->where('enrollment_id', $payment->enrollment_id)
-                        ->orWhereNull('enrollment_id');
-                });
-            }
-
-            $feeItems = $feeItemsQuery->lockForUpdate()->get();
-
-            foreach ($feeItems as $item) {
-                if ($remainingAmount <= 0) {
-                    break;
-                }
-
-                $itemBalance = (float) $item->balance;
-
-                if ($itemBalance <= 0) {
-                    continue;
-                }
-
-                $allocatable = min($remainingAmount, $itemBalance);
-
-                PaymentAllocation::create([
-                    'payment_id' => $payment->id,
-                    'student_fee_item_id' => $item->id,
-                    'amount_allocated' => $allocatable,
-                ]);
-
-                $newAmountPaid = (float) $item->amount_paid + $allocatable;
-                $newBalance = (float) $item->amount - $newAmountPaid;
-
-                if ($newBalance < 0) {
-                    $newBalance = 0;
-                }
-
-                $item->update([
-                    'amount_paid' => $newAmountPaid,
-                    'balance' => $newBalance,
-                    'status' => $newBalance == 0.0
-                        ? 'paid'
-                        : ($newAmountPaid > 0 ? 'partial' : 'pending'),
-                ]);
-
-                $remainingAmount -= $allocatable;
-            }
-
-            return $payment->load(['allocations.studentFeeItem']);
+            return $payment->fresh()->load(['allocations.studentFeeItem']);
         });
     }
-
 
     public function allocateExistingPayment(Payment $payment): void
     {
@@ -93,34 +40,26 @@ class PaymentPostingService
             return;
         }
 
-        $remaining = (float) $payment->amount;
+        DB::transaction(function () use ($payment) {
+            $this->allocatePayment($payment->fresh());
+        });
+    }
+
+    protected function allocatePayment(Payment $payment): void
+    {
+        $alreadyAllocated = (float) $payment->allocations()->sum('amount_allocated');
+
+        $remaining = max(0, (float) $payment->amount - $alreadyAllocated);
 
         if ($remaining <= 0) {
+            $payment->update([
+                'unallocated_balance' => 0,
+            ]);
+
             return;
         }
 
-        $feeItemsQuery = StudentFeeItem::query()
-            ->where('student_id', $payment->student_id)
-            ->whereIn('status', ['pending', 'partial']);
-
-        if (!empty($payment->enrollment_id)) {
-            $feeItemsQuery->where(function ($q) use ($payment) {
-                $q->whereNull('enrollment_id') // student-once fees
-                    ->orWhere('enrollment_id', $payment->enrollment_id);
-            });
-        }
-
-        $feeItems = $feeItemsQuery
-            ->orderByRaw("
-            CASE
-                WHEN enrollment_id IS NULL THEN 0
-                ELSE 1
-            END
-        ")
-            ->orderBy('charge_date')
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->get();
+        $feeItems = $this->outstandingFeeItemsForPayment($payment);
 
         foreach ($feeItems as $item) {
             if ($remaining <= 0) {
@@ -155,12 +94,95 @@ class PaymentPostingService
             $remaining -= $allocatable;
         }
 
-        if ($remaining > 0) {
-            \Log::warning('Payment has unallocated amount', [
-                'payment_id' => $payment->id,
-                'student_id' => $payment->student_id,
-                'remaining_amount' => $remaining,
-            ]);
+        $payment->update([
+            'unallocated_balance' => max(0, $remaining),
+        ]);
+    }
+
+    protected function outstandingFeeItemsForPayment(Payment $payment)
+    {
+        $studentId = $payment->student_id;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Resolve Student From Enrollment
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            empty($studentId) &&
+            !empty($payment->enrollment_id)
+        ) {
+            $studentId = optional(
+                $payment->enrollment
+            )->student_id;
         }
+
+        if (empty($studentId)) {
+            return collect();
+        }
+
+        return StudentFeeItem::query()
+
+            ->select('student_fee_items.*')
+
+            ->leftJoin(
+                'fee_definitions',
+                'fee_definitions.id',
+                '=',
+                'student_fee_items.fee_definition_id'
+            )
+
+            ->where('student_fee_items.student_id', $studentId)
+
+            ->where('student_fee_items.balance', '>', 0)
+
+            ->whereIn('student_fee_items.status', [
+                'pending',
+                'partial',
+            ])
+
+            ->when(!empty($payment->enrollment_id), function ($query) use ($payment) {
+
+                $query->where(function ($q) use ($payment) {
+
+                    $q->where(
+                        'student_fee_items.enrollment_id',
+                        $payment->enrollment_id
+                    )
+
+                        ->orWhereNull(
+                            'student_fee_items.enrollment_id'
+                        );
+                });
+            })
+
+            /*
+            |--------------------------------------------------------------------------
+            | Priority Allocation Order
+            |--------------------------------------------------------------------------
+            |
+            | 1. Student once fees first
+            | 2. Oldest charges
+            | 3. Lowest ID
+            |
+            */
+
+            ->orderByRaw("
+            CASE
+                WHEN fee_definitions.scope = 'student'
+                 AND fee_definitions.applies_once = 1
+                THEN 0
+                ELSE 1
+            END
+        ")
+
+            ->orderBy('student_fee_items.charge_date')
+
+            ->orderBy('student_fee_items.id')
+
+            ->lockForUpdate()
+
+            ->get();
     }
 }

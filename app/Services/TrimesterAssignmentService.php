@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class TrimesterAssignmentService
 {
-    public function assign(Carbon $admissionDate, Course $course): array
+    /* public function assign(Carbon $admissionDate, Course $course): array
     {
         $currentTrimester = Trimester::query()
             ->whereDate('start_date', '<=', $admissionDate)
@@ -31,6 +31,50 @@ class TrimesterAssignmentService
 
         if (
             $course->allows_continuous_intake &&
+            $currentTrimester->intake_cutoff_date &&
+            $admissionDate->gt($currentTrimester->intake_cutoff_date)
+        ) {
+            $assignedTrimester = Trimester::query()
+                ->whereDate('start_date', '>', $currentTrimester->end_date)
+                ->orderBy('start_date')
+                ->firstOrFail();
+        }
+
+        return [
+            'intake_trimester_id' => $currentTrimester->id,
+            'assigned_start_trimester_id' => $assignedTrimester->id,
+        ];
+    } */
+
+    public function assign(Carbon $admissionDate, Course $course): array
+    {
+        $currentTrimester = Trimester::query()
+            ->whereDate('start_date', '<=', $admissionDate)
+            ->whereDate('end_date', '>=', $admissionDate)
+            ->first();
+
+        if (!$currentTrimester) {
+            $nextTrimester = Trimester::query()
+                ->whereDate('start_date', '>', $admissionDate)
+                ->orderBy('start_date')
+                ->firstOrFail();
+
+            return [
+                'intake_trimester_id' => $nextTrimester->id,
+                'assigned_start_trimester_id' => $nextTrimester->id,
+            ];
+        }
+
+        if ($course->allows_continuous_intake) {
+            return [
+                'intake_trimester_id' => $currentTrimester->id,
+                'assigned_start_trimester_id' => $currentTrimester->id,
+            ];
+        }
+
+        $assignedTrimester = $currentTrimester;
+
+        if (
             $currentTrimester->intake_cutoff_date &&
             $admissionDate->gt($currentTrimester->intake_cutoff_date)
         ) {

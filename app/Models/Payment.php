@@ -16,8 +16,10 @@ class Payment extends Model
      |------------------------------------------------------------------
      */
     protected $casts = [
-        'paid_at' => 'datetime',
         'payment_date' => 'date',
+        'paid_at' => 'datetime',
+        'amount' => 'decimal:2',
+        'unallocated_balance' => 'decimal:2',
     ];
 
     /* -----------------------------------------------------------------
@@ -32,14 +34,14 @@ class Payment extends Model
 
     // Convenience hops
     public function student()
-{
-    return $this->belongsTo(Student::class);
-}
+    {
+        return $this->belongsTo(Student::class);
+    }
 
-public function allocations()
-{
-    return $this->hasMany(PaymentAllocation::class);
-}
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
 
     public function course()
     {
@@ -82,8 +84,10 @@ public function allocations()
 
     public function scopeForIntake($query, $intakeId)
     {
-        return $query->whereHas('enrollment', fn ($q) =>
-        $q->where('intake_id', $intakeId)
+        return $query->whereHas(
+            'enrollment',
+            fn($q) =>
+            $q->where('intake_id', $intakeId)
         );
     }
 
@@ -95,7 +99,7 @@ public function allocations()
     public function markAsPaid(string $reference = null): void
     {
         $this->update([
-            'is_paid' => true,
+            'status' => 'completed',
             'reference' => $reference ?? $this->reference,
             'paid_at' => now(),
         ]);

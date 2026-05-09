@@ -3,6 +3,7 @@
 use App\Models\FeeCategory;
 use App\Models\FeeDefinition;
 use Livewire\Volt\Component;
+use App\Services\StudentOnceFeeCourseSyncService;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 
@@ -34,7 +35,7 @@ new class extends Component {
         $this->fee_category_id = $fee->fee_category_id;
         $this->name = $fee->name;
         $this->scope = $fee->scope;
-        $this->applies_once = $fee->applies_once? 1 : 0;
+        $this->applies_once = $fee->applies_once ? 1 : 0;
         $this->mandatory = $fee->mandatory;
         $this->default_amount = $fee->default_amount;
         $this->effective_from = optional($fee->effective_from)->format('Y-m-d');
@@ -56,7 +57,7 @@ new class extends Component {
         ]);
         // dd($this->mandatory);
 
-        FeeDefinition::updateOrCreate(
+        $feeDefinition = FeeDefinition::updateOrCreate(
             ['id' => $this->feeDefinitionId],
             [
                 // 'fee_category_id' => $this->fee_category_id,
@@ -72,6 +73,8 @@ new class extends Component {
             ],
         );
 
+        app(StudentOnceFeeCourseSyncService::class)->syncForFeeDefinition($feeDefinition);
+
         $this->dispatch('hide-fee-definition-modal');
         $this->resetForm();
 
@@ -80,7 +83,11 @@ new class extends Component {
 
     public function deleteFeeDefinition($id)
     {
-        FeeDefinition::findOrFail($id)->delete();
+        $feeDefinition = FeeDefinition::findOrFail($id);
+
+        app(StudentOnceFeeCourseSyncService::class)->removeForFeeDefinition($feeDefinition);
+
+        $feeDefinition->delete();
 
         LivewireAlert::text('Fee definition deleted successfully.')->success()->toast()->position('top-end')->show();
     }

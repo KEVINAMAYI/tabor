@@ -11,6 +11,11 @@ class Course extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'allows_continuous_intake' => 'boolean',
+        'chargeable_student_once_fee_definition_ids' => 'array',
+    ];
+
 
     /* -----------------------------------------------------------------
      |  Direct relationships
