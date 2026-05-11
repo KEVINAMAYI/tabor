@@ -106,7 +106,6 @@ new class extends Component {
                         })
                         ->orWhere('method', 'like', "%{$this->search}%")
                         ->orWhere('payment_method', 'like', "%{$this->search}%")
-                        ->orWhere('reference_no', 'like', "%{$this->search}%")
                         ->orWhere('reference', 'like', "%{$this->search}%")
                         ->orWhere('receipt_no', 'like', "%{$this->search}%")
                         ->orWhere('transaction_id', 'like', "%{$this->search}%");
