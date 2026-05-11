@@ -235,8 +235,8 @@
                 <td>{{ optional($statement['start_date'])->format('d M Y') ?? '—' }}</td>
                 <td>B/F</td>
                 <td>Previous Balance Brought Forward</td>
-                <td class="text-end">—</td>
-                <td class="text-end">—</td>
+                <td class="text-end"></td>
+                <td class="text-end"></td>
                 <td class="text-end">{{ number_format($statement['opening_balance'], 2) }}</td>
             </tr>
 
@@ -246,10 +246,10 @@
                     <td>{{ $entry['reference'] ?? '—' }}</td>
                     <td>{{ $entry['description'] ?? '—' }}</td>
                     <td class="text-end">
-                        {{ ($entry['dr'] ?? 0) > 0 ? number_format($entry['dr'], 2) : '—' }}
+                        {{ ($entry['dr'] ?? 0) > 0 ? number_format($entry['dr'], 2) : '' }}
                     </td>
                     <td class="text-end">
-                        {{ ($entry['cr'] ?? 0) > 0 ? number_format($entry['cr'], 2) : '—' }}
+                        {{ ($entry['cr'] ?? 0) > 0 ? number_format($entry['cr'], 2) : '' }}
                     </td>
                     <td class="text-end">
                         {{ number_format($entry['balance'] ?? 0, 2) }}
@@ -264,7 +264,7 @@
                             <td style="padding-left: 24px;">
                                 Allocated to {{ $allocation['description'] ?? 'Fee Item' }}
                             </td>
-                            <td class="text-end">—</td>
+                            <td class="text-end"></td>
                             <td class="text-end">
                                 {{ number_format($allocation['amount'] ?? 0, 2) }}
                             </td>

@@ -127,15 +127,17 @@ class StudentStatementService
     ): Collection {
         return $this->rawCharges($student, $progression, $startDate, $endDate)
             ->map(function (StudentFeeItem $item) {
+                $amount = (float) $item->amount;
+
                 return [
                     'date' => $item->charge_date,
-                    'reference' => 'CHG-' . $item->id,
+                    'reference' => $amount < 0 ? 'DISC-' . $item->id : 'CHG-' . $item->id,
                     'description' => $item->description,
-                    'dr' => (float) $item->amount,
-                    'cr' => 0.00,
-                    'source_type' => 'charge',
+                    'dr' => $amount > 0 ? $amount : 0.00,
+                    'cr' => $amount < 0 ? abs($amount) : 0.00,
+                    'source_type' => $amount < 0 ? 'discount' : 'charge',
                     'sort_date' => optional($item->charge_date)->timestamp ?? 0,
-                    'sort_order' => 1,
+                    'sort_order' => $amount < 0 ? 2 : 1,
                     'sort_id' => $item->id,
                 ];
             });

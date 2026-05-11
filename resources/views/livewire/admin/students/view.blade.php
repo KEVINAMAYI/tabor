@@ -20,6 +20,7 @@ use App\Actions\Enrollment\DeleteEnrollmentAction;
 use App\Actions\Enrollment\MarkCourseCompletedAction;
 use App\Actions\Enrollment\MoveToPendingGraduationAction;
 use App\Actions\Enrollment\MarkGraduatedAction;
+use App\Actions\Finance\ApplyStudentDiscountAction;
 
 new class extends Component {
     public Student $student;
@@ -46,6 +47,13 @@ new class extends Component {
     public $payment_reference = '';
     public $payment_receipt_no = '';
     public $payment_notes = '';
+
+    // Discount modal
+    public $discount_enrollment_id = null;
+    public $discount_progression_id = '';
+    public $discount_date = '';
+    public $discount_amount = '';
+    public $discount_description = '';
 
     // Generate charges modal
     public $generateChargesEnrollmentId = null;
@@ -247,6 +255,14 @@ new class extends Component {
             'currentCharges' => $currentCharges,
             'currentPaid' => $currentPaid,
             'currentBalance' => $currentBalance,
+
+            'discountProgressions' => $selectedEnrollment
+                ? EnrollmentProgression::query()
+                    ->with(['trimester.academicYear'])
+                    ->where('enrollment_id', $selectedEnrollment->id)
+                    ->orderBy('trimester_sequence')
+                    ->get()
+                : collect(),
         ];
     }
 
@@ -488,6 +504,62 @@ new class extends Component {
         $this->resetPaymentForm();
 
         LivewireAlert::text('Payment posted successfully.')->success()->toast()->position('top-end')->show();
+    }
+
+    public function openDiscountModal(int $enrollmentId): void
+    {
+        $this->resetDiscountForm();
+
+        $this->discount_enrollment_id = $enrollmentId;
+        $this->discount_date = now()->toDateString();
+
+        $currentProgression = EnrollmentProgression::query()->where('enrollment_id', $enrollmentId)->where('status', 'active')->orderByDesc('id')->first();
+
+        $this->discount_progression_id = $currentProgression?->id ?? '';
+
+        $this->dispatch('show-discount-modal');
+    }
+
+    public function saveDiscount(): void
+    {
+        $this->validate([
+            'discount_enrollment_id' => ['required', 'exists:enrollments,id'],
+            'discount_progression_id' => ['required', 'exists:enrollment_progressions,id'],
+            'discount_date' => ['required', 'date'],
+            'discount_amount' => ['required', 'numeric', 'min:1'],
+            'discount_description' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $progression = EnrollmentProgression::query()->where('enrollment_id', $this->discount_enrollment_id)->findOrFail($this->discount_progression_id);
+
+            app(ApplyStudentDiscountAction::class)->execute($progression, [
+                'amount' => $this->discount_amount,
+                'discount_date' => $this->discount_date,
+                'description' => $this->discount_description ?: 'Discount - Trimester ' . $progression->trimester_sequence,
+            ]);
+
+            $this->resetDiscountForm();
+
+            $this->dispatch('hide-discount-modal');
+
+            LivewireAlert::text('Discount applied successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text('Failed to apply discount: ' . $th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
+    }
+
+    protected function resetDiscountForm(): void
+    {
+        $this->discount_enrollment_id = null;
+        $this->discount_progression_id = '';
+        $this->discount_date = now()->toDateString();
+        $this->discount_amount = '';
+        $this->discount_description = '';
     }
 
     public function openStatementModal(int $enrollmentId): void
@@ -1064,6 +1136,12 @@ new class extends Component {
                                     </button>
                                 </div> --}}
 
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-outline-warning w-100 rounded-3"
+                                        wire:click="openDiscountModal({{ $selectedEnrollment->id }})">
+                                        <i class="ti ti-discount-2 me-1"></i> Apply Discount
+                                    </button>
+                                </div>
                                 <div class="col-md-4">
                                     <button type="button" class="btn btn-outline-primary w-100 rounded-3"
                                         wire:click="openPaymentModal({{ $selectedEnrollment->id }})">
@@ -1724,6 +1802,154 @@ new class extends Component {
         </div>
     </div>
 
+    {{-- APPLY DISCOUNT MODAL --}}
+    <div class="modal fade" id="discountModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Apply Student Discount</h5>
+                        <small class="text-muted">
+                            Post a discount to a specific trimester progression. It will appear in that progression
+                            statement.
+                        </small>
+                    </div>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form wire:submit.prevent="saveDiscount">
+                    <div class="modal-body">
+                        @if ($selectedEnrollment)
+                            <div class="p-3 rounded-3 bg-light mb-4">
+                                <div class="fw-semibold text-dark">
+                                    {{ $selectedEnrollment->course?->title }} -
+                                    {{ $selectedEnrollment->course?->level }}
+                                </div>
+
+                                <div class="small text-muted mt-1">
+                                    {{ $student->first_name }} {{ $student->last_name }}
+                                    •
+                                    {{ 'TTI/' . $student->admission_number . '/' . $selectedEnrollment->course?->code . '/' . $student->created_at->format('Y') }}
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="alert alert-warning border-0 rounded-3">
+                            This creates a credit entry against the selected progression. It does not alter payments or
+                            allocations.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-medium">Trimester Progression</label>
+
+                                <select class="form-select rounded-3" wire:model="discount_progression_id">
+                                    <option value="">Select progression</option>
+
+                                    @foreach ($discountProgressions as $progression)
+                                        <option value="{{ $progression->id }}">
+                                            T{{ $progression->trimester_sequence }}
+                                            -
+                                            {{ $progression->trimester?->name ?? 'Trimester' }}
+                                            {{ $progression->trimester?->academicYear?->name }}
+                                            -
+                                            {{ ucfirst($progression->status) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                @error('discount_progression_id')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+
+                                <div class="small text-muted mt-1">
+                                    You can select current or previous progressions.
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Discount Date</label>
+
+                                <input type="date" class="form-control rounded-3" wire:model="discount_date">
+
+                                @error('discount_date')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Discount Amount</label>
+
+                                <input type="number" step="0.01" min="1" class="form-control rounded-3"
+                                    wire:model="discount_amount" placeholder="0.00">
+
+                                @error('discount_amount')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-medium">Reason / Description</label>
+
+                                <input type="text" class="form-control rounded-3"
+                                    wire:model="discount_description"
+                                    placeholder="Example: Scholarship discount, management waiver, bursary...">
+
+                                @error('discount_description')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        @if ($discount_progression_id)
+                            @php
+                                $selectedDiscountProgression = $discountProgressions->firstWhere(
+                                    'id',
+                                    (int) $discount_progression_id,
+                                );
+                            @endphp
+
+                            @if ($selectedDiscountProgression)
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="small text-muted mb-1">Selected Progression</div>
+
+                                    <div class="fw-semibold">
+                                        T{{ $selectedDiscountProgression->trimester_sequence }}
+                                        -
+                                        {{ $selectedDiscountProgression->trimester?->name }}
+                                        {{ $selectedDiscountProgression->trimester?->academicYear?->name }}
+                                    </div>
+
+                                    <div class="small text-muted">
+                                        Status: {{ ucfirst($selectedDiscountProgression->status) }}
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning rounded-3" wire:loading.attr="disabled"
+                            wire:target="saveDiscount">
+                            <span wire:loading.remove wire:target="saveDiscount">
+                                <i class="ti ti-discount-2 me-1"></i> Apply Discount
+                            </span>
+
+                            <span wire:loading wire:target="saveDiscount">
+                                Processing...
+                            </span>
+                        </button>
+
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{-- Statement Modal --}}
     <div class="modal fade" id="statementModal" tabindex="-1" wire:ignore.self>
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -1911,5 +2137,8 @@ new class extends Component {
 
         window.addEventListener('show-statement-modal', () => modalInstance('statementModal')?.show());
         window.addEventListener('hide-statement-modal', () => modalInstance('statementModal')?.hide());
+
+        window.addEventListener('show-discount-modal', () => modalInstance('discountModal')?.show());
+        window.addEventListener('hide-discount-modal', () => modalInstance('discountModal')?.hide());
     </script>
 @endpush
