@@ -6,6 +6,8 @@ use App\Models\Enrollment;
 use App\Models\EnrollmentProgression;
 use App\Models\FeeDefinition;
 use App\Models\Trimester;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -47,7 +49,7 @@ new class extends Component {
             'fee_definition_id' => ['nullable', 'exists:fee_definitions,id'],
             'trimester_id' => ['nullable', 'exists:trimesters,id'],
             'description' => ['required', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0'],
+            'amount' => ['required', 'numeric', 'not_in:0'],
             'charge_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['required', 'in:pending,partial,paid,overdue,cancelled'],
@@ -67,6 +69,7 @@ new class extends Component {
 
     public function updatedStudentFilter(): void
     {
+        $this->enrollmentFilter = '';
         $this->resetPage();
     }
 
@@ -89,17 +92,18 @@ new class extends Component {
     {
         $this->enrollment_id = '';
         $this->enrollment_progression_id = '';
+        $this->trimester_id = '';
     }
 
     public function updatedEnrollmentId($value): void
     {
         $this->enrollment_progression_id = '';
+        $this->trimester_id = '';
 
-        $enrollment = Enrollment::with('assignedStartTrimester')->find($value);
+        $enrollment = Enrollment::with(['student', 'course'])->find($value);
 
         if ($enrollment) {
             $this->student_id = $enrollment->student_id;
-            $this->trimester_id = $enrollment->assigned_start_trimester_id;
         }
     }
 
@@ -111,6 +115,8 @@ new class extends Component {
             $this->enrollment_id = $progression->enrollment_id;
             $this->student_id = $progression->student_id;
             $this->trimester_id = $progression->trimester_id;
+            $this->charge_date = optional($progression->started_at)->format('Y-m-d') ?: now()->toDateString();
+            $this->due_date = $this->charge_date;
         }
     }
 
@@ -120,43 +126,20 @@ new class extends Component {
 
         if ($definition) {
             $this->description = $definition->name;
-            $this->amount = $this->amount ?: $definition->default_amount;
+
+            if (blank($this->amount)) {
+                $this->amount = $definition->default_amount;
+            }
         }
     }
 
     public function with(): array
     {
         $query = StudentFeeItem::query()
-            ->with(['student', 'enrollment.course', 'progression.trimester.academicYear', 'trimester.academicYear', 'feeDefinition', 'allocations'])
-
-            /*
-    |--------------------------------------------------------------------------
-    | Hide Future Progression Fee Items
-    |--------------------------------------------------------------------------
-    |
-    | Include:
-    | - student-level fee items with no enrollment progression
-    | - fee items whose progression sequence is <= the current active
-    |   progression sequence for that same enrollment
-    |
-    */
-
-            ->where(function ($q) {
-                $q->whereNull('enrollment_progression_id')->orWhereExists(function ($sub) {
-                    $sub->selectRaw(1)
-                        ->from('enrollment_progressions as item_ep')
-                        ->join('enrollment_progressions as current_ep', function ($join) {
-                            $join->on('current_ep.enrollment_id', '=', 'item_ep.enrollment_id')->where('current_ep.status', '=', 'active');
-                        })
-                        ->whereColumn('item_ep.id', 'student_fee_items.enrollment_progression_id')
-                        ->whereColumn('item_ep.enrollment_id', 'student_fee_items.enrollment_id')
-                        ->whereColumn('item_ep.trimester_sequence', '<=', 'current_ep.trimester_sequence');
-                });
-            })
-
+            ->with(['student', 'enrollment.course', 'progression.trimester.academicYear', 'trimester.academicYear', 'feeDefinition', 'allocations.payment'])
             ->when(filled($this->search), function ($q) {
                 $q->where(function ($sub) {
-                    $sub->where('description', 'like', '%' . $this->search . '%')
+                    $sub->where('student_fee_items.description', 'like', '%' . $this->search . '%')
                         ->orWhereHas('student', function ($studentQuery) {
                             $studentQuery
                                 ->where('first_name', 'like', '%' . $this->search . '%')
@@ -168,42 +151,71 @@ new class extends Component {
                         });
                 });
             })
-
-            ->when(filled($this->studentFilter), fn($q) => $q->where('student_id', $this->studentFilter))
-            ->when(filled($this->statusFilter), fn($q) => $q->where('status', $this->statusFilter))
-            ->when(filled($this->enrollmentFilter), fn($q) => $q->where('enrollment_id', $this->enrollmentFilter));
+            ->when(filled($this->studentFilter), fn($q) => $q->where('student_fee_items.student_id', $this->studentFilter))
+            ->when(filled($this->statusFilter), fn($q) => $q->where('student_fee_items.status', $this->statusFilter))
+            ->when(filled($this->enrollmentFilter), fn($q) => $q->where('student_fee_items.enrollment_id', $this->enrollmentFilter));
 
         $summaryQuery = clone $query;
 
         return [
-            'feeItems' => $query->latest('charge_date')->latest('id')->paginate($this->perPage),
+            'feeItems' => $query
+                ->leftJoin('fee_definitions', 'fee_definitions.id', '=', 'student_fee_items.fee_definition_id')
+                ->leftJoin('students', 'students.id', '=', 'student_fee_items.student_id')
+                ->leftJoin('enrollments', 'enrollments.id', '=', 'student_fee_items.enrollment_id')
+                ->leftJoin('enrollment_progressions', 'enrollment_progressions.id', '=', 'student_fee_items.enrollment_progression_id')
+                ->select('student_fee_items.*', 'students.first_name', 'students.last_name', 'students.admission_number')
+                ->orderBy('students.admission_number')
+                ->orderBy('enrollments.id')
+                ->orderByRaw(
+                    "
+                    CASE
+                        WHEN fee_definitions.scope = 'student'
+                         AND fee_definitions.applies_once = 1
+                        THEN 0
+                        ELSE 1
+                    END
+                ",
+                )
+                ->orderBy('enrollment_progressions.trimester_sequence')
+                ->orderBy('student_fee_items.charge_date')
+                ->orderBy('student_fee_items.id')
+                ->paginate($this->perPage),
 
             'students' => Student::query()->orderBy('first_name')->orderBy('last_name')->get(),
-
             'enrollments' => Enrollment::query()
                 ->with(['student', 'course'])
                 ->when(filled($this->student_id), fn($q) => $q->where('student_id', $this->student_id))
+                ->whereIn('status', ['active', 'course_completed', 'pending_graduation', 'graduated'])
                 ->latest()
                 ->get(),
 
             'filterEnrollments' => Enrollment::query()
                 ->with(['student', 'course'])
+                ->when(filled($this->studentFilter), fn($q) => $q->where('student_id', $this->studentFilter))
+                ->whereIn('status', ['active', 'course_completed', 'pending_graduation', 'graduated'])
                 ->latest()
                 ->get(),
 
             'progressions' => EnrollmentProgression::query()
                 ->with(['trimester.academicYear', 'enrollment.course'])
                 ->when(filled($this->enrollment_id), fn($q) => $q->where('enrollment_id', $this->enrollment_id))
+                ->whereIn('status', ['active', 'completed'])
                 ->orderBy('trimester_sequence')
                 ->get(),
 
             'feeDefinitions' => FeeDefinition::query()->where('active', true)->orderBy('name')->get(),
 
-            'trimesters' => Trimester::query()->with('academicYear')->orderBy('start_date')->get(),
+            'trimesters' => Trimester::query()
+                ->with('academicYear')
+                ->where(function ($q) {
+                    $q->whereDate('start_date', '<=', now())->orWhere('status', 'closed')->orWhere('status', 'active');
+                })
+                ->orderBy('start_date')
+                ->get(),
 
-            'summaryCharges' => (clone $summaryQuery)->sum('amount'),
-            'summaryPaid' => (clone $summaryQuery)->sum('amount_paid'),
-            'summaryBalance' => (clone $summaryQuery)->sum('balance'),
+            'summaryCharges' => (clone $summaryQuery)->sum('student_fee_items.amount'),
+            'summaryPaid' => (clone $summaryQuery)->sum('student_fee_items.amount_paid'),
+            'summaryBalance' => (clone $summaryQuery)->sum('student_fee_items.balance'),
             'summaryCount' => (clone $summaryQuery)->count(),
         ];
     }
@@ -217,7 +229,7 @@ new class extends Component {
 
     public function editFeeItem(int $id): void
     {
-        $item = StudentFeeItem::with('allocations')->findOrFail($id);
+        $item = StudentFeeItem::with(['student', 'allocations'])->findOrFail($id);
 
         $this->feeItemId = $item->id;
         $this->student_id = $item->student_id;
@@ -246,16 +258,10 @@ new class extends Component {
             $amount = (float) $this->amount;
 
             if ($this->isEditing) {
-                $item = StudentFeeItem::with('allocations')->findOrFail($this->feeItemId);
+                $item = StudentFeeItem::query()->where('id', $this->feeItemId)->lockForUpdate()->firstOrFail();
 
-                $allocated = (float) $item->allocations()->sum('amount_allocated');
-
-                if ($amount < $allocated) {
-                    throw new \RuntimeException('Amount cannot be less than already allocated payments.');
-                }
-
-                $amountPaid = $allocated;
-                $balance = max(0, $amount - $amountPaid);
+                $oldStudentId = $item->student_id;
+                $oldEnrollmentId = $item->enrollment_id;
 
                 $item->update([
                     'student_id' => $this->student_id,
@@ -265,14 +271,32 @@ new class extends Component {
                     'trimester_id' => $this->trimester_id ?: null,
                     'description' => $this->description,
                     'amount' => $amount,
-                    'amount_paid' => $amountPaid,
-                    'balance' => $balance,
+                    'amount_paid' => 0,
+                    'balance' => $amount,
                     'charge_date' => $this->charge_date,
                     'due_date' => $this->due_date ?: null,
-                    'status' => $this->resolvedStatus($balance, $amountPaid),
+                    'status' => $amount > 0 ? 'pending' : 'paid',
                 ]);
+
+                /*
+            |--------------------------------------------------------------------------
+            | Rebuild Allocations
+            |--------------------------------------------------------------------------
+            |
+            | Rebuild old scope first in case student/enrollment changed,
+            | then rebuild the new scope.
+            |
+            */
+
+                $this->rebuildAllocationsForEnrollment($oldStudentId, $oldEnrollmentId);
+
+                if ((int) $oldStudentId !== (int) $item->student_id || (int) $oldEnrollmentId !== (int) $item->enrollment_id) {
+                    if ($amount > 0) {
+                        $this->rebuildAllocationsForEnrollment($item->student_id, $item->enrollment_id);
+                    }
+                }
             } else {
-                StudentFeeItem::create([
+                $item = StudentFeeItem::create([
                     'student_id' => $this->student_id,
                     'enrollment_id' => $this->enrollment_id ?: null,
                     'enrollment_progression_id' => $this->enrollment_progression_id ?: null,
@@ -287,6 +311,10 @@ new class extends Component {
                     'due_date' => $this->due_date ?: null,
                     'status' => $amount > 0 ? 'pending' : 'paid',
                 ]);
+
+                if ($amount > 0) {
+                    $this->rebuildAllocationsForEnrollment($item->student_id, $item->enrollment_id);
+                }
             }
 
             DB::commit();
@@ -294,7 +322,7 @@ new class extends Component {
             $this->dispatch('hide-fee-item-modal');
             $this->resetForm();
 
-            LivewireAlert::text($this->isEditing ? 'Fee item updated successfully.' : 'Fee item created successfully.')
+            LivewireAlert::text($this->isEditing ? 'Fee item updated and allocations rebuilt successfully.' : 'Fee item created and allocations rebuilt successfully.')
                 ->success()
                 ->toast()
                 ->position('top-end')
@@ -308,6 +336,98 @@ new class extends Component {
             ]);
 
             LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
+        }
+    }
+
+    protected function rebuildAllocationsForEnrollment($studentId, $enrollmentId = null): void
+    {
+        $paymentIds = Payment::query()->where('student_id', $studentId)->when($enrollmentId, fn($q) => $q->where('enrollment_id', $enrollmentId))->pluck('id');
+
+        $feeItemIds = StudentFeeItem::query()->where('student_id', $studentId)->when($enrollmentId, fn($q) => $q->where('enrollment_id', $enrollmentId))->pluck('id');
+
+        PaymentAllocation::query()->whereIn('payment_id', $paymentIds)->delete();
+
+        StudentFeeItem::query()
+            ->whereIn('id', $feeItemIds)
+            ->update([
+                'amount_paid' => 0,
+                'balance' => DB::raw('amount'),
+                'status' => 'pending',
+            ]);
+
+        Payment::query()
+            ->whereIn('id', $paymentIds)
+            ->update([
+                'unallocated_balance' => DB::raw('amount'),
+            ]);
+
+        Payment::query()
+            ->whereIn('id', $paymentIds)
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get()
+            ->each(function ($payment) {
+                app(\App\Services\PaymentPostingService::class)->allocateExistingPayment($payment->fresh());
+            });
+    }
+
+    protected function allocateUnallocatedPaymentsToFeeItem(StudentFeeItem $item): void
+    {
+        if ((float) $item->amount <= 0 || (float) $item->balance <= 0) {
+            return;
+        }
+
+        $payments = Payment::query()
+            ->where('unallocated_balance', '>', 0)
+            ->where(function ($q) use ($item) {
+                if ($item->enrollment_id) {
+                    $q->where('enrollment_id', $item->enrollment_id)->orWhere(function ($sub) use ($item) {
+                        $sub->where('student_id', $item->student_id)->whereNull('enrollment_id');
+                    });
+                } else {
+                    $q->where('student_id', $item->student_id);
+                }
+            })
+            ->whereIn('status', ['completed', 'unallocated'])
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($payments as $payment) {
+            $item = StudentFeeItem::query()->where('id', $item->id)->lockForUpdate()->first();
+
+            if (!$item || (float) $item->balance <= 0) {
+                break;
+            }
+
+            $available = (float) $payment->unallocated_balance;
+
+            if ($available <= 0) {
+                continue;
+            }
+
+            $allocatable = min($available, (float) $item->balance);
+
+            PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'student_fee_item_id' => $item->id,
+                'amount_allocated' => $allocatable,
+            ]);
+
+            $newAmountPaid = (float) $item->amount_paid + $allocatable;
+            $newBalance = max(0, (float) $item->amount - $newAmountPaid);
+
+            $item->update([
+                'amount_paid' => $newAmountPaid,
+                'balance' => $newBalance,
+                'status' => $this->resolvedStatus($newBalance, $newAmountPaid),
+            ]);
+
+            $payment->update([
+                'unallocated_balance' => max(0, $available - $allocatable),
+                'status' => max(0, $available - $allocatable) > 0 ? 'unallocated' : 'completed',
+            ]);
         }
     }
 
@@ -372,7 +492,8 @@ new class extends Component {
             <div>
                 <h4 class="fw-semibold mb-1">Student Fee Items</h4>
                 <p class="text-muted small mb-0">
-                    Manage posted student charges. Paid items are protected from unsafe deletion.
+                    Manage all posted student charges. New or edited items can consume unallocated payments
+                    automatically.
                 </p>
             </div>
 
@@ -439,10 +560,14 @@ new class extends Component {
                         <label class="form-label small text-muted">Enrollment</label>
                         <select class="form-select" wire:model.live="enrollmentFilter">
                             <option value="">All enrollments</option>
+
                             @foreach ($filterEnrollments as $enrollment)
                                 <option value="{{ $enrollment->id }}">
+                                    {{ $enrollment->student?->admission_number }}
+                                    -
                                     {{ $enrollment->student?->first_name }} {{ $enrollment->student?->last_name }}
-                                    - {{ $enrollment->course?->title }}
+                                    -
+                                    {{ $enrollment->course?->title }}
                                 </option>
                             @endforeach
                         </select>
@@ -533,8 +658,10 @@ new class extends Component {
                             <td>
                                 @if ($item->progression)
                                     T{{ $item->progression->trimester_sequence }}
-                                   {{--  -
-                                    {{ $item->progression->trimester?->name ?? '—' }} --}}
+                                    <div class="small text-muted">
+                                        {{ $item->progression->trimester?->name }}
+                                        {{ $item->progression->trimester?->academicYear?->name }}
+                                    </div>
                                 @else
                                     {{ $item->trimester?->name ?? '—' }}
                                 @endif
@@ -598,7 +725,8 @@ new class extends Component {
                             {{ $isEditing ? 'Edit Fee Item' : 'Add Fee Item' }}
                         </h5>
                         <small class="text-muted">
-                            Manual changes should only be used for corrections or special charges.
+                            Select student → enrollment → progression. Unallocated payments will auto-apply where
+                            possible.
                         </small>
                     </div>
 
@@ -610,20 +738,25 @@ new class extends Component {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Student</label>
+
                                 <select class="form-select" wire:model.live="student_id">
-                                    <option value="">Select student</option>
+                                    <option value="">Search / select student</option>
+
                                     @foreach ($students as $student)
                                         <option value="{{ $student->id }}">
+                                            {{ $student->admission_number ? $student->admission_number . ' - ' : '' }}
                                             {{ $student->first_name }} {{ $student->last_name }}
-                                            @if ($student->admission_number)
-                                                - {{ $student->admission_number }}
-                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
+
                                 @error('student_id')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
+
+                                <small class="text-muted">
+                                    Click the dropdown and type to search.
+                                </small>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -636,6 +769,7 @@ new class extends Component {
                                             @if ($enrollment->course?->level)
                                                 - {{ $enrollment->course->level }}
                                             @endif
+                                            ({{ ucfirst(str_replace('_', ' ', $enrollment->status)) }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -653,6 +787,7 @@ new class extends Component {
                                             T{{ $progression->trimester_sequence }}
                                             - {{ $progression->trimester?->name }}
                                             {{ $progression->trimester?->academicYear?->name }}
+                                            - {{ ucfirst($progression->status) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -744,10 +879,11 @@ new class extends Component {
                         @if ($isEditing)
                             <div class="alert alert-warning border-0 rounded-3 mb-0">
                                 If payments already exist, the amount cannot be reduced below the allocated amount.
+                                If increased, available unallocated payments will be applied automatically.
                             </div>
                         @else
                             <div class="alert alert-info border-0 rounded-3 mb-0">
-                                New manual fee items will be unpaid until payment allocation is posted.
+                                New fee items will consume existing unallocated payments automatically where possible.
                             </div>
                         @endif
                     </div>

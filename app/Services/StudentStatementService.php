@@ -150,32 +150,47 @@ class StudentStatementService
         Carbon $endDate
     ): Collection {
         return $this->rawAllocations($student, $progression, $startDate, $endDate)
-            ->groupBy('payment_id')
-            ->map(function (Collection $allocations) {
-                $payment = $allocations->first()->payment;
+            ->map(function ($allocation) use ($startDate) {
+                $payment = $allocation->payment;
+                $feeItem = $allocation->studentFeeItem;
 
-                $breakdown = $allocations
-                    ->groupBy(fn($allocation) => $allocation->studentFeeItem?->description ?? 'Fee Item')
-                    ->map(function (Collection $items, string $description) {
-                        return [
-                            'description' => $description,
-                            'amount' => (float) $items->sum('amount_allocated'),
-                        ];
-                    })
-                    ->values();
+                $paymentDate = Carbon::parse($payment->payment_date);
+                $chargeDate = $feeItem?->charge_date
+                    ? Carbon::parse($feeItem->charge_date)
+                    : $startDate;
+
+                /*
+                |--------------------------------------------------------------------------
+                | Effective Ledger Date
+                |--------------------------------------------------------------------------
+                |
+                | If payment happened before the charge existed, show the credit on the
+                | charge date so the statement does not credit before the debit.
+                |
+                */
+
+                $ledgerDate = $paymentDate->lt($chargeDate)
+                    ? $chargeDate
+                    : $paymentDate;
 
                 return [
                     'payment_id' => $payment->id,
-                    'date' => $payment->payment_date,
-                    'reference' => $payment->transaction_id ?: ($payment->reference ?: 'PAY-' . $payment->id),
+                    'date' => $ledgerDate,
+                    'actual_payment_date' => $paymentDate,
+                    'reference' => $payment->receipt_no ?: ($payment->reference ?: 'PAY-' . $payment->id),
                     'description' => 'Payment Received',
                     'dr' => 0.00,
-                    'cr' => (float) $allocations->sum('amount_allocated'),
+                    'cr' => (float) $allocation->amount_allocated,
                     'source_type' => 'payment',
-                    'sort_date' => optional($payment->payment_date)->timestamp ?? 0,
+                    'sort_date' => $ledgerDate->timestamp,
                     'sort_order' => 2,
-                    'sort_id' => $payment->id,
-                    'allocations' => $breakdown,
+                    'sort_id' => $allocation->id,
+                    'allocations' => collect([
+                        [
+                            'description' => $feeItem?->description ?? 'Fee Item',
+                            'amount' => (float) $allocation->amount_allocated,
+                        ],
+                    ]),
                 ];
             })
             ->values();
@@ -214,8 +229,12 @@ class StudentStatementService
                 $q->where('student_id', $student->id)
                     ->where('enrollment_id', $progression->enrollment_id);
             })
-            ->whereHas('payment', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('payment_date', [$startDate, $endDate]);
+            ->whereHas('payment', function ($q) use ($progression, $startDate, $endDate) {
+                if ($this->isFirstProgression($progression)) {
+                    $q->whereDate('payment_date', '<=', $endDate);
+                } else {
+                    $q->whereBetween('payment_date', [$startDate, $endDate]);
+                }
             })
             ->orderBy(
                 PaymentAllocation::query()
@@ -226,6 +245,11 @@ class StudentStatementService
             )
             ->orderBy('id')
             ->get();
+    }
+
+    protected function isFirstProgression(EnrollmentProgression $progression): bool
+    {
+        return (int) $progression->trimester_sequence === 1;
     }
 
     protected function progressionDates(EnrollmentProgression $progression): array

@@ -22,6 +22,6 @@ class StudentStatementController extends Controller
             'statement' => $statement,
         ]);
 
-        return $pdf->stream('student-statement.pdf');
+        return $pdf->stream(trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) . '_' . $statement['course']->code ?? $statement['course']->title . '_Trimester ' . $progression->trimester_sequence . '.pdf');
     }
 }

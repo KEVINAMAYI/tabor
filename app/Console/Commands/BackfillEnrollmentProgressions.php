@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\EnrollmentProgression;
+use App\Models\Trimester;
 use App\Models\FeeDefinition;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
@@ -207,14 +208,103 @@ class BackfillEnrollmentProgressions extends Command
             ->orderBy('id')
             ->chunkById(100, function ($enrollments) use (&$processed) {
                 foreach ($enrollments as $enrollment) {
-                    app(EnrollmentProgressionService::class)
-                        ->generateForEnrollment($enrollment);
+                    $progressions = $this->createProgressionsUpToCurrentTrimester($enrollment);
+
+                    foreach ($progressions as $progression) {
+                        if ((int) $progression->trimester_sequence === 1) {
+                            app(FeeGenerationService::class)
+                                ->generateStudentOnceFees($enrollment);
+                        }
+
+                        app(FeeGenerationService::class)
+                            ->generateChargesForProgression($progression);
+                    }
 
                     $processed++;
                 }
             });
 
         $this->info("Progressions processed for {$processed} enrollment(s).");
+    }
+
+    protected function createProgressionsUpToCurrentTrimester(Enrollment $enrollment): \Illuminate\Support\Collection
+    {
+        $enrollment->loadMissing(['course', 'assignedStartTrimester']);
+
+        if (!$enrollment->course || !$enrollment->assignedStartTrimester) {
+            return collect();
+        }
+
+        $currentTrimester = Trimester::query()
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->first();
+
+        if (!$currentTrimester) {
+            $currentTrimester = Trimester::query()
+                ->whereDate('start_date', '<=', now())
+                ->orderByDesc('start_date')
+                ->first();
+        }
+
+        if (!$currentTrimester) {
+            return collect();
+        }
+
+        $trimesters = Trimester::query()
+            ->whereDate('start_date', '>=', $enrollment->assignedStartTrimester->start_date)
+            ->whereDate('start_date', '<=', $currentTrimester->start_date)
+            ->orderBy('start_date')
+            ->limit((int) $enrollment->course->number_of_trimesters)
+            ->get();
+
+        $created = collect();
+
+        foreach ($trimesters as $index => $trimester) {
+            $sequence = $index + 1;
+
+            $status = (int) $trimester->id === (int) $currentTrimester->id
+                ? 'active'
+                : 'completed';
+
+            $progression = EnrollmentProgression::firstOrCreate(
+                [
+                    'enrollment_id' => $enrollment->id,
+                    'trimester_sequence' => $sequence,
+                ],
+                [
+                    'student_id' => $enrollment->student_id,
+                    'trimester_id' => $trimester->id,
+                    'status' => $status,
+                    'started_at' => $sequence === 1
+                        ? $enrollment->admission_date
+                        : $trimester->start_date,
+                    'completed_at' => $status === 'completed'
+                        ? $trimester->end_date
+                        : null,
+                ]
+            );
+
+            if (!$progression->wasRecentlyCreated) {
+                $progression->update([
+                    'student_id' => $enrollment->student_id,
+                    'trimester_id' => $trimester->id,
+                    'status' => $status,
+                    'started_at' => $progression->started_at ?: (
+                        $sequence === 1
+                        ? $enrollment->admission_date
+                        : $trimester->start_date
+                    ),
+                    'completed_at' => $status === 'completed'
+                        ? ($progression->completed_at ?: $trimester->end_date)
+                        : null,
+                ]);
+            }
+
+            $created->push($progression->fresh());
+        }
+
+        return $created;
     }
 
     protected function backfillStudentOnceFees(): void

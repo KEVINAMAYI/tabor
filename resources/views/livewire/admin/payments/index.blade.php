@@ -3,6 +3,9 @@
 use App\Exports\PaymentExport;
 use App\Models\Payment;
 use App\Models\Enrollment;
+use App\Models\Student;
+use App\Models\StudentFeeItem;
+use App\Models\PaymentAllocation;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\DB;
@@ -11,46 +14,61 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
-use App\Models\StudentFeeItem;
-use App\Models\PaymentAllocation;
-use App\Services\Finance\PaymentPostingService;
-
 new class extends Component {
     use WithPagination;
 
     public $selectAll = false;
-    public $amount, $payment_method, $payment_reason, $reference, $paid_at, $enrollment_id, $status, $payer;
-    public $editId = null;
     public $selected = [];
+
     public $search = '';
+    public $studentFilter = '';
+    public $allocationFilter = '';
+    public $methodFilter = '';
+    public $paymentForFilter = '';
+
+    public $amount;
+    public $payment_method;
+    public $payment_reason;
+    public $reference;
+    public $paid_at;
+    public $enrollment_id;
+    public $status;
+    public $payer;
+    public $editId = null;
+
     public $student_search = '';
     public $enrollments = [];
 
     public $selectedPayment = null;
     public $allocationRows = [];
+    public $allocationDraftRows = [];
     public $unallocatedAmount = 0;
 
-    public $manual_fee_item_id = '';
-    public $manual_allocation_amount = '';
-    public $availableFeeItems = [];
-
     public $perPage = 10;
+
+    protected string $paginationTheme = 'bootstrap';
 
     public function rules()
     {
         return [
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required',
-            'payment_reason' => 'required',
-            'reference' => 'nullable|string|max:255',
-            'paid_at' => 'nullable|date',
-            'enrollment_id' => 'required|exists:enrollments,id',
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_method' => ['required', 'string'],
+            'payment_reason' => ['required', 'string'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'paid_at' => ['nullable', 'date'],
+            'enrollment_id' => ['nullable', 'exists:enrollments,id'],
         ];
     }
 
     public function mount()
     {
-        $this->enrollments = Enrollment::all(); // Get all enrollments
+        $this->paid_at = now()->toDateString();
+
+        $this->enrollments = Enrollment::query()
+            ->with(['student', 'course'])
+            ->latest()
+            ->limit(20)
+            ->get();
     }
 
     #[On('search')]
@@ -61,12 +79,37 @@ new class extends Component {
         $this->selectAll = false;
     }
 
+    public function updatedStudentFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedAllocationFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedMethodFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPaymentForFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+    }
+
     #[On('perform-search')]
     public function searchEnrollments($query)
     {
         $this->student_search = $query;
 
-        $this->enrollments = Enrollment::with(['student', 'course', 'intake'])
+        $this->enrollments = Enrollment::with(['student', 'course'])
             ->whereHas('student', function ($q) use ($query) {
                 $q->where('first_name', 'like', '%' . $query . '%')
                     ->orWhere('last_name', 'like', '%' . $query . '%')
@@ -74,7 +117,8 @@ new class extends Component {
                     ->orWhere('email', 'like', '%' . $query . '%');
             })
             ->orWhereHas('course', function ($q) use ($query) {
-                $q->where('title', 'like', '%' . $query . '%');
+                $q->where('title', 'like', '%' . $query . '%')
+                    ->orWhere('code', 'like', '%' . $query . '%');
             })
             ->limit(10)
             ->get();
@@ -84,21 +128,28 @@ new class extends Component {
     {
         $this->enrollment_id = $id;
 
-        $enrollment = Enrollment::with(['student', 'course', 'intake'])->findOrFail($id);
+        $enrollment = Enrollment::with(['student', 'course'])->findOrFail($id);
 
-        if ($enrollment) {
-            $this->student_search = $enrollment->student->first_name . ' ' . $enrollment->student->last_name . ' — ' . $enrollment->course->title . ' (Intake: ' . ($enrollment->intake->name ?? 'N/A') . ')';
-        }
+        $this->student_search =
+            $enrollment->student?->first_name . ' ' .
+            $enrollment->student?->last_name . ' — ' .
+            $enrollment->course?->title;
     }
 
     public function with()
     {
-        $payments = Payment::with(['enrollment.student', 'enrollment.course', 'allocations.studentFeeItem'])
-            ->when(!empty($this->search), function ($q) {
+        $baseQuery = Payment::query()
+            ->with([
+                'enrollment.student',
+                'enrollment.course',
+                'allocations.studentFeeItem.student',
+                'allocations.studentFeeItem.enrollment.course',
+            ])
+            ->when(filled($this->search), function ($q) {
                 $q->where(function ($query) {
                     $query
-                        ->whereHas('enrollment.student', function ($query) {
-                            $query
+                        ->whereHas('enrollment.student', function ($studentQuery) {
+                            $studentQuery
                                 ->where('first_name', 'like', "%{$this->search}%")
                                 ->orWhere('last_name', 'like', "%{$this->search}%")
                                 ->orWhere('email', 'like', "%{$this->search}%")
@@ -108,166 +159,287 @@ new class extends Component {
                         ->orWhere('payment_method', 'like', "%{$this->search}%")
                         ->orWhere('reference', 'like', "%{$this->search}%")
                         ->orWhere('receipt_no', 'like', "%{$this->search}%")
-                        ->orWhere('transaction_id', 'like', "%{$this->search}%");
+                        ->orWhere('transaction_id', 'like', "%{$this->search}%")
+                        ->orWhere('payer', 'like', "%{$this->search}%");
                 });
             })
+            ->when(filled($this->studentFilter), function ($q) {
+                $q->where(function ($query) {
+                    $query->where('student_id', $this->studentFilter)
+                        ->orWhereHas('enrollment', function ($enrollmentQuery) {
+                            $enrollmentQuery->where('student_id', $this->studentFilter);
+                        })
+                        ->orWhereHas('allocations.studentFeeItem', function ($itemQuery) {
+                            $itemQuery->where('student_id', $this->studentFilter);
+                        });
+                });
+            })
+            ->when(filled($this->methodFilter), function ($q) {
+                $q->where(function ($query) {
+                    $query->where('method', $this->methodFilter)
+                        ->orWhere('payment_method', $this->methodFilter);
+                });
+            })
+            ->when(filled($this->paymentForFilter), function ($q) {
+                $q->where('payment_reason', $this->paymentForFilter);
+            });
+
+        $paymentsForSummary = (clone $baseQuery)->get();
+
+        if (filled($this->allocationFilter)) {
+            $paymentsForSummary = $paymentsForSummary->filter(function ($payment) {
+                $allocated = (float) $payment->allocations->sum('amount_allocated');
+                $unallocated = (float) ($payment->unallocated_balance ?? ((float) $payment->amount - $allocated));
+
+                return match ($this->allocationFilter) {
+                    'fully_allocated' => $unallocated <= 0,
+                    'partial' => $allocated > 0 && $unallocated > 0,
+                    'unallocated' => $allocated <= 0 && $unallocated > 0,
+                    default => true,
+                };
+            });
+        }
+
+        $paymentIds = $paymentsForSummary->pluck('id')->all();
+
+        $payments = Payment::query()
+            ->with([
+                'enrollment.student',
+                'enrollment.course',
+                'allocations.studentFeeItem.student',
+                'allocations.studentFeeItem.enrollment.course',
+            ])
+            ->whereIn('id', $paymentIds)
             ->latest()
             ->paginate($this->perPage);
 
+        $summaryAmount = $paymentsForSummary->sum('amount');
+        $summaryAllocated = $paymentsForSummary->sum(fn ($payment) => $payment->allocations->sum('amount_allocated'));
+        $summaryUnallocated = $paymentsForSummary->sum(fn ($payment) => $payment->unallocated_balance ?? ((float) $payment->amount - (float) $payment->allocations->sum('amount_allocated')));
+
         return [
             'payments' => $payments,
+
+            'students' => Student::query()
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(),
+
+            'methods' => Payment::query()
+                ->selectRaw('COALESCE(method, payment_method) as method_name')
+                ->whereRaw('COALESCE(method, payment_method) IS NOT NULL')
+                ->distinct()
+                ->orderBy('method_name')
+                ->pluck('method_name'),
+
+            'paymentReasons' => Payment::query()
+                ->whereNotNull('payment_reason')
+                ->distinct()
+                ->orderBy('payment_reason')
+                ->pluck('payment_reason'),
+
+            'allocationStudents' => Student::query()
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(),
+
+            'allocationEnrollments' => Enrollment::query()
+                ->with(['student', 'course'])
+                ->whereIn('status', [
+                    'active',
+                    'course_completed',
+                    'pending_graduation',
+                    'graduated',
+                ])
+                ->orderByDesc('id')
+                ->get(),
+
+            'allocationFeeItems' => StudentFeeItem::query()
+                ->with(['student', 'enrollment.course', 'feeDefinition'])
+                ->where('balance', '>', 0)
+                ->whereIn('status', ['pending', 'partial'])
+                ->orderBy('charge_date')
+                ->orderBy('id')
+                ->get(),
+
+            'summaryCount' => $paymentsForSummary->count(),
+            'summaryAmount' => $summaryAmount,
+            'summaryAllocated' => $summaryAllocated,
+            'summaryUnallocated' => $summaryUnallocated,
         ];
     }
 
     public function viewAllocation(int $paymentId): void
     {
-        $payment = Payment::with(['enrollment.student', 'enrollment.course', 'allocations.studentFeeItem'])->findOrFail($paymentId);
+        $payment = Payment::with([
+            'enrollment.student',
+            'enrollment.course',
+            'allocations.studentFeeItem.student',
+            'allocations.studentFeeItem.enrollment.course',
+        ])->findOrFail($paymentId);
 
         $allocated = $payment->allocations->sum('amount_allocated');
 
         $this->selectedPayment = [
             'id' => $payment->id,
             'receipt_no' => $payment->receipt_no ?? ($payment->transaction_id ?? 'N/A'),
-            'reference_no' => $payment->reference_no ?? ($payment->reference ?? 'N/A'),
+            'reference' => $payment->reference ?? 'N/A',
             'amount' => (float) $payment->amount,
+            'allocated' => (float) $allocated,
+            'unallocated' => (float) ($payment->unallocated_balance ?? ((float) $payment->amount - (float) $allocated)),
             'method' => $payment->method ?? ($payment->payment_method ?? 'N/A'),
-            'payment_date' => optional($payment->payment_date ?? $payment->paid_at)->format('d M Y h:i A'),
-            'student' => trim(($payment->enrollment?->student?->first_name ?? '') . ' ' . ($payment->enrollment?->student?->last_name ?? '')) ?: 'N/A',
-            'course' => $payment->enrollment?->course?->title ?? ($payment->enrollment?->course?->name ?? 'N/A'),
+            'payment_date' => optional($payment->payment_date ?? $payment->paid_at)->format('d M Y'),
+            'payer' => $payment->payer ?? 'N/A',
+            'student' => trim(($payment->enrollment?->student?->first_name ?? '') . ' ' . ($payment->enrollment?->student?->last_name ?? '')) ?: 'Multiple / Unmapped',
+            'course' => $payment->enrollment?->course?->title ?? 'Multiple / Unmapped',
         ];
 
         $this->allocationRows = $payment->allocations
             ->map(function ($allocation) {
+                $item = $allocation->studentFeeItem;
+
                 return [
                     'fee_item_id' => $allocation->student_fee_item_id,
-                    'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                    'student' => trim(($item?->student?->first_name ?? '') . ' ' . ($item?->student?->last_name ?? '')),
+                    'course' => $item?->enrollment?->course?->title ?? '—',
+                    'description' => $item?->description ?? 'Fee Item',
                     'amount_allocated' => (float) $allocation->amount_allocated,
-                    'fee_amount' => (float) ($allocation->studentFeeItem?->amount ?? 0),
-                    'fee_paid' => (float) ($allocation->studentFeeItem?->amount_paid ?? 0),
-                    'fee_balance' => (float) ($allocation->studentFeeItem?->balance ?? 0),
+                    'fee_amount' => (float) ($item?->amount ?? 0),
+                    'fee_paid' => (float) ($item?->amount_paid ?? 0),
+                    'fee_balance' => (float) ($item?->balance ?? 0),
                 ];
             })
             ->toArray();
 
-        $this->unallocatedAmount = (float) $payment->amount - (float) $allocated;
+        $this->unallocatedAmount = (float) $this->selectedPayment['unallocated'];
+        $this->allocationDraftRows = [];
 
-        $this->loadAvailableFeeItems($payment);
+        if ($this->unallocatedAmount > 0) {
+            $this->addAllocationRow();
+        }
 
         $this->dispatch('show-allocation-modal');
     }
 
-    protected function loadAvailableFeeItems(Payment $payment): void
+    public function addAllocationRow(): void
     {
-        $query = StudentFeeItem::query()->where('student_id', $payment->student_id)->where('balance', '>', 0)->orderByRaw('CASE WHEN enrollment_id IS NULL THEN 0 ELSE 1 END')->orderBy('charge_date')->orderBy('id');
-
-        if ($payment->enrollment_id) {
-            $query->where(function ($q) use ($payment) {
-                $q->whereNull('enrollment_id')->orWhere('enrollment_id', $payment->enrollment_id);
-            });
-        }
-
-        $this->availableFeeItems = $query
-            ->get()
-            ->map(
-                fn($item) => [
-                    'id' => $item->id,
-                    'description' => $item->description,
-                    'balance' => (float) $item->balance,
-                    'charge_date' => optional($item->charge_date)->format('d M Y'),
-                ],
-            )
-            ->toArray();
+        $this->allocationDraftRows[] = [
+            'student_id' => '',
+            'enrollment_id' => '',
+            'student_fee_item_id' => '',
+            'amount' => '',
+        ];
     }
 
-    public function allocateManually(): void
+    public function removeAllocationRow(int $index): void
+    {
+        unset($this->allocationDraftRows[$index]);
+        $this->allocationDraftRows = array_values($this->allocationDraftRows);
+    }
+
+    public function saveManualAllocations(): void
     {
         $this->validate([
-            'manual_fee_item_id' => ['required', 'exists:student_fee_items,id'],
-            'manual_allocation_amount' => ['required', 'numeric', 'min:1'],
+            'allocationDraftRows' => ['required', 'array', 'min:1'],
+            'allocationDraftRows.*.student_id' => ['required', 'exists:students,id'],
+            'allocationDraftRows.*.enrollment_id' => ['nullable', 'exists:enrollments,id'],
+            'allocationDraftRows.*.student_fee_item_id' => ['required', 'exists:student_fee_items,id'],
+            'allocationDraftRows.*.amount' => ['required', 'numeric', 'min:1'],
         ]);
 
         try {
             DB::transaction(function () {
-                $payment = Payment::with('allocations')->findOrFail($this->selectedPayment['id']);
-                $feeItem = StudentFeeItem::lockForUpdate()->findOrFail($this->manual_fee_item_id);
+                $payment = Payment::query()
+                    ->where('id', $this->selectedPayment['id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                $allocated = $payment->allocations()->sum('amount_allocated');
-                $remainingPayment = (float) $payment->amount - (float) $allocated;
+                $remaining = (float) $payment->unallocated_balance;
 
-                if ($remainingPayment <= 0) {
-                    throw new \Exception('This payment has no unallocated balance.');
+                if ($remaining <= 0) {
+                    throw new \RuntimeException('This payment has no unallocated balance.');
                 }
 
-                if ((float) $feeItem->balance <= 0) {
-                    throw new \Exception('The selected fee item has no outstanding balance.');
+                $requestedTotal = collect($this->allocationDraftRows)
+                    ->sum(fn ($row) => (float) $row['amount']);
+
+                if ($requestedTotal > $remaining) {
+                    throw new \RuntimeException('Allocation total cannot exceed unallocated amount.');
                 }
 
-                $amount = min((float) $this->manual_allocation_amount, $remainingPayment, (float) $feeItem->balance);
+                foreach ($this->allocationDraftRows as $row) {
+                    $amount = (float) $row['amount'];
 
-                PaymentAllocation::create([
-                    'payment_id' => $payment->id,
-                    'student_fee_item_id' => $feeItem->id,
-                    'amount_allocated' => $amount,
-                ]);
+                    if ($amount <= 0) {
+                        continue;
+                    }
 
-                $newPaid = (float) $feeItem->amount_paid + $amount;
-                $newBalance = max(0, (float) $feeItem->amount - $newPaid);
+                    $feeItem = StudentFeeItem::query()
+                        ->where('id', $row['student_fee_item_id'])
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
-                $feeItem->update([
-                    'amount_paid' => $newPaid,
-                    'balance' => $newBalance,
-                    'status' => $newBalance <= 0 ? 'paid' : ($newPaid > 0 ? 'partial' : 'pending'),
+                    if ((int) $feeItem->student_id !== (int) $row['student_id']) {
+                        throw new \RuntimeException('Selected fee item does not belong to selected student.');
+                    }
+
+                    if (!empty($row['enrollment_id']) && (int) $feeItem->enrollment_id !== (int) $row['enrollment_id']) {
+                        throw new \RuntimeException('Selected fee item does not belong to selected enrollment.');
+                    }
+
+                    if ((float) $feeItem->balance <= 0) {
+                        throw new \RuntimeException('Selected fee item has no outstanding balance.');
+                    }
+
+                    if ($amount > (float) $feeItem->balance) {
+                        throw new \RuntimeException('Allocation amount cannot exceed fee item balance.');
+                    }
+
+                    PaymentAllocation::create([
+                        'payment_id' => $payment->id,
+                        'student_fee_item_id' => $feeItem->id,
+                        'amount_allocated' => $amount,
+                    ]);
+
+                    $newPaid = (float) $feeItem->amount_paid + $amount;
+                    $newBalance = max(0, (float) $feeItem->amount - $newPaid);
+
+                    $feeItem->update([
+                        'amount_paid' => $newPaid,
+                        'balance' => $newBalance,
+                        'status' => $newBalance <= 0 ? 'paid' : 'partial',
+                    ]);
+
+                    $remaining -= $amount;
+                }
+
+                $payment->update([
+                    'unallocated_balance' => max(0, $remaining),
+                    'status' => max(0, $remaining) > 0 ? 'unallocated' : 'completed',
                 ]);
             });
 
             $paymentId = $this->selectedPayment['id'];
-            $this->manual_fee_item_id = '';
-            $this->manual_allocation_amount = '';
-
             $this->viewAllocation($paymentId);
 
-            LivewireAlert::text('Payment allocated successfully.')->success()->toast()->position('top-end')->show();
-        } catch (\Throwable $e) {
-            Log::error('Manual payment allocation failed', [
+            LivewireAlert::text('Manual allocations saved successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        } catch (\Throwable $th) {
+            Log::error('Manual allocation failed', [
                 'payment_id' => $this->selectedPayment['id'] ?? null,
-                'fee_item_id' => $this->manual_fee_item_id,
-                'message' => $e->getMessage(),
+                'message' => $th->getMessage(),
             ]);
 
-            LivewireAlert::text($e->getMessage())->error()->toast()->position('top-end')->show();
+            LivewireAlert::text($th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
-
-    /*
-    public function autoAllocateSelectedPayment(): void
-{
-    try {
-        $payment = Payment::findOrFail($this->selectedPayment['id']);
-
-        app(PaymentPostingService::class)
-            ->allocateExistingPayment($payment);
-
-        $this->viewAllocation($payment->id);
-
-        LivewireAlert::text('Payment auto-allocated successfully.')
-            ->success()
-            ->toast()
-            ->position('top-end')
-            ->show();
-
-    } catch (\Throwable $e) {
-        Log::error('Auto allocation failed', [
-            'payment_id' => $this->selectedPayment['id'] ?? null,
-            'message' => $e->getMessage(),
-        ]);
-
-        LivewireAlert::text('Auto allocation failed.')
-            ->error()
-            ->toast()
-            ->position('top-end')
-            ->show();
-    }
-} */
 
     public function addPayment()
     {
@@ -275,14 +447,23 @@ new class extends Component {
 
         try {
             DB::beginTransaction();
-            Payment::create([
-                'enrollment_id' => $this->enrollment_id,
+
+            $enrollment = $this->enrollment_id
+                ? Enrollment::find($this->enrollment_id)
+                : null;
+
+            $payment = Payment::create([
+                'student_id' => $enrollment?->student_id,
+                'enrollment_id' => $enrollment?->id,
                 'amount' => $this->amount,
+                'unallocated_balance' => $this->amount,
+                'method' => $this->payment_method,
                 'payment_method' => $this->payment_method,
                 'payment_reason' => $this->payment_reason,
                 'status' => 'completed',
                 'reference' => $this->reference,
-                'paid_at' => $this->paid_at,
+                'payment_date' => $this->paid_at ?: now()->toDateString(),
+                'paid_at' => $this->paid_at ?: now(),
                 'payer' => $this->payer,
             ]);
 
@@ -292,12 +473,23 @@ new class extends Component {
             $this->resetPage();
             $this->dispatch('hide-payment-modal');
 
-            LivewireAlert::text('Payment added successfully.!')->success()->toast()->position('top-end')->show();
-        } catch (\Exception $e) {
+            LivewireAlert::text('Payment added successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error adding payment: ' . $e->getMessage());
 
-            LivewireAlert::text('Failed to add payment.!')->error()->toast()->position('top-end')->show();
+            Log::error('Error adding payment', [
+                'message' => $e->getMessage(),
+            ]);
+
+            LivewireAlert::text('Failed to add payment.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
@@ -309,11 +501,18 @@ new class extends Component {
         $this->enrollment_id = $payment->enrollment_id;
         $this->amount = $payment->amount;
         $this->status = $payment->status;
-        $this->payment_method = $payment->payment_method;
+        $this->payment_method = $payment->method ?? $payment->payment_method;
         $this->payment_reason = $payment->payment_reason;
         $this->reference = $payment->reference;
-        $this->paid_at = $payment->paid_at;
+        $this->paid_at = optional($payment->payment_date ?? $payment->paid_at)->format('Y-m-d');
         $this->payer = $payment->payer;
+
+        if ($payment->enrollment) {
+            $this->student_search =
+                $payment->enrollment->student?->first_name . ' ' .
+                $payment->enrollment->student?->last_name . ' — ' .
+                $payment->enrollment->course?->title;
+        }
 
         $this->dispatch('show-payment-modal');
     }
@@ -325,16 +524,30 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
-            $payment = Payment::findOrFail($this->editId);
+            $payment = Payment::with('allocations')->findOrFail($this->editId);
+
+            if ($payment->allocations()->exists() && (float) $this->amount < (float) $payment->allocations()->sum('amount_allocated')) {
+                throw new \RuntimeException('Payment amount cannot be less than allocated amount.');
+            }
+
+            $enrollment = $this->enrollment_id
+                ? Enrollment::find($this->enrollment_id)
+                : null;
+
+            $allocated = (float) $payment->allocations()->sum('amount_allocated');
 
             $payment->update([
-                'enrollment_id' => $this->enrollment_id,
+                'student_id' => $enrollment?->student_id,
+                'enrollment_id' => $enrollment?->id,
                 'amount' => $this->amount,
+                'unallocated_balance' => max(0, (float) $this->amount - $allocated),
+                'method' => $this->payment_method,
                 'payment_method' => $this->payment_method,
                 'payment_reason' => $this->payment_reason,
                 'reference' => $this->reference,
-                'status' => 'completed',
-                'paid_at' => $this->paid_at,
+                'status' => max(0, (float) $this->amount - $allocated) > 0 ? 'unallocated' : 'completed',
+                'payment_date' => $this->paid_at ?: now()->toDateString(),
+                'paid_at' => $this->paid_at ?: now(),
                 'payer' => $this->payer,
             ]);
 
@@ -344,35 +557,103 @@ new class extends Component {
             $this->resetPage();
             $this->dispatch('hide-payment-modal');
 
-            LivewireAlert::text('Payment updated successfully.!')->success()->toast()->position('top-end')->show();
-        } catch (\Exception $e) {
+            LivewireAlert::text('Payment updated successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Failed to update payment: ' . $e->getMessage());
-            LivewireAlert::text('Failed to update payment.!')->error()->toast()->position('top-end')->show();
+
+            LivewireAlert::text($e->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 
     public function deletePayment($id)
     {
-        Payment::findOrFail($id)->delete();
-        $this->resetPage();
+        try {
+            DB::beginTransaction();
 
-        LivewireAlert::text('Payment deleted successfully.!')->success()->toast()->position('top-end')->show();
+            $payment = Payment::with('allocations.studentFeeItem')->findOrFail($id);
+
+            if ($payment->allocations()->exists()) {
+                throw new \RuntimeException('Cannot delete payment with allocations.');
+            }
+
+            $payment->delete();
+
+            DB::commit();
+
+            $this->resetPage();
+
+            LivewireAlert::text('Payment deleted successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            LivewireAlert::text($th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
     }
 
     public function deleteSelected()
     {
-        Payment::whereIn('id', $this->selected)->delete();
-        $this->selected = [];
-        $this->selectAll = false;
-        $this->resetPage();
+        try {
+            DB::beginTransaction();
 
-        LivewireAlert::text('Payments deleted successfully.!')->success()->toast()->position('top-end')->show();
+            $paymentsWithAllocations = Payment::query()
+                ->whereIn('id', $this->selected)
+                ->whereHas('allocations')
+                ->count();
+
+            if ($paymentsWithAllocations > 0) {
+                throw new \RuntimeException('Some selected payments have allocations and cannot be deleted.');
+            }
+
+            Payment::whereIn('id', $this->selected)->delete();
+
+            DB::commit();
+
+            $this->selected = [];
+            $this->selectAll = false;
+            $this->resetPage();
+
+            LivewireAlert::text('Payments deleted successfully.')
+                ->success()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            LivewireAlert::text($th->getMessage())
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
+        }
     }
 
     private function resetForm()
     {
-        $this->enrollment_id = $this->search = $this->amount = $this->payment_method = $this->payment_reason = $this->reference = $this->paid_at = null;
+        $this->enrollment_id = null;
+        $this->student_search = '';
+        $this->amount = null;
+        $this->payment_method = null;
+        $this->payment_reason = null;
+        $this->reference = null;
+        $this->paid_at = now()->toDateString();
+        $this->payer = null;
         $this->editId = null;
     }
 
@@ -380,22 +661,9 @@ new class extends Component {
     public function selectAll()
     {
         if ($this->selectAll) {
-            $currentPagePaymentIds = Payment::with(['enrollment.student', 'enrollment.course']) // Ensure the same query logic
-                ->when(!empty($this->search), function ($q) {
-                    $q->where(function ($query) {
-                        $query
-                            ->whereHas('enrollment.student', function ($query) {
-                                $query
-                                    ->where('first_name', 'like', "%{$this->search}%")
-                                    ->orWhere('last_name', 'like', "%{$this->search}%")
-                                    ->orWhere('email', 'like', "%{$this->search}%");
-                            })
-                            ->orWhere('method', 'like', "%{$this->search}%")
-                            ->orWhere('reference', 'like', "%{$this->search}%");
-                    });
-                })
+            $currentPagePaymentIds = Payment::query()
                 ->latest()
-                ->paginate(10)
+                ->paginate($this->perPage)
                 ->pluck('id')
                 ->map(fn($id) => (string) $id)
                 ->toArray();
@@ -413,49 +681,21 @@ new class extends Component {
 
     public function exportPdf()
     {
-        $url = route('payments.export.pdf');
-        return redirect()->to($url);
+        return redirect()->to(route('payments.export.pdf'));
     }
-}; ?>
+};
+
+?>
 
 @push('styles')
     <style>
-        .pagination {
-            margin-left: 10px;
-        }
-
-        .action-btn a {
-            color: #446076;
-            transition: color 0.2s ease;
-        }
-
-        .action-btn a:hover {
-            color: #f69121;
-        }
-
-        .search-table tbody tr:hover {
-            background-color: #fff6ee;
-        }
-
-        .form-check-input:checked {
-            background-color: #f69121;
-            border-color: #f69121;
-        }
-
-        .dropdown-results {
-            border-radius: 8px;
-            background-color: #fff;
-            overflow-y: auto;
-        }
-
-        .dropdown-item:hover,
-        .hover-bg:hover {
-            background-color: #f8f9fa;
-        }
-
-        .dropdown-item:last-child {
-            border-bottom: none;
-        }
+        .pagination { margin-left: 10px; }
+        .action-btn a { color: #446076; transition: color 0.2s ease; }
+        .action-btn a:hover { color: #f69121; }
+        .search-table tbody tr:hover { background-color: #fff6ee; }
+        .form-check-input:checked { background-color: #f69121; border-color: #f69121; }
+        .dropdown-results { border-radius: 8px; background-color: #fff; overflow-y: auto; }
+        .dropdown-item:hover, .hover-bg:hover { background-color: #f8f9fa; }
     </style>
 @endpush
 
@@ -463,152 +703,178 @@ new class extends Component {
     <div class="col-12">
         <div class="widget-content searchable-container list">
             <div class="card card-body">
-                <div class="row">
-                    <div class="col-md-4 col-xl-3">
-                        <!-- Search Input -->
-                        <form class="position-relative">
-                            <input wire:keyup.debounce.100ms="$dispatch('search')" type="text"
-                                class="form-control product-search ps-5" placeholder="Search Payments..."
-                                wire:model="search" />
-                            <i
-                                class="ti ti-search position-absolute top-50 start-0 translate-middle-y fs-6 text-dark ms-3"></i>
-                        </form>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Search</label>
+                        <input wire:keyup.debounce.150ms="$dispatch('search')" type="text"
+                            class="form-control" placeholder="Search payments..." wire:model="search" />
                     </div>
-                    <div
-                        class="col-md-8 col-xl-9 text-end d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
-                        @if (count($selected) > 0)
-                            <!-- Delete Selected Button -->
-                            @can('delete-payments')
-                                <div class="action-btn">
-                                    <a href="javascript:void(0)" wire:click.prevent="deleteSelected"
-                                        class="delete-multiple bg-danger-subtle btn me-2 text-danger">
-                                        <i class="ti ti-trash me-1 fs-5"></i> Delete Selected
-                                    </a>
-                                </div>
-                            @endcan
-                        @endif
-                        <!-- Add Payment Button -->
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Student</label>
+                        <select class="form-select" wire:model.live="studentFilter">
+                            <option value="">All students</option>
+                            @foreach($students as $student)
+                                <option value="{{ $student->id }}">
+                                    {{ $student->admission_number }} - {{ $student->first_name }} {{ $student->last_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Allocation</label>
+                        <select class="form-select" wire:model.live="allocationFilter">
+                            <option value="">All</option>
+                            <option value="fully_allocated">Fully Allocated</option>
+                            <option value="partial">Partially Allocated</option>
+                            <option value="unallocated">Unallocated</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Method</label>
+                        <select class="form-select" wire:model.live="methodFilter">
+                            <option value="">All methods</option>
+                            @foreach($methods as $method)
+                                <option value="{{ $method }}">{{ ucfirst($method) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Payment For</label>
+                        <select class="form-select" wire:model.live="paymentForFilter">
+                            <option value="">All</option>
+                            @foreach($paymentReasons as $reason)
+                                <option value="{{ $reason }}">{{ ucfirst($reason) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-1 text-end">
                         @can('create-payments')
-                            <a href="javascript:void(0)" wire:click="$dispatch('show-payment-modal')"
-                                class="btn btn-primary d-flex align-items-center">
-                                <i class="ti ti-credit-card text-white me-1 fs-5"></i> Add Payment
-                            </a>
+                            <button type="button" wire:click="$dispatch('show-payment-modal')" class="btn btn-primary w-100">
+                                Add
+                            </button>
                         @endcan
                     </div>
                 </div>
             </div>
 
-            <!-- Add Payment Modal -->
-            <div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog"
-                aria-labelledby="addPaymentModalTitle" aria-hidden="true" wire:ignore.self>
-                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header d-flex align-items-center">
-                            <h5 class="modal-title">Create Payment</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="card border-0 bg-primary-subtle">
+                        <div class="card-body">
+                            <div class="small text-primary">Payments</div>
+                            <div class="fs-5 fw-bold text-primary">{{ number_format($summaryCount) }}</div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <div class="small text-muted">Total Received</div>
+                            <div class="fs-5 fw-bold">KES {{ number_format($summaryAmount, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card border-0 bg-success-subtle">
+                        <div class="card-body">
+                            <div class="small text-success">Allocated</div>
+                            <div class="fs-5 fw-bold text-success">KES {{ number_format($summaryAllocated, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card border-0 bg-danger-subtle">
+                        <div class="card-body">
+                            <div class="small text-danger">Unallocated</div>
+                            <div class="fs-5 fw-bold text-danger">KES {{ number_format($summaryUnallocated, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="addPaymentModal" tabindex="-1" wire:ignore.self>
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ $editId ? 'Edit Payment' : 'Create Payment' }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
                         <form wire:submit.prevent="{{ $editId ? 'updatePayment' : 'addPayment' }}">
                             <div class="modal-body">
                                 <div class="row">
+                                    <div class="col-md-6 mb-3 position-relative" x-data="{ open: false, studentSearch: @entangle('student_search').defer }" @click.away="open = false">
+                                        <label class="form-label">Student / Enrollment</label>
 
-                                    <!-- Enrollment Selector -->
-                                    <div class="col-md-6 mb-3 position-relative" x-data="{ open: false, studentSearch: @entangle('student_search').defer }"
-                                        @click.away="open = false">
-
-
-                                        <label for="search" class="form-label">Student</label>
-
-                                        <input type="text" id="student_search" class="form-control"
-                                            autocomplete="off"
-                                            placeholder="Search student name, id, phone, course, or intake..."
+                                        <input type="text" class="form-control" autocomplete="off"
+                                            placeholder="Search student, admission number, or course..."
                                             x-model="studentSearch"
                                             @input="$dispatch('perform-search', { query: studentSearch }); open = true"
                                             @focus="open = true" />
 
-
-                                        <!-- Floating Dropdown -->
-                                        @php
-                                            $hasResults = count($enrollments) > 0;
-                                            $dropdownClass = $hasResults
-                                                ? 'border border-light shadow-lg'
-                                                : 'border-0 shadow-none';
-                                        @endphp
-
                                         <div x-show="open && studentSearch.length > 0" x-transition
-                                            class="dropdown-results position-absolute bg-white rounded mt-1"
-                                            :class="studentSearch.length > 0 && {{ count($enrollments) }} > 0 ?
-                                                'border border-light shadow-lg' : 'border-0 shadow-none'"
+                                            class="dropdown-results position-absolute bg-white rounded mt-1 border border-light shadow-lg"
                                             style="width: 95%; max-height: 220px; overflow-y: auto; z-index: 1050;">
-
-
                                             @if (!empty($student_search))
-                                                @if (count($enrollments) > 0)
-                                                    @foreach ($enrollments as $enrollment)
-                                                        @php
-                                                            $student = $enrollment->student;
-                                                            $course = $enrollment->course;
-                                                            $intake = $enrollment->intake;
-                                                            $displayText =
-                                                                $student?->first_name .
-                                                                ' ' .
-                                                                $student?->last_name .
-                                                                ' — ' .
-                                                                $course?->title .
-                                                                ' (Intake: ' .
-                                                                ($intake->name ?? 'N/A') .
-                                                                ')';
-                                                        @endphp
-                                                        <div class="dropdown-item px-3 py-2 border-bottom small hover-bg"
-                                                            @click="
-                                                                    $wire.selectEnrollment({{ $enrollment->id }});
-                                                                    studentSearch = '{{ $displayText }}';
-                                                                    open = false;"
-                                                            style="cursor: pointer;">
-                                                            <strong>{{ $student?->first_name }}
-                                                                {{ $student?->last_name }}</strong><br>
-                                                            <span class="text-muted">{{ $course?->title }} — Intake:
-                                                                {{ $intake?->name ?? 'N/A' }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                @else
+                                                @forelse ($enrollments as $enrollment)
+                                                    @php
+                                                        $student = $enrollment->student;
+                                                        $course = $enrollment->course;
+                                                        $displayText = trim(($student?->first_name ?? '') . ' ' . ($student?->last_name ?? '')) . ' — ' . ($course?->title ?? '');
+                                                    @endphp
+
+                                                    <div class="dropdown-item px-3 py-2 border-bottom small hover-bg"
+                                                        @click="
+                                                            $wire.selectEnrollment({{ $enrollment->id }});
+                                                            studentSearch = '{{ $displayText }}';
+                                                            open = false;"
+                                                        style="cursor: pointer;">
+                                                        <strong>{{ $student?->admission_number }} - {{ $student?->first_name }} {{ $student?->last_name }}</strong><br>
+                                                        <span class="text-muted">{{ $course?->title }}</span>
+                                                    </div>
+                                                @empty
                                                     <div class="px-3 py-2 text-muted small">No results found</div>
-                                                @endif
+                                                @endforelse
                                             @endif
                                         </div>
 
-                                        </select>
                                         @error('enrollment_id')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
+
+                                        <small class="text-muted">
+                                            Leave empty only for rare multi-student payments.
+                                        </small>
                                     </div>
-                                    <!-- Amount Input -->
+
                                     <div class="col-md-6 mb-3">
-                                        <label for="amount" class="form-label">Amount</label>
-                                        <input type="number" wire:model="amount" class="form-control"
-                                            placeholder="Amount" />
-                                        @error('amount')
-                                            <small class="text-danger">{{ $message }}</small>
-                                        @enderror
+                                        <label class="form-label">Amount</label>
+                                        <input type="number" step="0.01" wire:model="amount" class="form-control" />
+                                        @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
-                                    <!-- Payment Method Selector -->
+
                                     <div class="col-md-6 mb-3">
-                                        <label for="method" class="form-label">Payment Method</label>
+                                        <label class="form-label">Payment Method</label>
                                         <select wire:model="payment_method" class="form-control">
                                             <option value="">Select Payment Method</option>
                                             <option value="mpesa">M-Pesa</option>
                                             <option value="bank">Bank</option>
-                                            @can('give-discounts')
-                                                <option value="discount">Discount</option>
-                                            @endcan
+                                            <option value="cash">Cash</option>
+                                            <option value="discount">Discount</option>
                                         </select>
-                                        @error('method')
-                                            <small class="text-danger">{{ $message }}</small>
-                                        @enderror
+                                        @error('payment_method') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
-                                    <!-- Payment Method Selector -->
+
                                     <div class="col-md-6 mb-3">
-                                        <label for="method" class="form-label">Payment For</label>
+                                        <label class="form-label">Payment For</label>
                                         <select wire:model="payment_reason" class="form-control">
                                             <option value="">Select Reason</option>
                                             <option value="tuition">Tuition</option>
@@ -616,51 +882,46 @@ new class extends Component {
                                             <option value="attachment">Industrial Attachment</option>
                                             <option value="other">Other</option>
                                         </select>
-                                        @error('payment_reason')
-                                            <small class="text-danger">{{ $message }}</small>
-                                        @enderror
+                                        @error('payment_reason') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
-                                    <!-- Reference Input -->
-                                    {{-- <div class="col-md-6 mb-3">
-                                        <label for="reference" class="form-label">Reference</label>
-                                        <input type="text" wire:model="reference" class="form-control"
-                                            placeholder="Reference" />
-                                    </div> --}}
-                                    <!-- Paid Date Input -->
+
                                     <div class="col-md-6 mb-3">
-                                        <label for="paid_at" class="form-label">Paid On</label>
+                                        <label class="form-label">Reference</label>
+                                        <input type="text" wire:model="reference" class="form-control" />
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Paid On</label>
                                         <input type="date" wire:model="paid_at" class="form-control" />
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="payer" class="form-label">Narration/Comments</label>
-                                        <textarea wire:model="payer" class="form-control" placeholder="Narration/Comments"></textarea>
+
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Narration / Payer</label>
+                                        <textarea wire:model="payer" class="form-control"></textarea>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="modal-footer">
-                                <div class="d-flex gap-1 m-0">
-                                    <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
-                                        {{ $editId ? 'Save' : 'Add' }}
-                                    </button>
-                                    <button type="button" class="btn bg-danger-subtle text-danger"
-                                        data-bs-dismiss="modal">Discard
-                                    </button>
-                                </div>
+                                <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
+                                    {{ $editId ? 'Save' : 'Add' }}
+                                </button>
+                                <button type="button" class="btn bg-danger-subtle text-danger" data-bs-dismiss="modal">
+                                    Discard
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!--Allocation Modal -->
             <div class="modal fade" id="allocationModal" tabindex="-1" wire:ignore.self>
                 <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                     <div class="modal-content border-0">
                         <div class="modal-header">
                             <div>
                                 <h5 class="modal-title fw-semibold">Payment Allocation</h5>
-                                <small class="text-muted">See how this payment was distributed across fee
-                                    items.</small>
+                                <small class="text-muted">Allocate this payment to one or multiple student fee items.</small>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
@@ -688,8 +949,7 @@ new class extends Component {
                                         <div class="border rounded-3 p-3">
                                             <div class="small text-muted">Allocated</div>
                                             <div class="fw-semibold text-success">
-                                                KES
-                                                {{ number_format(collect($allocationRows)->sum('amount_allocated'), 2) }}
+                                                KES {{ number_format(collect($allocationRows)->sum('amount_allocated'), 2) }}
                                             </div>
                                         </div>
                                     </div>
@@ -697,49 +957,34 @@ new class extends Component {
                                     <div class="col-md-3">
                                         <div class="border rounded-3 p-3">
                                             <div class="small text-muted">Unallocated</div>
-                                            <div
-                                                class="fw-semibold {{ $unallocatedAmount > 0 ? 'text-danger' : 'text-muted' }}">
+                                            <div class="fw-semibold {{ $unallocatedAmount > 0 ? 'text-danger' : 'text-muted' }}">
                                                 KES {{ number_format($unallocatedAmount, 2) }}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="mb-4">
-                                    <div class="small text-muted">Student / Course</div>
-                                    <div class="fw-semibold">
-                                        {{ $selectedPayment['student'] }} — {{ $selectedPayment['course'] }}
-                                    </div>
-                                    <div class="small text-muted">
-                                        {{ $selectedPayment['method'] }} • {{ $selectedPayment['payment_date'] }}
-                                    </div>
-                                </div>
-
-                                <h6 class="fw-semibold mb-3">Allocation Breakdown</h6>
+                                <h6 class="fw-semibold mb-3">Existing Allocation Breakdown</h6>
 
                                 <div class="table-responsive mb-4">
                                     <table class="table align-middle">
                                         <thead>
                                             <tr>
+                                                <th>Student</th>
+                                                <th>Course</th>
                                                 <th>Fee Item</th>
                                                 <th class="text-end">Allocated</th>
-                                                <th class="text-end">Fee Amount</th>
-                                                <th class="text-end">Fee Paid</th>
                                                 <th class="text-end">Fee Balance</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @forelse($allocationRows as $row)
                                                 <tr>
+                                                    <td>{{ $row['student'] ?: '—' }}</td>
+                                                    <td>{{ $row['course'] }}</td>
                                                     <td>{{ $row['description'] }}</td>
                                                     <td class="text-end text-success">
                                                         KES {{ number_format($row['amount_allocated'], 2) }}
-                                                    </td>
-                                                    <td class="text-end">
-                                                        KES {{ number_format($row['fee_amount'], 2) }}
-                                                    </td>
-                                                    <td class="text-end">
-                                                        KES {{ number_format($row['fee_paid'], 2) }}
                                                     </td>
                                                     <td class="text-end">
                                                         KES {{ number_format($row['fee_balance'], 2) }}
@@ -760,53 +1005,94 @@ new class extends Component {
                                     <div class="border rounded-3 p-3 bg-light">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
-                                                <h6 class="fw-semibold mb-1">Allocate Unallocated Balance</h6>
+                                                <h6 class="fw-semibold mb-1">Manual Allocation</h6>
                                                 <p class="small text-muted mb-0">
-                                                    Best option: auto-allocate first using the finance allocation rules.
-                                                    Use manual allocation only for corrections.
+                                                    Add one or more rows. Total cannot exceed unallocated balance.
                                                 </p>
                                             </div>
 
-                                            <button type="button" class="btn btn-primary btn-sm"
-                                                wire:click="autoAllocateSelectedPayment" wire:loading.attr="disabled">
-                                                Auto Allocate
+                                            <button type="button" class="btn btn-outline-primary btn-sm" wire:click="addAllocationRow">
+                                                Add Row
                                             </button>
                                         </div>
 
-                                        <div class="row g-3 align-items-end">
-                                            <div class="col-md-7">
-                                                <label class="form-label">Outstanding Fee Item</label>
-                                                <select class="form-select" wire:model="manual_fee_item_id">
-                                                    <option value="">Select fee item</option>
-                                                    @foreach ($availableFeeItems as $item)
-                                                        <option value="{{ $item['id'] }}">
-                                                            {{ $item['description'] }} — Balance KES
-                                                            {{ number_format($item['balance'], 2) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @error('manual_fee_item_id')
-                                                    <small class="text-danger">{{ $message }}</small>
-                                                @enderror
-                                            </div>
+                                        <form wire:submit.prevent="saveManualAllocations">
+                                            @foreach ($allocationDraftRows as $index => $row)
+                                                @php
+                                                    $rowStudentId = $row['student_id'] ?? '';
+                                                    $rowEnrollmentId = $row['enrollment_id'] ?? '';
 
-                                            <div class="col-md-3">
-                                                <label class="form-label">Amount</label>
-                                                <input type="number" step="0.01" class="form-control"
-                                                    wire:model="manual_allocation_amount"
-                                                    placeholder="{{ number_format($unallocatedAmount, 2, '.', '') }}">
-                                                @error('manual_allocation_amount')
-                                                    <small class="text-danger">{{ $message }}</small>
-                                                @enderror
-                                            </div>
+                                                    $rowEnrollments = $allocationEnrollments
+                                                        ->when($rowStudentId, fn ($items) => $items->where('student_id', (int) $rowStudentId));
 
-                                            <div class="col-md-2">
-                                                <button type="button" class="btn btn-success w-100"
-                                                    wire:click="allocateManually" wire:loading.attr="disabled">
-                                                    Allocate
+                                                    $rowFeeItems = $allocationFeeItems
+                                                        ->when($rowStudentId, fn ($items) => $items->where('student_id', (int) $rowStudentId))
+                                                        ->when($rowEnrollmentId, fn ($items) => $items->where('enrollment_id', (int) $rowEnrollmentId));
+                                                @endphp
+
+                                                <div class="row g-2 align-items-end mb-2">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small">Student</label>
+                                                        <select class="form-select" wire:model.live="allocationDraftRows.{{ $index }}.student_id">
+                                                            <option value="">Select student</option>
+                                                            @foreach ($allocationStudents as $student)
+                                                                <option value="{{ $student->id }}">
+                                                                    {{ $student->admission_number }} - {{ $student->first_name }} {{ $student->last_name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small">Enrollment</label>
+                                                        <select class="form-select" wire:model.live="allocationDraftRows.{{ $index }}.enrollment_id">
+                                                            <option value="">Any enrollment</option>
+                                                            @foreach ($rowEnrollments as $enrollment)
+                                                                <option value="{{ $enrollment->id }}">
+                                                                    {{ $enrollment->course?->title }} - {{ $enrollment->course?->level }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small">Fee Item</label>
+                                                        <select class="form-select" wire:model="allocationDraftRows.{{ $index }}.student_fee_item_id">
+                                                            <option value="">Select fee item</option>
+                                                            @foreach ($rowFeeItems as $item)
+                                                                <option value="{{ $item->id }}">
+                                                                    {{ $item->description }} — Bal KES {{ number_format($item->balance, 2) }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-2">
+                                                        <label class="form-label small">Amount</label>
+                                                        <input type="number" step="0.01" min="1" class="form-control"
+                                                            wire:model="allocationDraftRows.{{ $index }}.amount">
+                                                    </div>
+
+                                                    <div class="col-md-1">
+                                                        <button type="button" class="btn btn-outline-danger w-100"
+                                                            wire:click="removeAllocationRow({{ $index }})">
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <div class="small text-muted">
+                                                    Unallocated available:
+                                                    <strong>KES {{ number_format($unallocatedAmount, 2) }}</strong>
+                                                </div>
+
+                                                <button type="submit" class="btn btn-success">
+                                                    Save Allocations
                                                 </button>
                                             </div>
-                                        </div>
+                                        </form>
                                     </div>
                                 @endif
                             @endif
@@ -819,11 +1105,8 @@ new class extends Component {
                 </div>
             </div>
 
-            <!-- Payments Table -->
             <div class="card card-body">
                 <div class="table-responsive">
-
-                    <!-- Top Bar Inside the Card -->
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-2">
                         <div class="d-flex align-items-center">
                             <label for="perPage" class="form-label me-2">Show</label>
@@ -835,30 +1118,15 @@ new class extends Component {
                             </select>
                             <span class="ms-2">entries</span>
                         </div>
-                        <!-- Title -->
-                        <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
-                            <iconify-icon icon="mdi:wallet-outline" class="me-2"
-                                style="font-size: 20px;"></iconify-icon>
 
-                            Payments List
-                        </h6>
+                        <h6 class="mb-0 fw-semibold text-primary">Payments List</h6>
 
-                        <!-- Action Buttons -->
                         <div class="d-flex gap-2 flex-wrap">
-
-                            <!-- Export Excel Button -->
-                            <button wire:click="exportExcel"
-                                class="btn btn-outline-success btn-sm d-flex align-items-center px-3 py-1 rounded">
-                                <iconify-icon icon="mdi:file-excel-outline" class="me-1"
-                                    style="font-size: 18px;"></iconify-icon>
+                            <button wire:click="exportExcel" class="btn btn-outline-success btn-sm">
                                 Excel
                             </button>
 
-                            <!-- Export PDF Button -->
-                            <button wire:click="exportPdf"
-                                class="btn btn-outline-danger btn-sm d-flex align-items-center px-3 py-1 rounded">
-                                <iconify-icon icon="mdi:file-pdf-box" class="me-1"
-                                    style="font-size: 18px;"></iconify-icon>
+                            <button wire:click="exportPdf" class="btn btn-outline-danger btn-sm">
                                 PDF
                             </button>
                         </div>
@@ -868,83 +1136,68 @@ new class extends Component {
                         <thead class="header-item">
                             <tr>
                                 <th>
-                                    <div class="form-check text-center">
-                                        <input wire:click="$dispatch('select-all')" type="checkbox"
-                                            class="form-check-input" wire:model="selectAll" />
-                                    </div>
+                                    <input wire:click="$dispatch('select-all')" type="checkbox"
+                                        class="form-check-input" wire:model="selectAll" />
                                 </th>
                                 <th>#</th>
-                                <th>Trans ID</th>
+                                <th>Receipt</th>
                                 <th>Student</th>
-                                <th>Student ID</th>
                                 <th>Course/Ref</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Allocation Status</th>
+                                <th class="text-end">Amount</th>
+                                <th>Allocation</th>
                                 <th>Method</th>
-                                <th>Payment For</th>
+                                <th>For</th>
                                 <th>Paid On</th>
                                 <th>Narration</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             @forelse ($payments as $payment)
-                                <tr class="search-items">
-                                    <td class="text-center">
-                                        <div class="form-check text-center">
-                                            <input type="checkbox" class="form-check-input" wire:model="selected"
-                                                value="{{ (string) $payment->id }}" />
-                                        </div>
-                                    </td>
-                                    <td class="text-muted">{{ $loop->iteration }}</td>
+                                @php
+                                    $allocated = $payment->allocations->sum('amount_allocated');
+                                    $unallocated = $payment->unallocated_balance ?? ((float) $payment->amount - (float) $allocated);
+                                    $student = $payment->enrollment?->student;
+                                    $course = $payment->enrollment?->course;
+                                @endphp
+
+                                <tr>
                                     <td>
-                                        <span
-                                            class="badge bg-light text-dark">{{ $payment->transaction_id ?? 'N/A' }}</span>
+                                        <input type="checkbox" class="form-check-input" wire:model="selected"
+                                            value="{{ (string) $payment->id }}" />
                                     </td>
-                                    @if (!empty($payment->enrollment))
-                                        <td style="color: #446076; font-weight: 500;">
-                                            <a href="{{ route('students.view', $payment->enrollment->student->id) }}">
-                                                {{ !empty($payment->enrollment)
-                                                    ? $payment->enrollment->student->first_name . ' ' . $payment->enrollment->student->last_name
-                                                    : 'N/A' }}
+
+                                    <td>{{ $loop->iteration + ($payments->currentPage() - 1) * $payments->perPage() }}</td>
+
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            {{ $payment->receipt_no ?? $payment->transaction_id ?? 'N/A' }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @if($student)
+                                            <a href="{{ route('students.view', $student->id) }}">
+                                                {{ $student->first_name }} {{ $student->last_name }}
                                             </a>
-                                        </td>
-                                    @else
-                                        <td style="color: #446076; font-weight: 500;">
-                                            {{ !empty($payment->enrollment)
-                                                ? $payment->enrollment->student->first_name . ' ' . $payment->enrollment->student->last_name
-                                                : 'N/A' }}
-                                        </td>
-                                    @endif
-                                    <td>
-                                        <span
-                                            class="badge bg-light text-dark">{{ 'TTI/' . $payment->enrollment?->student?->admission_number . '/' . $payment->enrollment?->course?->code . '/' . $payment->enrollment?->created_at->format('Y') }}</span>
-                                    </td>
-                                    <td>
-                                        <span
-                                            class="badge bg-light text-dark">{{ !empty($payment->enrollment) ? $payment->enrollment->course->title . ' - ' . $payment->enrollment->course->level : 'N/A' }}</span>
-                                    </td>
-                                    <td style="color: #f69121; font-weight: 600;">
-                                        {{ number_format($payment->amount, 2) }}
-                                    </td>
-                                    <td>
-                                        @if ($payment->status === 'completed')
-                                            <span
-                                                style="background-color: #e6f4ea; color: #28a745; padding: 4px 8px; border-radius: 4px;">
-                                                Mapped
-                                            </span>
-                                        @elseif($payment->status === 'pending')
-                                            <span
-                                                style="background-color: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px;">
-                                                Pending
-                                            </span>
+                                            <div class="small text-muted">{{ $student->admission_number }}</div>
+                                        @else
+                                            <span class="text-muted">Multiple / Unmapped</span>
                                         @endif
                                     </td>
-                                    @php
-                                        $allocated = $payment->allocations->sum('amount_allocated');
-                                        $unallocated = $payment->amount - $allocated;
-                                    @endphp
+
+                                    <td>
+                                        {{ $course?->title ?? $payment->reference ?? 'N/A' }}
+                                        @if($course?->level)
+                                            <div class="small text-muted">{{ $course->level }}</div>
+                                        @endif
+                                    </td>
+
+                                    <td class="text-end fw-semibold text-primary">
+                                        KES {{ number_format($payment->amount, 2) }}
+                                    </td>
+
                                     <td>
                                         @if ($unallocated <= 0)
                                             <span class="badge bg-success-subtle text-success">Fully Allocated</span>
@@ -953,27 +1206,30 @@ new class extends Component {
                                         @else
                                             <span class="badge bg-danger-subtle text-danger">Unallocated</span>
                                         @endif
+
+                                        <div class="small text-muted">
+                                            Unalloc: KES {{ number_format($unallocated, 2) }}
+                                        </div>
                                     </td>
 
-                                    <td><strong>{{ ucfirst($payment->payment_method) }}</strong></td>
-                                    <td><strong>{{ ucfirst($payment->payment_reason) }}</strong></td>
-                                    <td><strong>{{ \Carbon\Carbon::parse($payment->paid_at)->format('d/m/y h:i A') }}</strong>
-                                    </td>
+                                    <td>{{ ucfirst($payment->method ?? $payment->payment_method ?? 'N/A') }}</td>
+                                    <td>{{ ucfirst($payment->payment_reason ?? 'N/A') }}</td>
+                                    <td>{{ optional($payment->payment_date ?? $payment->paid_at)->format('d/m/y') }}</td>
                                     <td>{{ $payment->payer }}</td>
+
                                     <td>
                                         <div class="action-btn">
-                                            <a href="javascript:void(0)"
-                                                wire:click="editPayment({{ $payment->id }})" style="color: #446076;"
-                                                title="Edit">
+                                            <a href="javascript:void(0)" wire:click="editPayment({{ $payment->id }})" title="Edit">
                                                 <i class="ti ti-pencil fs-5"></i>
                                             </a>
-                                            <a href="javascript:void(0)"
-                                                wire:click="viewAllocation({{ $payment->id }})"
-                                                style="color: #28a745; margin-left: 10px;" title="View Allocation">
+
+                                            <a href="javascript:void(0)" wire:click="viewAllocation({{ $payment->id }})"
+                                                style="color: #28a745; margin-left: 10px;" title="Allocation">
                                                 <i class="ti ti-list-details fs-5"></i>
                                             </a>
+
                                             <a href="javascript:void(0)"
-                                                onclick="confirm('Are you sure you want to delete this payment? This action cannot be undone.') || event.stopImmediatePropagation()"
+                                                onclick="confirm('Delete this payment?') || event.stopImmediatePropagation()"
                                                 wire:click="deletePayment({{ $payment->id }})"
                                                 style="color: #f69121; margin-left: 10px;" title="Delete">
                                                 <i class="ti ti-trash fs-5"></i>
@@ -983,29 +1239,25 @@ new class extends Component {
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">No payments found.</td>
+                                    <td colspan="12" class="text-center text-muted">No payments found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
 
-
-                    {{-- Add the pagination links here --}}
                     <div class="d-flex justify-content-center mt-4">
                         {{ $payments->links() }}
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-
 @push('scripts')
     <script>
         window.addEventListener('show-payment-modal', () => {
-            new bootstrap.Modal(document.getElementById('addPaymentModal')).show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addPaymentModal')).show();
         });
 
         window.addEventListener('hide-payment-modal', () => {

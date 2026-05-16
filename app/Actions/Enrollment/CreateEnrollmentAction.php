@@ -43,12 +43,14 @@ class CreateEnrollmentAction
                 'assigned_start_trimester_id' => $assignment['assigned_start_trimester_id'],
             ]);
 
-            app(EnrollmentProgressionService::class)
-                ->generateForEnrollment($enrollment);
+            $progression = app(EnrollmentProgressionService::class)
+                ->createFirstProgression($enrollment);
 
             app(FeeGenerationService::class)
-                ->generateInitialCharges($enrollment);
+                ->generateStudentOnceFees($enrollment);
 
+            app(FeeGenerationService::class)
+                ->generateChargesForProgression($progression);
             return $enrollment->fresh();
         });
     }

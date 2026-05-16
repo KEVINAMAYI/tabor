@@ -36,10 +36,7 @@ class PaymentPostingService
 
     public function allocateExistingPayment(Payment $payment): void
     {
-        if ($payment->allocations()->exists()) {
-            return;
-        }
-
+      
         DB::transaction(function () use ($payment) {
             $this->allocatePayment($payment->fresh());
         });
@@ -103,12 +100,6 @@ class PaymentPostingService
     {
         $studentId = $payment->student_id;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Resolve Student From Enrollment
-        |--------------------------------------------------------------------------
-        */
-
         if (
             empty($studentId) &&
             !empty($payment->enrollment_id)
@@ -123,7 +114,6 @@ class PaymentPostingService
         }
 
         return StudentFeeItem::query()
-
             ->select('student_fee_items.*')
 
             ->leftJoin(
@@ -142,29 +132,15 @@ class PaymentPostingService
                 'partial',
             ])
 
-            ->when(!empty($payment->enrollment_id), function ($query) use ($payment) {
-
-                $query->where(function ($q) use ($payment) {
-
-                    $q->where(
-                        'student_fee_items.enrollment_id',
-                        $payment->enrollment_id
-                    )
-
-                        ->orWhereNull(
-                            'student_fee_items.enrollment_id'
-                        );
-                });
-            })
-
             /*
             |--------------------------------------------------------------------------
             | Priority Allocation Order
             |--------------------------------------------------------------------------
             |
-            | 1. Student once fees first
-            | 2. Oldest charges
-            | 3. Lowest ID
+            | 1. Student-once fees first
+            | 2. Same enrollment as payment first
+            | 3. Other enrollments for same student after
+            | 4. Oldest charges
             |
             */
 
@@ -176,6 +152,14 @@ class PaymentPostingService
                 ELSE 1
             END
         ")
+
+            ->orderByRaw("
+            CASE
+                WHEN student_fee_items.enrollment_id = ?
+                THEN 0
+                ELSE 1
+            END
+        ", [$payment->enrollment_id])
 
             ->orderBy('student_fee_items.charge_date')
 
