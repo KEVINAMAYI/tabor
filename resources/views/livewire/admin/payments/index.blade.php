@@ -372,7 +372,7 @@ new class extends Component {
 
         $payment->update([
             'unallocated_balance' => max(0, $remaining),
-            'status' => max(0, $remaining) > 0 ? 'unallocated' : 'completed',
+            'status' => 'completed', //max(0, $remaining) > 0 ? 'partial' :
         ]);
     }
 
@@ -425,7 +425,7 @@ new class extends Component {
                 'method' => $this->payment_method,
                 'payment_method' => $this->payment_method,
                 'payment_reason' => $this->payment_reason,
-                'status' => 'unallocated',
+                'status' => 'completed', // 'unallocated', since we will allocate immediately after
                 'reference' => $this->reference,
                 'payment_date' => $this->paid_at ?: now()->toDateString(),
                 'paid_at' => $this->paid_at ?: now(),
@@ -515,7 +515,7 @@ new class extends Component {
                 'payment_method' => $this->payment_method,
                 'payment_reason' => $this->payment_reason,
                 'reference' => $this->reference,
-                'status' => 'unallocated',
+                'status' => 'completed', // 'unallocated', since we will allocate immediately after
                 'payment_date' => $this->paid_at ?: now()->toDateString(),
                 'paid_at' => $this->paid_at ?: now(),
                 'payer' => $this->payer,
