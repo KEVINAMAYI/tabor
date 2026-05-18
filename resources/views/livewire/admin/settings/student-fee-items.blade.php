@@ -270,7 +270,7 @@ new class extends Component {
                     'fee_definition_id' => $this->fee_definition_id ?: null,
                     'trimester_id' => $this->trimester_id ?: null,
                     'description' => $this->description,
-                    'amount' => $amount,
+                    'amount' => $this->normalizedFeeItemAmount(),
                     'amount_paid' => 0,
                     'balance' => $amount,
                     'charge_date' => $this->charge_date,
@@ -287,7 +287,9 @@ new class extends Component {
             | then rebuild the new scope.
             |
             */
-
+                if ($amount > 0) {
+                    $this->allocateUnallocatedPaymentsToFeeItem($item);
+                }
                 $this->rebuildAllocationsForEnrollment($oldStudentId, $oldEnrollmentId);
 
                 if ((int) $oldStudentId !== (int) $item->student_id || (int) $oldEnrollmentId !== (int) $item->enrollment_id) {
@@ -304,7 +306,7 @@ new class extends Component {
                     'fee_definition_id' => $this->fee_definition_id ?: null,
                     'trimester_id' => $this->trimester_id ?: null,
                     'description' => $this->description,
-                    'amount' => $amount,
+                    'amount' => $this->normalizedFeeItemAmount(),
                     'amount_paid' => 0,
                     'balance' => $amount,
                     'charge_date' => $this->charge_date,
@@ -349,16 +351,22 @@ new class extends Component {
 
         StudentFeeItem::query()
             ->whereIn('id', $feeItemIds)
-            ->update([
-                'amount_paid' => 0,
-                'balance' => DB::raw('amount'),
-                'status' => 'pending',
-            ]);
+            ->get()
+            ->each(function ($item) {
+                $amount = (float) $item->amount;
+
+                $item->update([
+                    'amount_paid' => 0,
+                    'balance' => $amount,
+                    'status' => $amount <= 0 ? 'paid' : 'pending',
+                ]);
+            });
 
         Payment::query()
             ->whereIn('id', $paymentIds)
             ->update([
                 'unallocated_balance' => DB::raw('amount'),
+                'status' => 'completed',
             ]);
 
         Payment::query()
@@ -436,19 +444,27 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
-            $item = StudentFeeItem::with('allocations')->findOrFail($id);
+            $item = StudentFeeItem::query()->with('allocations.payment')->where('id', $id)->lockForUpdate()->firstOrFail();
 
-            if ($item->allocations()->exists() || (float) $item->amount_paid > 0) {
-                throw new \RuntimeException('Cannot delete a fee item that already has payment allocations.');
-            }
+            $studentId = $item->student_id;
+            $enrollmentId = $item->enrollment_id;
+
+            $item->allocations()->delete();
 
             $item->delete();
 
+            $this->rebuildAllocationsForEnrollment($studentId, $enrollmentId);
+
             DB::commit();
 
-            LivewireAlert::text('Fee item deleted successfully.')->success()->toast()->position('top-end')->show();
+            LivewireAlert::text('Fee item deleted and allocations rebuilt successfully.')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollBack();
+
+            Log::error('Failed deleting fee item', [
+                'message' => $th->getMessage(),
+                'fee_item_id' => $id,
+            ]);
 
             LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
         }
@@ -465,6 +481,19 @@ new class extends Component {
         }
 
         return $this->status === 'overdue' ? 'overdue' : 'pending';
+    }
+
+    protected function normalizedFeeItemAmount(): float
+    {
+        $amount = abs((float) $this->amount);
+
+        $definition = $this->fee_definition_id ? FeeDefinition::find($this->fee_definition_id) : null;
+
+        $name = strtolower($definition?->name ?? ($this->description ?? ''));
+
+        $isCreditItem = str_contains($name, 'discount') || str_contains($name, 'commission') || str_contains($name, 'waiver') || str_contains($name, 'scholarship');
+
+        return $isCreditItem ? -$amount : $amount;
     }
 
     protected function resetForm(): void
@@ -693,8 +722,7 @@ new class extends Component {
 
                                 <button type="button" class="btn btn-sm btn-outline-danger rounded-3"
                                     wire:click="deleteFeeItem({{ $item->id }})"
-                                    onclick="return confirm('Delete this fee item? This is only allowed if it has no allocations.')"
-                                    @disabled($hasAllocations || $item->amount_paid > 0)>
+                                    onclick="return confirm('Delete this fee item? Allocations will be rebuilt automatically.')">
                                     Delete
                                 </button>
                             </td>
@@ -878,8 +906,8 @@ new class extends Component {
 
                         @if ($isEditing)
                             <div class="alert alert-warning border-0 rounded-3 mb-0">
-                                If payments already exist, the amount cannot be reduced below the allocated amount.
-                                If increased, available unallocated payments will be applied automatically.
+                                Editing this fee item will rebuild payment allocations for this enrollment
+                                automatically.
                             </div>
                         @else
                             <div class="alert alert-info border-0 rounded-3 mb-0">

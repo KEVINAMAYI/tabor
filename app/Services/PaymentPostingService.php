@@ -36,7 +36,7 @@ class PaymentPostingService
 
     public function allocateExistingPayment(Payment $payment): void
     {
-      
+
         DB::transaction(function () use ($payment) {
             $this->allocatePayment($payment->fresh());
         });
@@ -131,6 +131,13 @@ class PaymentPostingService
                 'pending',
                 'partial',
             ])
+
+            ->when(!empty($payment->enrollment_id), function ($query) use ($payment) {
+                $query->where(function ($q) use ($payment) {
+                    $q->where('student_fee_items.enrollment_id', $payment->enrollment_id)
+                        ->orWhereNull('student_fee_items.enrollment_id');
+                });
+            })
 
             /*
             |--------------------------------------------------------------------------

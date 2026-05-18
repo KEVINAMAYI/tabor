@@ -214,6 +214,7 @@ class MpesaApi extends Controller
                     'enrollment_id' => $enrollment?->id,
                     'payment_date' => now()->toDateString(),
                     'amount' => $amount,
+                    'unallocated_balance' => $amount,
                     'payment_method' => 'mpesa',
                     'reference_no' => $account,
                     // 'receipt_no' => $mpesaTransactionId,

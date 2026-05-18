@@ -6,6 +6,7 @@ use App\Models\EnrollmentProgression;
 use App\Models\PaymentAllocation;
 use App\Models\Student;
 use App\Models\StudentFeeItem;
+use App\Models\Payment;
 use App\Models\Trimester;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -32,11 +33,26 @@ class StudentStatementService
 
         $entries = $chargeEntries
             ->concat($paymentEntries)
+
+            ->map(function ($entry) {
+
+                $entry['sort_date'] = isset($entry['sort_date'])
+                    ? \Carbon\Carbon::parse($entry['sort_date'])->timestamp
+                    : 0;
+
+                $entry['sort_order'] = (int) ($entry['sort_order'] ?? 0);
+
+                $entry['sort_id'] = (int) ($entry['sort_id'] ?? 0);
+
+                return $entry;
+            })
+
             ->sortBy([
                 ['sort_date', 'asc'],
                 ['sort_order', 'asc'],
                 ['sort_id', 'asc'],
             ])
+
             ->values();
 
         $runningBalance = $openingBalance;
@@ -110,13 +126,27 @@ class StudentStatementService
 
         $opening = $this->getOpeningBalance($student, $progression);
 
-        $debits = $this->chargeEntries($student, $progression, $startDate, $endDate)
-            ->sum('dr');
+        $chargeEntries = $this->chargeEntries(
+            $student,
+            $progression,
+            $startDate,
+            $endDate
+        );
 
-        $credits = $this->paymentEntries($student, $progression, $startDate, $endDate)
-            ->sum('cr');
+        $paymentEntries = $this->paymentEntries(
+            $student,
+            $progression,
+            $startDate,
+            $endDate
+        );
 
-        return (float) $opening + (float) $debits - (float) $credits;
+        $debits = (float) $chargeEntries->sum('dr');
+
+        $credits =
+            (float) $chargeEntries->sum('cr') +
+            (float) $paymentEntries->sum('cr');
+
+        return (float) $opening + $debits - $credits;
     }
 
     protected function chargeEntries(
@@ -149,53 +179,67 @@ class StudentStatementService
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        return $this->rawAllocations($student, $progression, $startDate, $endDate)
-            ->map(function ($allocation) use ($startDate) {
-                $payment = $allocation->payment;
-                $feeItem = $allocation->studentFeeItem;
+        $payments = Payment::query()
+            ->with([
+                'allocations.studentFeeItem',
+            ])
+            ->where('student_id', $student->id)
+            ->where(function ($q) use ($progression) {
+                $q->where('enrollment_id', $progression->enrollment_id)
+                    ->orWhereNull('enrollment_id');
+            })
+            ->whereDate('payment_date', '>=', $startDate)
+            ->whereDate('payment_date', '<=', $endDate)
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
 
-                $paymentDate = Carbon::parse($payment->payment_date);
-                $chargeDate = $feeItem?->charge_date
-                    ? Carbon::parse($feeItem->charge_date)
-                    : $startDate;
+        return $payments->map(function (Payment $payment) use ($progression) {
+            $paymentDate = Carbon::parse($payment->payment_date ?? $payment->paid_at);
+
+            $currentProgressionAllocations = $payment->allocations
+                ->filter(function ($allocation) use ($progression) {
+                    return (int) $allocation->studentFeeItem?->enrollment_progression_id === (int) $progression->id;
+                })
+                ->map(function ($allocation) {
+                    return [
+                        'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                        'amount' => (float) $allocation->amount_allocated,
+                        'amount_allocated' => (float) $allocation->amount_allocated,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return [
+                'payment_id' => $payment->id,
+                'date' => $paymentDate,
+                'actual_payment_date' => $paymentDate,
+                'reference' => $payment->transaction_id ?: ($payment->reference ?: 'PAY-' . $payment->id),
+                'description' => 'Payment Received',
+                'dr' => 0.00,
+                'cr' => (float) $payment->amount,
+                'source_type' => 'payment',
+                'sort_date' => $paymentDate->timestamp,
+                'sort_order' => 2,
+                'sort_id' => $payment->id,
 
                 /*
                 |--------------------------------------------------------------------------
-                | Effective Ledger Date
+                | Allocation Display Rule
                 |--------------------------------------------------------------------------
                 |
-                | If payment happened before the charge existed, show the credit on the
-                | charge date so the statement does not credit before the debit.
+                | Only show allocations belonging to this progression.
+                | If payment was allocated to a future progression fee item,
+                | the payment still appears here as a credit, but allocation
+                | details wait for that future progression statement.
                 |
                 */
 
-                $ledgerDate = $paymentDate->lt($chargeDate)
-                    ? $chargeDate
-                    : $paymentDate;
-
-                return [
-                    'payment_id' => $payment->id,
-                    'date' => $ledgerDate,
-                    'actual_payment_date' => $paymentDate,
-                    'reference' => $payment->receipt_no ?: ($payment->reference ?: 'PAY-' . $payment->id),
-                    'description' => 'Payment Received',
-                    'dr' => 0.00,
-                    'cr' => (float) $allocation->amount_allocated,
-                    'source_type' => 'payment',
-                    'sort_date' => $ledgerDate->timestamp,
-                    'sort_order' => 2,
-                    'sort_id' => $allocation->id,
-                    'allocations' => collect([
-                        [
-                            'description' => $feeItem?->description ?? 'Fee Item',
-                            'amount' => (float) $allocation->amount_allocated,
-                        ],
-                    ]),
-                ];
-            })
-            ->values();
+                'allocations' => $currentProgressionAllocations,
+            ];
+        })->values();
     }
-
     protected function rawCharges(
         Student $student,
         EnrollmentProgression $progression,

@@ -23,12 +23,6 @@
             margin-bottom: 6px;
         }
 
-        .institution-header h1 {
-            margin: 0;
-            font-size: 20px;
-            color: #0e334e;
-        }
-
         .institution-header p {
             margin: 3px 0;
             color: #666;
@@ -98,14 +92,36 @@
             font-size: 10.5px;
             background: #fafafa;
             color: #6b7280;
+            border-top: none;
+        }
+
+        .credit-row td {
+            color: #15803d;
+        }
+
+        .debit-row td {
+            color: #1f2937;
         }
 
         .footer {
             margin-top: 30px;
             font-size: 11px;
             color: #6b7280;
-            display: flex;
-            justify-content: space-between;
+        }
+
+        .balance-positive {
+            font-weight: bold;
+            color: #b91c1c;
+        }
+
+        .balance-negative {
+            font-weight: bold;
+            color: #15803d;
+        }
+
+        .balance-zero {
+            font-weight: bold;
+            color: #111827;
         }
     </style>
 </head>
@@ -119,6 +135,7 @@
         $progression = $statement['progression'];
 
         $studentName = trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? ''));
+
         $studentNumber =
             'TTI/' .
             ($student->admission_number ?? '—') .
@@ -127,7 +144,12 @@
             '/' .
             optional($student->created_at)->format('Y');
 
-        $closingBalanceClass = ($statement['closing_balance'] ?? 0) > 0 ? 'balance-due' : 'balance-cleared';
+        $openingBalance = (float) ($statement['opening_balance'] ?? 0);
+        $chargeTotal = (float) ($statement['charge_total'] ?? 0);
+        $paymentTotal = (float) ($statement['payment_total'] ?? 0);
+        $closingBalance = (float) ($statement['closing_balance'] ?? 0);
+
+        $closingBalanceClass = $closingBalance > 0 ? 'balance-due' : 'balance-cleared';
     @endphp
 
     <div class="institution-header">
@@ -147,6 +169,7 @@
                 <strong>Student Name:</strong>
                 {{ $studentName ?: $student->name ?? '—' }}
             </td>
+
             <td>
                 <strong>Student No:</strong>
                 {{ $studentNumber }}
@@ -158,6 +181,7 @@
                 <strong>Course:</strong>
                 {{ trim(($course?->title ?? '—') . ' - ' . ($course?->level ?? '')) }}
             </td>
+
             <td>
                 <strong>Trimester:</strong>
                 {{ $trimester?->name ?? '—' }}
@@ -172,6 +196,7 @@
                 <strong>Period From:</strong>
                 {{ optional($statement['start_date'])->format('d M Y') ?? '—' }}
             </td>
+
             <td>
                 <strong>Period To:</strong>
                 {{ optional($statement['end_date'])->format('d M Y') ?? '—' }}
@@ -186,6 +211,7 @@
                     of {{ $course->number_of_trimesters }}
                 @endif
             </td>
+
             <td>
                 <strong>Progression Status:</strong>
                 {{ str_replace('_', ' ', ucfirst($progression->status)) }}
@@ -199,18 +225,28 @@
         <thead>
             <tr>
                 <th>Balance B/F</th>
-                <th>Charges This Trimester</th>
-                <th>Payments This Trimester</th>
+                <th>Charges / Debits</th>
+                <th>Payments & Discounts / Credits</th>
                 <th>Balance C/F</th>
             </tr>
         </thead>
+
         <tbody>
             <tr>
-                <td class="text-end">{{ number_format($statement['opening_balance'], 2) }}</td>
-                <td class="text-end">{{ number_format($statement['charge_total'], 2) }}</td>
-                <td class="text-end">{{ number_format($statement['payment_total'], 2) }}</td>
+                <td class="text-end">
+                    {{ number_format($openingBalance, 2) }}
+                </td>
+
+                <td class="text-end">
+                    {{ number_format($chargeTotal, 2) }}
+                </td>
+
+                <td class="text-end">
+                    {{ number_format($paymentTotal, 2) }}
+                </td>
+
                 <td class="text-end {{ $closingBalanceClass }}">
-                    {{ number_format($statement['closing_balance'], 2) }}
+                    {{ number_format($closingBalance, 2) }}
                 </td>
             </tr>
         </tbody>
@@ -237,38 +273,83 @@
                 <td>Previous Balance Brought Forward</td>
                 <td class="text-end"></td>
                 <td class="text-end"></td>
-                <td class="text-end">{{ number_format($statement['opening_balance'], 2) }}</td>
+                <td class="text-end">{{ number_format($openingBalance, 2) }}</td>
             </tr>
 
             @forelse($statement['ledger'] as $entry)
-                <tr>
-                    <td>{{ optional($entry['date'])->format('d M Y') ?? '—' }}</td>
-                    <td>{{ $entry['reference'] ?? '—' }}</td>
-                    <td>{{ $entry['description'] ?? '—' }}</td>
-                    <td class="text-end">
-                        {{ ($entry['dr'] ?? 0) > 0 ? number_format($entry['dr'], 2) : '' }}
+                @php
+                    $isCredit = ((float) ($entry['cr'] ?? 0)) > 0;
+                    $isDebit = ((float) ($entry['dr'] ?? 0)) > 0;
+                    $rowClass = $isCredit ? 'credit-row' : ($isDebit ? 'debit-row' : '');
+                @endphp
+
+                <tr class="{{ $rowClass }}">
+                    <td>
+                        {{ optional($entry['date'])->format('d M Y') ?? '—' }}
+
+                        @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['actual_payment_date']))
+                            @if (optional($entry['actual_payment_date'])->format('Y-m-d') !== optional($entry['date'])->format('Y-m-d'))
+                                <br>
+                                <span class="muted">
+                                    Paid: {{ optional($entry['actual_payment_date'])->format('d M Y') }}
+                                </span>
+                            @endif
+                        @endif
                     </td>
+
+                    <td>{{ $entry['reference'] ?? '' }}</td>
+
+                    <td>{{ $entry['description'] ?? '' }}</td>
+
                     <td class="text-end">
-                        {{ ($entry['cr'] ?? 0) > 0 ? number_format($entry['cr'], 2) : '' }}
+                        {{ $isDebit ? number_format($entry['dr'], 2) : '' }}
                     </td>
+
                     <td class="text-end">
-                        {{ number_format($entry['balance'] ?? 0, 2) }}
+                        {{ $isCredit ? number_format($entry['cr'], 2) : '' }}
+                    </td>
+
+                    @php
+                        $rowBalance = (float) ($entry['balance'] ?? 0);
+
+                        $rowBalanceClass =
+                            $rowBalance > 0
+                                ? 'balance-positive'
+                                : ($rowBalance < 0
+                                    ? 'balance-negative'
+                                    : 'balance-zero');
+                    @endphp
+
+                    <td class="text-end">
+                        <span class="{{ $rowBalanceClass }}">
+                            {{ number_format($rowBalance, 2) }}
+                        </span>
                     </td>
                 </tr>
 
                 @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
                     @foreach ($entry['allocations'] as $allocation)
+                        @php
+                            $allocationAmount =
+                                (float) ($allocation['amount'] ?? ($allocation['amount_allocated'] ?? 0));
+                        @endphp
+
                         <tr class="allocation-row">
                             <td></td>
+
                             <td></td>
+
                             <td style="padding-left: 24px;">
                                 Allocated to {{ $allocation['description'] ?? 'Fee Item' }}
                             </td>
+
                             <td class="text-end"></td>
-                            <td class="text-end">
-                                {{ number_format($allocation['amount'] ?? 0, 2) }}
+
+                            <td class="text-end muted">
+                                {{ number_format($allocationAmount, 2) }}
                             </td>
-                            <td></td>
+
+                            <td class="text-end muted"></td>
                         </tr>
                     @endforeach
                 @endif
@@ -281,13 +362,24 @@
             @endforelse
 
             <tr>
-                <th colspan="3">Totals</th>
-                <th>{{ number_format($statement['total_debits'], 2) }}</th>
-                <th>{{ number_format($statement['total_credits'], 2) }}</th>
-                <th>{{ number_format($statement['closing_balance'], 2) }}</th>
+                <th colspan="3" class="text-end">Totals</th>
+                <th class="text-end">{{ number_format($statement['total_debits'], 2) }}</th>
+                <th class="text-end">{{ number_format($statement['total_credits'], 2) }}</th>
+                <th class="text-end">@php
+                    $closingBalanceClass =
+                        $closingBalance > 0
+                            ? 'balance-positive'
+                            : ($closingBalance < 0
+                                ? 'balance-negative'
+                                : 'balance-zero');
+                @endphp</th>
             </tr>
         </tbody>
     </table>
+
+    <div class="footer">
+        Generated on {{ now()->format('d M Y h:i A') }}
+    </div>
 </body>
 
 </html>
