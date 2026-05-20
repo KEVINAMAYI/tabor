@@ -359,9 +359,9 @@ new class extends Component {
                                         <label for="status" class="form-label">Status</label>
                                         <select wire:model="status" id="status" class="form-control" required>
                                             <option value="pending">Pending</option>
-                                            <option value="approved">Approved</option>
+                                            <option value="active">Approved</option>
                                             <option value="withdrawn">Withdrawn</option>
-                                            <option value="completed">Completed</option>
+                                            {{-- <option value="completed">Completed</option> --}}
                                             <option value="rejected">Rejected</option>
                                         </select>
                                     </div>
