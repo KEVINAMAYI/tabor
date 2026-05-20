@@ -58,8 +58,8 @@ new class extends Component {
                 });
             })
             ->orderBy('students.first_name', 'asc')
-            ->select('enrollments.*') // Avoid ambiguous column issues
-            // ->distinct() // on the server
+            // ->select('enrollments.*') // Avoid ambiguous column issues
+            ->distinct() // on the server
             ->groupBy('enrollments.id')  // on my local machine
             ->paginate($this->perPage);
 
