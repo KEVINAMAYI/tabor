@@ -1275,6 +1275,10 @@ new class extends Component {
                                                 style="color: #28a745; margin-left: 10px;" title="Allocation">
                                                 <i class="ti ti-list-details fs-5"></i>
                                             </a>
+                                            <a href="{{ route('payments.receipt', $payment->id) }}" target="_blank"
+                                                style="color: #0d6efd; margin-left: 10px;" title="Print Receipt">
+                                                <i class="ti ti-printer fs-5"></i>
+                                            </a>
 
                                             <a href="javascript:void(0)"
                                                 onclick="confirm('Delete this payment?') || event.stopImmediatePropagation()"

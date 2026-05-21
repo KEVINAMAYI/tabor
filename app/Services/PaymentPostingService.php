@@ -152,13 +152,18 @@ class PaymentPostingService
             */
 
             ->orderByRaw("
-            CASE
-                WHEN fee_definitions.scope = 'student'
-                 AND fee_definitions.applies_once = 1
-                THEN 0
-                ELSE 1
-            END
-        ")
+    CASE
+        WHEN fee_definitions.scope = 'student'
+         AND fee_definitions.applies_once = 1
+        THEN 0
+
+        WHEN LOWER(student_fee_items.description) LIKE '%tuition%'
+          OR LOWER(fee_definitions.name) LIKE '%tuition%'
+        THEN 1
+
+        ELSE 2
+    END
+")
 
             ->orderByRaw("
             CASE

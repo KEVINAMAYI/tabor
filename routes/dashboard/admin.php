@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use App\Http\Controllers\StatementController;
+use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\StudentStatementController;
 
 // Group all admin routes under the 'admin' prefix
@@ -38,6 +39,9 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     // Route to manage financial records
     Volt::route('payments', 'admin.payments.index')->name('payments.index');
 
+    Route::get('/payments/{payment}/receipt', [PaymentReceiptController::class, 'show'])
+        ->name('payments.receipt');
+
     // Route to manage exams
     Volt::route('exams', 'admin.exams.index')->name('exams.index');
 
@@ -51,7 +55,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('reports', 'admin.reports.index')->name('reports.index');
 
     // Route to manage payments
-    Volt::route('payments', 'admin.payments.index')->name('payments.index');
+    // Volt::route('payments', 'admin.payments.index')->name('payments.index');
 
     // Route to manage intakes
     Volt::route('intakes', 'admin.intakes.index')->name('intakes.index');
@@ -71,7 +75,7 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
 
     Route::get('/students/{student}/statements/{progression}', [StudentStatementController::class, 'show'])
-    ->name('students.statement');
+        ->name('students.statement');
 
 
 });

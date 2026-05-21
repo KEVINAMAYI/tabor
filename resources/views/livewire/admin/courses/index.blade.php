@@ -113,8 +113,8 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
-
-        /* \App\Models\EnrollmentProgression::query()
+        $count =0;
+        \App\Models\EnrollmentProgression::query()
             ->with(['enrollment.course', 'trimester'])
             ->chunkById(100, function ($progressions) {
                 foreach ($progressions as $progression) {
@@ -132,12 +132,12 @@ new class extends Component {
 
                             'status' => now()->gt($endDate) ? 'completed' : 'active',
                         ]);
+                        $count++;
                     }
                 }
             });
 
-        dd('Enrollment progressions updated successfully.'); */
-
+        dd("Enrollment progressions updated successfully. Total updated: $count");
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
 
