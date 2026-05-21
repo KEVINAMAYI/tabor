@@ -173,59 +173,12 @@ class StudentStatementService
             });
     }
 
-    protected function paymentEntries(
+    /* protected function paymentEntries(
         Student $student,
         EnrollmentProgression $progression,
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        /* $payments = Payment::query()
-            ->with([
-                'allocations.studentFeeItem',
-            ])
-            ->where('student_id', $student->id)
-            ->where(function ($q) use ($progression) {
-                $q->where('enrollment_id', $progression->enrollment_id)
-                    ->orWhereNull('enrollment_id');
-            })
-            ->whereDate('payment_date', '>=', $startDate)
-            ->whereDate('payment_date', '<=', $endDate)
-            ->orderBy('payment_date')
-            ->orderBy('id')
-            ->get();
-        return $payments->map(function (Payment $payment) use ($progression) {
-            $paymentDate = Carbon::parse($payment->payment_date ?? $payment->paid_at);
-
-            $currentProgressionAllocations = $payment->allocations
-                ->filter(function ($allocation) use ($progression) {
-                    return (int) $allocation->studentFeeItem?->enrollment_progression_id === (int) $progression->id;
-                })
-                ->map(function ($allocation) {
-                    return [
-                        'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
-                        'amount' => (float) $allocation->amount_allocated,
-                        'amount_allocated' => (float) $allocation->amount_allocated,
-                    ];
-                })
-                ->values()
-                ->all();
-
-            return [
-                'payment_id' => $payment->id,
-                'date' => $paymentDate,
-                'actual_payment_date' => $paymentDate,
-                'reference' => $payment->transaction_id ?: ($payment->reference ?: 'PAY-' . $payment->id),
-                'description' => 'Payment Received',
-                'dr' => 0.00,
-                'cr' => (float) $payment->amount,
-                'source_type' => 'payment',
-                'sort_date' => $paymentDate->timestamp,
-                'sort_order' => 2,
-                'sort_id' => $payment->id,
-
-                'allocations' => $currentProgressionAllocations,
-            ];
-        })->values();*/
 
         $allocations = PaymentAllocation::query()
             ->with([
@@ -282,6 +235,84 @@ class StudentStatementService
                     'sort_order' => 2,
                     'sort_id' => $payment->id,
                     'allocations' => $allocations
+                        ->map(function ($allocation) {
+                            return [
+                                'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                                'amount' => (float) $allocation->amount_allocated,
+                                'amount_allocated' => (float) $allocation->amount_allocated,
+                            ];
+                        })
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->values();
+    } */
+
+    protected function paymentEntries(
+        Student $student,
+        EnrollmentProgression $progression,
+        Carbon $startDate,
+        Carbon $endDate
+    ): Collection {
+        /*
+        |--------------------------------------------------------------------------
+        | Statement Payment Rule
+        |--------------------------------------------------------------------------
+        |
+        | 1. Payment must be shown once per payment_id.
+        | 2. Only allocations belonging to THIS progression are listed under it.
+        | 3. Payment date must fall inside THIS progression period.
+        | 4. Payments made in the next progression period must not appear here.
+        |
+        */
+
+        $allocations = PaymentAllocation::query()
+            ->with([
+                'payment',
+                'studentFeeItem',
+            ])
+            ->whereHas('studentFeeItem', function ($q) use ($student, $progression) {
+                $q->where('student_id', $student->id)
+                    ->where('enrollment_id', $progression->enrollment_id)
+                    ->where('enrollment_progression_id', $progression->id);
+            })
+            ->whereHas('payment', function ($q) use ($startDate, $endDate) {
+                $q->whereDate('payment_date', '>=', $startDate)
+                    ->whereDate('payment_date', '<=', $endDate);
+            })
+            ->get();
+
+        return $allocations
+            ->groupBy('payment_id')
+            ->map(function ($paymentAllocations) {
+                $firstAllocation = $paymentAllocations->first();
+                $payment = $firstAllocation->payment;
+
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at
+                );
+
+                $allocatedTotal = (float) $paymentAllocations->sum('amount_allocated');
+
+                return [
+                    'payment_id' => $payment->id,
+                    'date' => $paymentDate,
+                    'actual_payment_date' => $paymentDate,
+                    'reference' =>
+                        $payment->transaction_id
+                        ?: $payment->reference
+                        ?: $payment->receipt_no
+                        ?: $payment->payer
+                        ?: 'PAY-' . $payment->id,
+                    'description' => 'Payment Received',
+                    'dr' => 0.00,
+                    'cr' => $allocatedTotal,
+                    'source_type' => 'payment',
+                    'sort_date' => $paymentDate->timestamp,
+                    'sort_order' => 2,
+                    'sort_id' => $payment->id,
+                    'allocations' => $paymentAllocations
                         ->map(function ($allocation) {
                             return [
                                 'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
