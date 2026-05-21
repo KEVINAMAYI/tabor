@@ -268,7 +268,7 @@ class StudentStatementService
                     'payment_id' => $payment->id,
                     'date' => $effectiveLedgerDate,
                     'actual_payment_date' => $paymentDate,
-                    'reference' => $payment->receipt_no ?: ($payment->reference ?: 'PAY-' . $payment->id),
+                    'reference' => $payment->transaction_id ?: ($payment->reference ?: 'PAY-' . $payment->id),
                     'description' => 'Payment Received',
                     'dr' => 0.00,
                     'cr' => $allocatedTotal,
