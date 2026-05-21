@@ -114,6 +114,30 @@ new class extends Component {
             abort(403, 'Unauthorized action.');
         }
 
+        /* \App\Models\EnrollmentProgression::query()
+            ->with(['enrollment.course', 'trimester'])
+            ->chunkById(100, function ($progressions) {
+                foreach ($progressions as $progression) {
+                    $course = $progression->enrollment?->course;
+
+                    if ((bool) $course?->allows_continuous_intake) {
+                        $startDate = \Carbon\Carbon::parse($progression->enrollment?->enrolled_at ?? $progression->enrollment?->enrolled_at ?? now());
+
+                        $endDate = $startDate->copy()->addMonths(3)->subDay();
+
+                        $progression->update([
+                            'started_at' => $startDate->toDateString(),
+
+                            'completed_at' => now()->gt($endDate) ? $endDate->toDateString() : null,
+
+                            'status' => now()->gt($endDate) ? 'completed' : 'active',
+                        ]);
+                    }
+                }
+            });
+
+        dd('Enrollment progressions updated successfully.'); */
+
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
 

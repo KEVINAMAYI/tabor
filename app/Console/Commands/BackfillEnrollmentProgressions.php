@@ -231,6 +231,32 @@ class BackfillEnrollmentProgressions extends Command
     {
         $enrollment->loadMissing(['course', 'assignedStartTrimester']);
 
+        if ((bool) $enrollment->course?->allows_continuous_intake) {
+            $startDate = Carbon::parse($enrollment->admission_date);
+
+            $endDate = $startDate->copy()
+                ->addMonths(3)
+                ->subDay();
+
+            $progression = EnrollmentProgression::firstOrCreate(
+                [
+                    'enrollment_id' => $enrollment->id,
+                    'trimester_sequence' => 1,
+                ],
+                [
+                    'student_id' => $enrollment->student_id,
+                    'trimester_id' => $enrollment->assigned_start_trimester_id,
+                    'status' => now()->greaterThan($endDate) ? 'completed' : 'active',
+                    'started_at' => $startDate->toDateString(),
+                    'completed_at' => now()->greaterThan($endDate)
+                        ? $endDate->toDateString()
+                        : null,
+                ]
+            );
+
+            return collect([$progression->fresh()]);
+        }
+
         if (!$enrollment->course || !$enrollment->assignedStartTrimester) {
             return collect();
         }

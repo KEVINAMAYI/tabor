@@ -37,7 +37,7 @@ class StudentStatementService
             ->map(function ($entry) {
 
                 $entry['sort_date'] = isset($entry['sort_date'])
-                    ? \Carbon\Carbon::parse($entry['sort_date'])->timestamp
+                    ? Carbon::parse($entry['sort_date'])->timestamp
                     : 0;
 
                 $entry['sort_order'] = (int) ($entry['sort_order'] ?? 0);
@@ -179,7 +179,7 @@ class StudentStatementService
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        $payments = Payment::query()
+        /* $payments = Payment::query()
             ->with([
                 'allocations.studentFeeItem',
             ])
@@ -193,7 +193,6 @@ class StudentStatementService
             ->orderBy('payment_date')
             ->orderBy('id')
             ->get();
-
         return $payments->map(function (Payment $payment) use ($progression) {
             $paymentDate = Carbon::parse($payment->payment_date ?? $payment->paid_at);
 
@@ -224,21 +223,72 @@ class StudentStatementService
                 'sort_order' => 2,
                 'sort_id' => $payment->id,
 
-                /*
-                |--------------------------------------------------------------------------
-                | Allocation Display Rule
-                |--------------------------------------------------------------------------
-                |
-                | Only show allocations belonging to this progression.
-                | If payment was allocated to a future progression fee item,
-                | the payment still appears here as a credit, but allocation
-                | details wait for that future progression statement.
-                |
-                */
-
                 'allocations' => $currentProgressionAllocations,
             ];
-        })->values();
+        })->values();*/
+
+        $allocations = PaymentAllocation::query()
+            ->with([
+                'payment',
+                'studentFeeItem',
+            ])
+            ->whereHas('studentFeeItem', function ($q) use ($student, $progression) {
+                $q->where('student_id', $student->id)
+                    ->where('enrollment_progression_id', $progression->id);
+            })
+            ->whereHas('payment')
+            ->get();
+        return $allocations
+            ->groupBy('payment_id')
+            ->map(function ($allocations) use ($startDate) {
+                $firstAllocation = $allocations->first();
+                $payment = $firstAllocation->payment;
+
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at
+                );
+
+                $effectiveLedgerDate = $allocations
+                    ->map(function ($allocation) use ($paymentDate, $startDate) {
+                        $feeItem = $allocation->studentFeeItem;
+
+                        $chargeDate = $feeItem?->charge_date
+                            ? Carbon::parse($feeItem->charge_date)
+                            : $startDate;
+
+                        return $paymentDate->lt($chargeDate)
+                            ? $chargeDate
+                            : $paymentDate;
+                    })
+                    ->min();
+
+                $allocatedTotal = (float) $allocations->sum('amount_allocated');
+
+                return [
+                    'payment_id' => $payment->id,
+                    'date' => $effectiveLedgerDate,
+                    'actual_payment_date' => $paymentDate,
+                    'reference' => $payment->receipt_no ?: ($payment->reference ?: 'PAY-' . $payment->id),
+                    'description' => 'Payment Received',
+                    'dr' => 0.00,
+                    'cr' => $allocatedTotal,
+                    'source_type' => 'payment',
+                    'sort_date' => $effectiveLedgerDate->timestamp,
+                    'sort_order' => 2,
+                    'sort_id' => $payment->id,
+                    'allocations' => $allocations
+                        ->map(function ($allocation) {
+                            return [
+                                'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                                'amount' => (float) $allocation->amount_allocated,
+                                'amount_allocated' => (float) $allocation->amount_allocated,
+                            ];
+                        })
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->values();
     }
     protected function rawCharges(
         Student $student,
