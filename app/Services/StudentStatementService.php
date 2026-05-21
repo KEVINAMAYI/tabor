@@ -173,7 +173,7 @@ class StudentStatementService
             });
     }
 
-    /* protected function paymentEntries(
+     protected function paymentEntries(
         Student $student,
         EnrollmentProgression $progression,
         Carbon $startDate,
@@ -247,25 +247,25 @@ class StudentStatementService
                 ];
             })
             ->values();
-    } */
+    }
 
-    protected function paymentEntries(
+    /* protected function paymentEntries(
         Student $student,
         EnrollmentProgression $progression,
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        /*
-        |--------------------------------------------------------------------------
-        | Statement Payment Rule
-        |--------------------------------------------------------------------------
-        |
-        | 1. Payment must be shown once per payment_id.
-        | 2. Only allocations belonging to THIS progression are listed under it.
-        | 3. Payment date must fall inside THIS progression period.
-        | 4. Payments made in the next progression period must not appear here.
-        |
-        */
+
+        // |--------------------------------------------------------------------------
+        // | Statement Payment Rule
+        // |--------------------------------------------------------------------------
+        // |
+        // | 1. Payment must be shown once per payment_id.
+        // | 2. Only allocations belonging to THIS progression are listed under it.
+        // | 3. Payment date must fall inside THIS progression period.
+        // | 4. Payments made in the next progression period must not appear here.
+        // |
+
 
         $allocations = PaymentAllocation::query()
             ->with([
@@ -325,7 +325,7 @@ class StudentStatementService
                 ];
             })
             ->values();
-    }
+    } */
     protected function rawCharges(
         Student $student,
         EnrollmentProgression $progression,
