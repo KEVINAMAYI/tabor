@@ -334,7 +334,7 @@
 
                 <tr>
                     <td><strong>Admission No:</strong></td>
-                    <td>{{ $student?->admission_number ?? '—' }}</td>
+                    <td>{{ 'TTI/' . $student?->admission_number .'/'.$course?->code.'/'. $student->created_at->year }}</td>
                 </tr>
 
                 <tr>
