@@ -113,24 +113,35 @@ class StudentLedgerService
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        return Payment::query()
+        $payments = Payment::query()
             ->with([
                 'allocations.studentFeeItem',
             ])
             ->where('student_id', $student->id)
-            ->where(function ($q) use ($progression) {
+            ->where(function ($q) use ($progression, $startDate, $endDate) {
                 $q->where('enrollment_id', $progression->enrollment_id)
-                    ->orWhereNull('enrollment_id');
+                    ->orWhere(function ($sub) use ($startDate, $endDate) {
+                        $sub->whereNull('enrollment_id')
+                            ->whereDate('payment_date', '>=', $startDate->toDateString())
+                            ->whereDate('payment_date', '<=', $endDate->toDateString());
+                    });
             })
-            ->whereDate('payment_date', '>=', $startDate)
-            ->whereDate('payment_date', '<=', $endDate)
             ->orderBy('payment_date')
             ->orderBy('id')
-            ->get()
+            ->get();
+
+        return $payments
             ->map(function (Payment $payment) use ($progression) {
                 $paymentDate = Carbon::parse(
                     $payment->payment_date ?? $payment->paid_at ?? now()
                 );
+
+                $progressionAllocations = $payment->allocations
+                    ->filter(function ($allocation) use ($progression) {
+                        return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
+                            === (int) $progression->id;
+                    })
+                    ->values();
 
                 return [
                     'payment_id' => $payment->id,
@@ -145,17 +156,26 @@ class StudentLedgerService
                         ?: 'PAY-' . $payment->id,
 
                     'description' => 'Payment Received',
+
                     'dr' => 0.00,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Important
+                    |--------------------------------------------------------------------------
+                    |
+                    | Main payment row shows the actual amount received.
+                    | Allocations are only display rows under it.
+                    |
+                    */
+
                     'cr' => (float) $payment->amount,
+
                     'source_type' => 'payment',
                     'sort_order' => 3,
                     'sort_id' => $payment->id,
 
-                    'allocations' => $payment->allocations
-                        ->filter(function ($allocation) use ($progression) {
-                            return (int) $allocation->studentFeeItem?->enrollment_progression_id
-                                === (int) $progression->id;
-                        })
+                    'allocations' => $progressionAllocations
                         ->map(function ($allocation) {
                             return [
                                 'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
@@ -163,7 +183,6 @@ class StudentLedgerService
                                 'amount_allocated' => (float) $allocation->amount_allocated,
                             ];
                         })
-                        ->values()
                         ->all(),
                 ];
             })
