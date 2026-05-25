@@ -17,6 +17,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Services\CourseFeePlanSyncService;
 use App\Models\FeeDefinition;
 
+use App\Models\EnrollmentProgression;
+use Carbon\Carbon;
+
 new class extends Component {
     use WithFileUploads, WithPagination;
 
@@ -113,31 +116,36 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
-        /* $count =0;
-        \App\Models\EnrollmentProgression::query()
-            ->with(['enrollment.course', 'trimester'])
+
+        /* EnrollmentProgression::query()
+            ->with(['enrollment.course'])
+            ->whereHas('enrollment.course', function ($q) {
+                $q->where('allows_continuous_intake', true);
+            })
             ->chunkById(100, function ($progressions) {
                 foreach ($progressions as $progression) {
                     $course = $progression->enrollment?->course;
 
-                    if ((bool) $course?->allows_continuous_intake) {
-                        $startDate = \Carbon\Carbon::parse($progression->enrollment?->enrolled_at ?? $progression->enrollment?->enrolled_at ?? now());
+                    $startDate = Carbon::parse($progression->enrollment?->admission_date ?? $progression->enrollment?->created_at);
 
-                        $endDate = $startDate->copy()->addMonths(3)->subDay();
+                    $durationMonths = match (true) {
+                        str_contains(strtolower($course?->title ?? ''), 'b1') => 4,
+                        str_contains(strtolower($course?->title ?? ''), 'b2') => 4,
+                        default => 3,
+                    };
 
-                        $progression->update([
-                            'started_at' => $startDate->toDateString(),
+                    $endDate = $startDate->copy()->addMonths($durationMonths)->subDay();
 
-                            'completed_at' => now()->gt($endDate) ? $endDate->toDateString() : null,
-
-                            'status' => now()->gt($endDate) ? 'completed' : 'active',
-                        ]);
-                        $count++;
-                    }
+                    $progression->update([
+                        'started_at' => $startDate->toDateString(),
+                        'completed_at' => $endDate->toDateString(),
+                        'status' => now()->gt($endDate) ? 'completed' : 'active',
+                    ]);
                 }
             });
 
-        dd("Enrollment progressions updated successfully. Total updated: $count"); */
+        dd('Enrollment progressions updated successfully.'); */
+        
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
 

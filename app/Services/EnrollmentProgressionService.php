@@ -30,10 +30,16 @@ class EnrollmentProgressionService
 
             $completedAt = null;
 
+            $durationMonths = match (true) {
+                str_contains(strtolower($enrollment->course?->title ?? ''), 'b1') => 4,
+                str_contains(strtolower($enrollment->course?->title ?? ''), 'b2') => 4,
+                default => 3,
+            };
+
             if ((bool) $enrollment->course?->allows_continuous_intake) {
                 $completedAt = $startedAt
                     ->copy()
-                    ->addMonths(3)
+                    ->addMonths($durationMonths)
                     ->subDay()
                     ->toDateString();
             }

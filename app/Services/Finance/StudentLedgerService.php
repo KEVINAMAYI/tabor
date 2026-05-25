@@ -114,79 +114,79 @@ class StudentLedgerService
         Carbon $endDate
     ): Collection {
         $payments = Payment::query()
-            ->with([
-                'allocations.studentFeeItem',
-            ])
+            ->with(['allocations.studentFeeItem'])
             ->where('student_id', $student->id)
-            ->where(function ($q) use ($progression, $startDate, $endDate) {
+            ->where(function ($q) use ($progression) {
                 $q->where('enrollment_id', $progression->enrollment_id)
-                    ->orWhere(function ($sub) use ($startDate, $endDate) {
-                        $sub->whereNull('enrollment_id')
-                            ->whereDate('payment_date', '>=', $startDate->toDateString())
-                            ->whereDate('payment_date', '<=', $endDate->toDateString());
-                    });
+                    ->orWhereNull('enrollment_id');
             })
+
+            ->when(
+                !$this->isFirstProgression($progression),
+                fn($q) => $q->whereDate('payment_date', '>=', $startDate->toDateString())
+            )
+
+            ->when(
+                !$this->isFinalProgression($progression),
+                fn($q) => $q->whereDate('payment_date', '<=', $endDate->toDateString())
+            )
+
             ->orderBy('payment_date')
             ->orderBy('id')
             ->get();
 
-        return $payments
-            ->map(function (Payment $payment) use ($progression) {
-                $paymentDate = Carbon::parse(
-                    $payment->payment_date ?? $payment->paid_at ?? now()
-                );
+        return $payments->map(function (Payment $payment) use ($progression) {
+            $paymentDate = Carbon::parse(
+                $payment->payment_date ?? $payment->paid_at ?? now()
+            );
 
-                $progressionAllocations = $payment->allocations
-                    ->filter(function ($allocation) use ($progression) {
-                        return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
-                            === (int) $progression->id;
+            $progressionAllocations = $payment->allocations
+                ->filter(function ($allocation) use ($progression) {
+                    return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
+                        === (int) $progression->id;
+                })
+                ->values();
+
+            return [
+                'payment_id' => $payment->id,
+                'date' => $paymentDate,
+                'actual_payment_date' => $paymentDate,
+                'reference' =>
+                    $payment->transaction_id
+                    ?: $payment->reference
+                    ?: $payment->receipt_no
+                    ?: $payment->payer
+                    ?: 'PAY-' . $payment->id,
+                'description' => 'Payment Received',
+                'dr' => 0.00,
+                'cr' => (float) $payment->amount,
+                'source_type' => 'payment',
+                'sort_order' => 3,
+                'sort_id' => $payment->id,
+                'allocations' => $progressionAllocations
+                    ->map(function ($allocation) {
+                        return [
+                            'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                            'amount' => (float) $allocation->amount_allocated,
+                            'amount_allocated' => (float) $allocation->amount_allocated,
+                        ];
                     })
-                    ->values();
+                    ->all(),
+            ];
+        })->values();
+    }
 
-                return [
-                    'payment_id' => $payment->id,
-                    'date' => $paymentDate,
-                    'actual_payment_date' => $paymentDate,
+    protected function isFirstProgression(EnrollmentProgression $progression): bool
+    {
+        return (int) $progression->trimester_sequence === 1;
+    }
 
-                    'reference' =>
-                        $payment->transaction_id
-                        ?: $payment->reference
-                        ?: $payment->receipt_no
-                        ?: $payment->payer
-                        ?: 'PAY-' . $payment->id,
-
-                    'description' => 'Payment Received',
-
-                    'dr' => 0.00,
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Important
-                    |--------------------------------------------------------------------------
-                    |
-                    | Main payment row shows the actual amount received.
-                    | Allocations are only display rows under it.
-                    |
-                    */
-
-                    'cr' => (float) $payment->amount,
-
-                    'source_type' => 'payment',
-                    'sort_order' => 3,
-                    'sort_id' => $payment->id,
-
-                    'allocations' => $progressionAllocations
-                        ->map(function ($allocation) {
-                            return [
-                                'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
-                                'amount' => (float) $allocation->amount_allocated,
-                                'amount_allocated' => (float) $allocation->amount_allocated,
-                            ];
-                        })
-                        ->all(),
-                ];
-            })
-            ->values();
+    protected function isFinalProgression(EnrollmentProgression $progression): bool
+    {
+        return !EnrollmentProgression::query()
+            ->where('enrollment_id', $progression->enrollment_id)
+            ->where('trimester_sequence', '>', $progression->trimester_sequence)
+            ->exists();
     }
     protected function allocatedPaymentsForProgression(
         Student $student,
@@ -278,9 +278,17 @@ class StudentLedgerService
                 ?? now()
             )->startOfDay();
 
-            $endDate = $progression->completed_at
-                ? Carbon::parse($progression->completed_at)->endOfDay()
-                : $startDate->copy()->addMonths(3)->subDay()->endOfDay();
+            $durationMonths = match (true) {
+                str_contains(strtolower($course?->title ?? ''), 'b1') => 4,
+                str_contains(strtolower($course?->title ?? ''), 'b2') => 4,
+                default => 3,
+            };
+
+            $endDate = $startDate
+                ->copy()
+                ->addMonths($durationMonths)
+                ->subDay()
+                ->endOfDay();
 
             return [$startDate, $endDate];
         }
