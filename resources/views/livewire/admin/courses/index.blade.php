@@ -113,7 +113,7 @@ new class extends Component {
         if (!auth()->user()->hasPermissionTo('view-courses')) {
             abort(403, 'Unauthorized action.');
         }
-        $count =0;
+        /* $count =0;
         \App\Models\EnrollmentProgression::query()
             ->with(['enrollment.course', 'trimester'])
             ->chunkById(100, function ($progressions) {
@@ -137,7 +137,7 @@ new class extends Component {
                 }
             });
 
-        dd("Enrollment progressions updated successfully. Total updated: $count");
+        dd("Enrollment progressions updated successfully. Total updated: $count"); */
         $this->lecturers = Lecturer::all();
         $this->categories = CourseCategory::all();
 
