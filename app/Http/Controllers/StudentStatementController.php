@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\EnrollmentProgression;
 use App\Services\StudentStatementService;
+use App\Services\Finance\StudentLedgerService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class StudentStatementController extends Controller
@@ -15,7 +16,9 @@ class StudentStatementController extends Controller
             abort(404);
         }
 
-        $statement = app(StudentStatementService::class)
+        /*  $statement = app(StudentStatementService::class)
+             ->buildProgressionStatement($student, $progression); */
+        $statement = app(StudentLedgerService::class)
             ->buildProgressionStatement($student, $progression);
 
         $pdf = Pdf::loadView('statements.student-statement', [

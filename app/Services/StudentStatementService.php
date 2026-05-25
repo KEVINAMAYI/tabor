@@ -173,7 +173,7 @@ class StudentStatementService
             });
     }
 
-     protected function paymentEntries(
+    protected function paymentEntries(
         Student $student,
         EnrollmentProgression $progression,
         Carbon $startDate,
@@ -342,8 +342,8 @@ class StudentStatementService
                             ->whereBetween('charge_date', [$startDate, $endDate]);
                     });
             })
-            ->orderBy('charge_date')
-            ->orderBy('id')
+            ->orderBy('charge_date','asc')
+            ->orderBy('id', 'asc')
             ->get();
     }
 

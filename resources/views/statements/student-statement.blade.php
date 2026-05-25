@@ -327,7 +327,7 @@
                     </td>
                 </tr>
 
-                @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
+                {{-- @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
                     @foreach ($entry['allocations'] as $allocation)
                         @php
                             $allocationAmount =
@@ -349,6 +349,28 @@
                                 {{ number_format($allocationAmount, 2) }}
                             </td>
 
+                            <td class="text-end muted"></td>
+                        </tr>
+                    @endforeach
+                @endif --}}
+
+                @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
+                    @foreach ($entry['allocations'] as $allocation)
+                        @php
+                            $allocationAmount =
+                                (float) ($allocation['amount'] ?? ($allocation['amount_allocated'] ?? 0));
+                        @endphp
+
+                        <tr class="allocation-row">
+                            <td></td>
+                            <td></td>
+                            <td style="padding-left: 24px;">
+                                Allocated to {{ $allocation['description'] ?? 'Fee Item' }}
+                            </td>
+                            <td class="text-end"></td>
+                            <td class="text-end muted">
+                                {{ number_format($allocationAmount, 2) }}
+                            </td>
                             <td class="text-end muted"></td>
                         </tr>
                     @endforeach
