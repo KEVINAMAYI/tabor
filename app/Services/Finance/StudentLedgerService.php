@@ -199,129 +199,119 @@ class StudentLedgerService
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
-        /*
-        |--------------------------------------------------------------------------
-        | Previous Allocation Ownership Check
-        |--------------------------------------------------------------------------
-        |
-        | A payment should not be pulled into this progression through allocations
-        | if it already has allocations to an earlier progression of the same
-        | enrollment. This prevents repeated payment rows across statements.
-        |
-        */
+        $previousProgression = EnrollmentProgression::query()
+            ->where('student_id', $student->id)
+            ->where('enrollment_id', $progression->enrollment_id)
+            ->where('trimester_sequence', '<', $progression->trimester_sequence)
+            ->orderByDesc('trimester_sequence')
+            ->first();
 
-        $belongsToPreviousProgression = function (Payment $payment) use ($student, $progression): bool {
-            return PaymentAllocation::query()
-                ->where('payment_id', $payment->id)
-                ->whereHas('studentFeeItem', function ($q) use ($student, $progression) {
-                    $q->where('student_id', $student->id)
-                        ->where('enrollment_id', $progression->enrollment_id)
-                        ->whereHas('progression', function ($progressionQuery) use ($progression) {
-                            $progressionQuery->where('trimester_sequence', '<', $progression->trimester_sequence);
-                        });
-                })
-                ->exists();
+        $previousEndDate = null;
+
+        if ($previousProgression) {
+            [, $previousEndDate] = $this->progressionDates($previousProgression);
+            $previousEndDate = $previousEndDate->copy()->endOfDay();
+        }
+
+        $dateBelongsToThisStatement = function (Payment $payment) use ($previousEndDate, $endDate, $progression): bool {
+            $paymentDate = Carbon::parse(
+                $payment->payment_date ?? $payment->paid_at ?? now()
+            )->startOfDay();
+
+            if ($previousEndDate && $paymentDate->lte($previousEndDate)) {
+                return false;
+            }
+
+            if (
+                !$this->isFinalProgression($progression) &&
+                $paymentDate->gt($endDate->copy()->endOfDay())
+            ) {
+                return false;
+            }
+
+            return true;
         };
 
         /*
         |--------------------------------------------------------------------------
-        | Direct Period Payments
+        | Date-owned payments
         |--------------------------------------------------------------------------
         |
-        | These are payments whose date belongs to this progression period and whose
-        | payment record is directly attached to this enrollment or has no enrollment.
+        | Same-enrollment payments are owned by payment date.
+        | They must not be dragged into another progression by allocations.
         |
         */
 
-        $periodPayments = Payment::query()
+        $dateOwnedPayments = Payment::query()
             ->with(['allocations.studentFeeItem'])
             ->where('student_id', $student->id)
             ->where(function ($q) use ($progression) {
                 $q->where('enrollment_id', $progression->enrollment_id)
                     ->orWhereNull('enrollment_id');
             })
-            ->when(
-                !$this->isFirstProgression($progression),
-                fn($q) => $q->whereDate('payment_date', '>=', $startDate->toDateString())
-            )
-            ->when(
-                !$this->isFinalProgression($progression),
-                fn($q) => $q->whereDate('payment_date', '<=', $endDate->toDateString())
-            )
-            ->orderBy('payment_date')
-            ->orderBy('id')
             ->get()
-            ->mapWithKeys(function (Payment $payment) {
-                return [
-                    $payment->id => $payment,
-                ];
-            });
+            ->filter(fn(Payment $payment) => $dateBelongsToThisStatement($payment))
+            ->keyBy('id');
 
         /*
         |--------------------------------------------------------------------------
-        | Allocation-linked Payments
+        | Cross-enrollment allocation payments
         |--------------------------------------------------------------------------
         |
-        | These catch cross-enrollment/manual allocations where payment.enrollment_id
-        | may point elsewhere, but part of the payment was allocated to this
-        | progression's fee items.
+        | Only pull a payment by allocation if the payment belongs to another
+        | enrollment or has no enrollment. Same-enrollment payments are handled
+        | strictly by date above.
         |
         */
 
-        $allocationPayments = PaymentAllocation::query()
-            ->with(['payment.allocations.studentFeeItem', 'studentFeeItem'])
+        $crossEnrollmentAllocationGroups = PaymentAllocation::query()
+            ->with([
+                'payment.allocations.studentFeeItem',
+                'studentFeeItem',
+            ])
             ->whereHas('studentFeeItem', function ($q) use ($student, $progression) {
                 $q->where('student_id', $student->id)
                     ->where('enrollment_id', $progression->enrollment_id)
                     ->where('enrollment_progression_id', $progression->id);
             })
-            ->whereHas('payment')
+            ->whereHas('payment', function ($q) use ($progression) {
+                $q->where(function ($paymentQuery) use ($progression) {
+                    $paymentQuery
+                        ->whereNull('enrollment_id')
+                        ->orWhere('enrollment_id', '!=', $progression->enrollment_id);
+                });
+            })
             ->get()
-            ->filter(function (PaymentAllocation $allocation) use ($progression, $startDate, $endDate, $belongsToPreviousProgression) {
-                $payment = $allocation->payment;
+            ->groupBy('payment_id');
+
+        $paymentIds = $dateOwnedPayments
+            ->keys()
+            ->merge($crossEnrollmentAllocationGroups->keys())
+            ->unique()
+            ->values();
+
+        return $paymentIds
+            ->map(function ($paymentId) use ($dateOwnedPayments, $crossEnrollmentAllocationGroups, $progression) {
+                $payment = $dateOwnedPayments->get($paymentId);
+
+                $crossAllocations = collect();
+
+                if ($crossEnrollmentAllocationGroups->has($paymentId)) {
+                    $crossAllocations = $crossEnrollmentAllocationGroups->get($paymentId);
+                    $payment = $crossAllocations->first()?->payment;
+                }
 
                 if (!$payment) {
-                    return false;
+                    return null;
                 }
 
-                $paymentDate = Carbon::parse(
-                    $payment->payment_date ?? $payment->paid_at ?? now()
-                )->startOfDay();
+                $payment->loadMissing(['allocations.studentFeeItem']);
 
-                if (
-                    !$this->isFinalProgression($progression) &&
-                    $paymentDate->gt($endDate->copy()->endOfDay())
-                ) {
-                    return false;
-                }
-
-                if ($paymentDate->lt($startDate->copy()->startOfDay())) {
-                    return !$belongsToPreviousProgression($payment);
-                }
-
-                return true;
-            })
-            ->mapWithKeys(function (PaymentAllocation $allocation) {
-                return [
-                    $allocation->payment_id => $allocation->payment,
-                ];
-            });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Merge Payment Models By ID
-        |--------------------------------------------------------------------------
-        */
-
-        $payments = $periodPayments
-            ->union($allocationPayments)
-            ->filter();
-
-        return $payments
-            ->map(function (Payment $payment) use ($progression) {
                 $paymentDate = Carbon::parse(
                     $payment->payment_date ?? $payment->paid_at ?? now()
                 );
+
+                $isDateOwned = $dateOwnedPayments->has($payment->id);
 
                 $currentProgressionAllocations = $payment->allocations
                     ->filter(function ($allocation) use ($progression) {
@@ -342,38 +332,39 @@ class StudentLedgerService
                             ? Carbon::parse($feeItem->charge_date)->startOfDay()
                             : null;
 
-                        if ($chargeDate && $paymentDate->lt($chargeDate)) {
-                            return false;
-                        }
-
-                        return true;
+                        return !($chargeDate && $paymentDate->copy()->startOfDay()->lt($chargeDate));
                     })
                     ->values();
 
-                $allocatedToThisProgression = (float) $currentProgressionAllocations
-                    ->sum('amount_allocated');
+                $creditAmount = 0.00;
 
-                $paymentHasAllocations = $payment->allocations->isNotEmpty();
+                if ($isDateOwned) {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Date-Owned Same Enrollment Payment
+                    |--------------------------------------------------------------------------
+                    |
+                    | If the payment belongs to this enrollment and its payment date belongs
+                    | to this statement period, show the full money received here.
+                    |
+                    | Allocations may point to later charges, but that must not remove the
+                    | actual payment from the period where money was received.
+                    |
+                    */
 
-                $isPaymentForThisEnrollment =
-                    (int) $payment->enrollment_id === (int) $progression->enrollment_id ||
-                    empty($payment->enrollment_id);
-
-                if ($allocatedToThisProgression > 0) {
-                    $creditAmount = $allocatedToThisProgression;
-
-                    if (
-                        $isPaymentForThisEnrollment &&
-                        (float) $payment->unallocated_balance > 0
-                    ) {
-                        $creditAmount += (float) $payment->unallocated_balance;
-                    }
-                } elseif ($isPaymentForThisEnrollment && !$paymentHasAllocations) {
                     $creditAmount = (float) $payment->amount;
-                } elseif ($isPaymentForThisEnrollment && (float) $payment->unallocated_balance > 0) {
-                    $creditAmount = (float) $payment->unallocated_balance;
                 } else {
-                    return null;
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Cross-Enrollment Allocation
+                    |--------------------------------------------------------------------------
+                    |
+                    | If this payment belongs to another enrollment, show only the amount
+                    | allocated to this progression.
+                    |
+                    */
+
+                    $creditAmount = (float) $crossAllocations->sum('amount_allocated');
                 }
 
                 if ($creditAmount <= 0) {
