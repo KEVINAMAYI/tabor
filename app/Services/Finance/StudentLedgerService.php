@@ -107,7 +107,7 @@ class StudentLedgerService
             });
     }
 
-    protected function paymentEntries(
+    /* protected function paymentEntries(
         Student $student,
         EnrollmentProgression $progression,
         Carbon $startDate,
@@ -141,9 +141,26 @@ class StudentLedgerService
             );
 
             $progressionAllocations = $payment->allocations
-                ->filter(function ($allocation) use ($progression) {
-                    return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
-                        === (int) $progression->id;
+                ->filter(function ($allocation) use ($progression, $paymentDate) {
+                    $feeItem = $allocation->studentFeeItem;
+
+                    if (!$feeItem) {
+                        return false;
+                    }
+
+                    if ((int) $feeItem->enrollment_progression_id !== (int) $progression->id) {
+                        return false;
+                    }
+
+                    $chargeDate = $feeItem->charge_date
+                        ? Carbon::parse($feeItem->charge_date)
+                        : null;
+
+                    if ($chargeDate && $paymentDate->lt($chargeDate)) {
+                        return false;
+                    }
+
+                    return true;
                 })
                 ->values();
 
@@ -174,6 +191,113 @@ class StudentLedgerService
                     ->all(),
             ];
         })->values();
+    } */
+
+    protected function paymentEntries(
+        Student $student,
+        EnrollmentProgression $progression,
+        Carbon $startDate,
+        Carbon $endDate
+    ): Collection {
+        $periodPayments = Payment::query()
+            ->with(['allocations.studentFeeItem'])
+            ->where('student_id', $student->id)
+            ->where(function ($q) use ($progression) {
+                $q->where('enrollment_id', $progression->enrollment_id)
+                    ->orWhereNull('enrollment_id');
+            })
+            ->when(
+                !$this->isFirstProgression($progression),
+                fn($q) => $q->whereDate('payment_date', '>=', $startDate->toDateString())
+            )
+            ->when(
+                !$this->isFinalProgression($progression),
+                fn($q) => $q->whereDate('payment_date', '<=', $endDate->toDateString())
+            )
+            ->get()
+            ->mapWithKeys(function (Payment $payment) use ($progression) {
+                $progressionAllocations = $payment->allocations
+                    ->filter(function ($allocation) use ($progression) {
+                        return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
+                            === (int) $progression->id;
+                    })
+                    ->values();
+
+                return [
+                    $payment->id => [
+                        'payment' => $payment,
+                        'amount' => (float) $payment->amount,
+                        'allocations' => $progressionAllocations,
+                    ],
+                ];
+            });
+
+        $allocationPayments = PaymentAllocation::query()
+            ->with(['payment.allocations.studentFeeItem', 'studentFeeItem'])
+            ->whereHas('studentFeeItem', function ($q) use ($student, $progression) {
+                $q->where('student_id', $student->id)
+                    ->where('enrollment_id', $progression->enrollment_id)
+                    ->where('enrollment_progression_id', $progression->id);
+            })
+            ->whereHas('payment')
+            ->get()
+            ->groupBy('payment_id')
+            ->map(function ($allocations) {
+                $payment = $allocations->first()->payment;
+
+                return [
+                    'payment' => $payment,
+                    'amount' => (float) $allocations->sum('amount_allocated'),
+                    'allocations' => $allocations->values(),
+                ];
+            });
+
+        $periodPayments = collect($periodPayments);
+        $allocationPayments = collect($allocationPayments);
+
+        $payments = $periodPayments->union($allocationPayments);
+
+        return $payments
+            ->map(function (array $group) {
+                $payment = $group['payment'];
+
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at ?? now()
+                );
+
+                return [
+                    'payment_id' => $payment->id,
+                    'date' => $paymentDate,
+                    'actual_payment_date' => $paymentDate,
+                    'reference' =>
+                        $payment->transaction_id
+                        ?: $payment->reference
+                        ?: $payment->receipt_no
+                        ?: $payment->payer
+                        ?: 'PAY-' . $payment->id,
+                    'description' => 'Payment Received',
+                    'dr' => 0.00,
+                    'cr' => (float) $group['amount'],
+                    'source_type' => 'payment',
+                    'sort_order' => 3,
+                    'sort_id' => $payment->id,
+                    'allocations' => collect($group['allocations'])
+                        ->map(function ($allocation) {
+                            return [
+                                'description' => $allocation->studentFeeItem?->description ?? 'Fee Item',
+                                'amount' => (float) $allocation->amount_allocated,
+                                'amount_allocated' => (float) $allocation->amount_allocated,
+                            ];
+                        })
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->sortBy([
+                ['date', 'asc'],
+                ['sort_id', 'asc'],
+            ])
+            ->values();
     }
 
     protected function isFirstProgression(EnrollmentProgression $progression): bool
