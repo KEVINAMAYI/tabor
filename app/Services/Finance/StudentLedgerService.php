@@ -199,6 +199,42 @@ class StudentLedgerService
         Carbon $startDate,
         Carbon $endDate
     ): Collection {
+        $belongsToPreviousProgression = function (Payment $payment) use ($student, $progression): bool {
+            $paymentDate = Carbon::parse(
+                $payment->payment_date ?? $payment->paid_at ?? now()
+            )->startOfDay();
+
+            $previousProgressions = EnrollmentProgression::query()
+                ->where('student_id', $student->id)
+                ->where('enrollment_id', $progression->enrollment_id)
+                ->where('trimester_sequence', '<', $progression->trimester_sequence)
+                ->orderBy('trimester_sequence')
+                ->get();
+
+            foreach ($previousProgressions as $previousProgression) {
+                [$previousStart, $previousEnd] = $this->progressionDates($previousProgression);
+
+                if (
+                    $paymentDate->gte($previousStart->copy()->startOfDay()) &&
+                    $paymentDate->lte($previousEnd->copy()->endOfDay())
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        /*
+        |--------------------------------------------------------------------------
+        | Period-owned Payments
+        |--------------------------------------------------------------------------
+        |
+        | These are normal payments whose payment date belongs to this progression
+        | period and whose payment is directly linked to this enrollment or unmapped.
+        |
+        */
+
         $periodPayments = Payment::query()
             ->with(['allocations.studentFeeItem'])
             ->where('student_id', $student->id)
@@ -206,20 +242,40 @@ class StudentLedgerService
                 $q->where('enrollment_id', $progression->enrollment_id)
                     ->orWhereNull('enrollment_id');
             })
-            ->when(
-                !$this->isFirstProgression($progression),
-                fn($q) => $q->whereDate('payment_date', '>=', $startDate->toDateString())
-            )
+            ->whereDate('payment_date', '>=', $startDate->toDateString())
             ->when(
                 !$this->isFinalProgression($progression),
                 fn($q) => $q->whereDate('payment_date', '<=', $endDate->toDateString())
             )
+            ->orderBy('payment_date')
+            ->orderBy('id')
             ->get()
             ->mapWithKeys(function (Payment $payment) use ($progression) {
-                $progressionAllocations = $payment->allocations
-                    ->filter(function ($allocation) use ($progression) {
-                        return (int) optional($allocation->studentFeeItem)->enrollment_progression_id
-                            === (int) $progression->id;
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at ?? now()
+                );
+
+                $visibleAllocations = $payment->allocations
+                    ->filter(function ($allocation) use ($progression, $paymentDate) {
+                        $feeItem = $allocation->studentFeeItem;
+
+                        if (!$feeItem) {
+                            return false;
+                        }
+
+                        if ((int) $feeItem->enrollment_progression_id !== (int) $progression->id) {
+                            return false;
+                        }
+
+                        $chargeDate = $feeItem->charge_date
+                            ? Carbon::parse($feeItem->charge_date)->startOfDay()
+                            : null;
+
+                        if ($chargeDate && $paymentDate->lt($chargeDate)) {
+                            return false;
+                        }
+
+                        return true;
                     })
                     ->values();
 
@@ -227,10 +283,25 @@ class StudentLedgerService
                     $payment->id => [
                         'payment' => $payment,
                         'amount' => (float) $payment->amount,
-                        'allocations' => $progressionAllocations,
+                        'allocations' => $visibleAllocations,
                     ],
                 ];
             });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Allocation-owned Payments
+        |--------------------------------------------------------------------------
+        |
+        | These cover manual/cross-enrollment allocations.
+        | They are included only if:
+        | - the payment date belongs to this progression period, OR
+        | - the payment was made before this progression started and does not belong
+        |   to any previous progression period.
+        |
+        | This prevents the same payment from appearing in consecutive statements.
+        |
+        */
 
         $allocationPayments = PaymentAllocation::query()
             ->with(['payment.allocations.studentFeeItem', 'studentFeeItem'])
@@ -241,24 +312,80 @@ class StudentLedgerService
             })
             ->whereHas('payment')
             ->get()
+            ->filter(function (PaymentAllocation $allocation) use ($startDate, $endDate, $progression, $belongsToPreviousProgression) {
+                $payment = $allocation->payment;
+
+                if (!$payment) {
+                    return false;
+                }
+
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at ?? now()
+                )->startOfDay();
+
+                if ($paymentDate->lt($startDate->copy()->startOfDay())) {
+                    return !$belongsToPreviousProgression($payment);
+                }
+
+                if (
+                    !$this->isFinalProgression($progression) &&
+                    $paymentDate->gt($endDate->copy()->endOfDay())
+                ) {
+                    return false;
+                }
+
+                return true;
+            })
             ->groupBy('payment_id')
-            ->map(function ($allocations) {
+            ->map(function (Collection $allocations) use ($progression) {
                 $payment = $allocations->first()->payment;
+
+                $paymentDate = Carbon::parse(
+                    $payment->payment_date ?? $payment->paid_at ?? now()
+                );
+
+                $visibleAllocations = $allocations
+                    ->filter(function ($allocation) use ($progression, $paymentDate) {
+                        $feeItem = $allocation->studentFeeItem;
+
+                        if (!$feeItem) {
+                            return false;
+                        }
+
+                        if ((int) $feeItem->enrollment_progression_id !== (int) $progression->id) {
+                            return false;
+                        }
+
+                        $chargeDate = $feeItem->charge_date
+                            ? Carbon::parse($feeItem->charge_date)->startOfDay()
+                            : null;
+
+                        if ($chargeDate && $paymentDate->lt($chargeDate)) {
+                            return false;
+                        }
+
+                        return true;
+                    })
+                    ->values();
 
                 return [
                     'payment' => $payment,
                     'amount' => (float) $allocations->sum('amount_allocated'),
-                    'allocations' => $allocations->values(),
+                    'allocations' => $visibleAllocations,
                 ];
             });
 
-        $periodPayments = collect($periodPayments);
-        $allocationPayments = collect($allocationPayments);
+        /*
+        |--------------------------------------------------------------------------
+        | Merge Without Duplicating Payments
+        |--------------------------------------------------------------------------
+        */
 
         $payments = $periodPayments->union($allocationPayments);
 
         return $payments
             ->map(function (array $group) {
+                /** @var Payment $payment */
                 $payment = $group['payment'];
 
                 $paymentDate = Carbon::parse(
@@ -269,18 +396,26 @@ class StudentLedgerService
                     'payment_id' => $payment->id,
                     'date' => $paymentDate,
                     'actual_payment_date' => $paymentDate,
+
                     'reference' =>
                         $payment->transaction_id
                         ?: $payment->reference
                         ?: $payment->receipt_no
                         ?: $payment->payer
                         ?: 'PAY-' . $payment->id,
+
                     'description' => 'Payment Received',
+
                     'dr' => 0.00,
+
                     'cr' => (float) $group['amount'],
+
                     'source_type' => 'payment',
+
                     'sort_order' => 3,
+
                     'sort_id' => $payment->id,
+
                     'allocations' => collect($group['allocations'])
                         ->map(function ($allocation) {
                             return [
