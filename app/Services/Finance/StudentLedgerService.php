@@ -467,7 +467,7 @@ class StudentLedgerService
             ->get();
     }
 
-    protected function openingBalance(Student $student, EnrollmentProgression $progression): float
+    /* protected function openingBalance(Student $student, EnrollmentProgression $progression): float
     {
         $previousProgressions = EnrollmentProgression::query()
             ->where('student_id', $student->id)
@@ -482,6 +482,108 @@ class StudentLedgerService
             [$startDate, $endDate] = $this->progressionDates($previousProgression);
 
             $entries = $this->ledgerEntries($student, $previousProgression, $startDate, $endDate);
+
+            foreach ($entries as $entry) {
+                $balance += (float) $entry['dr'];
+                $balance -= (float) $entry['cr'];
+            }
+        }
+
+        return $balance;
+    } */
+
+    protected function openingBalance(Student $student, EnrollmentProgression $progression): float
+    {
+        $progression->loadMissing(['enrollment.course']);
+
+        $currentCourseCode = strtoupper(trim($progression->enrollment?->course?->code ?? ''));
+
+        $germanOrder = [
+            'GLA1' => 1,
+            'GLA2' => 2,
+            'GLB1' => 3,
+            'GLB2' => 4,
+        ];
+
+        if (!array_key_exists($currentCourseCode, $germanOrder)) {
+            $previousProgressions = EnrollmentProgression::query()
+                ->where('student_id', $student->id)
+                ->where('enrollment_id', $progression->enrollment_id)
+                ->where('trimester_sequence', '<', $progression->trimester_sequence)
+                ->orderBy('trimester_sequence')
+                ->get();
+
+            return $this->calculateProgressionsBalance(
+                $student,
+                $previousProgressions
+            );
+        }
+
+        $currentGermanRank = $germanOrder[$currentCourseCode];
+
+        $previousProgressions = EnrollmentProgression::query()
+            ->with(['enrollment.course'])
+            ->where('student_id', $student->id)
+            ->whereHas('enrollment.course', function ($q) use ($germanOrder) {
+                $q->whereIn('code', array_keys($germanOrder));
+            })
+            ->get()
+            ->filter(function (EnrollmentProgression $item) use ($progression, $germanOrder, $currentGermanRank) {
+                $code = strtoupper(trim($item->enrollment?->course?->code ?? ''));
+
+                if (!array_key_exists($code, $germanOrder)) {
+                    return false;
+                }
+
+                $rank = $germanOrder[$code];
+
+                if ($rank < $currentGermanRank) {
+                    return true;
+                }
+
+                if (
+                    $rank === $currentGermanRank &&
+                    (int) $item->enrollment_id === (int) $progression->enrollment_id &&
+                    (int) $item->trimester_sequence < (int) $progression->trimester_sequence
+                ) {
+                    return true;
+                }
+
+                return false;
+            })
+            ->sortBy(function (EnrollmentProgression $item) use ($germanOrder) {
+                $code = strtoupper(trim($item->enrollment?->course?->code ?? ''));
+
+                return sprintf(
+                    '%02d-%s-%04d',
+                    $germanOrder[$code] ?? 99,
+                    optional($item->started_at)->format('Ymd') ?: '99999999',
+                    $item->trimester_sequence
+                );
+            })
+            ->values();
+
+        return $this->calculateProgressionsBalance(
+            $student,
+            $previousProgressions
+        );
+    }
+
+    protected function calculateProgressionsBalance(
+        Student $student,
+        Collection $progressions
+    ): float {
+        $balance = 0.00;
+
+        foreach ($progressions as $previousProgression) {
+            [$startDate, $endDate] = $this->progressionDates($previousProgression);
+
+            $entries = $this->ledgerEntries(
+                $student,
+                $previousProgression,
+                $startDate,
+                $endDate
+            );
 
             foreach ($entries as $entry) {
                 $balance += (float) $entry['dr'];

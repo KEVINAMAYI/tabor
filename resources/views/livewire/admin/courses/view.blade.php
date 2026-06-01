@@ -24,7 +24,7 @@ new class extends Component {
     protected $rules = [
         'title' => 'required|string|max:255',
         'code' => 'required|string|max:255',
-        'default_lecturer_id' => 'required',
+        'default_lecturer_id' => '',
         'description' => 'nullable|string',
         'course_id' => 'required|exists:courses,id',
     ];
