@@ -456,6 +456,11 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {}; ?>
                                                 healthcare industry, and societal challenges through innovation and
                                                 action.
                                             </li>
+                                            <li class="list-group-item border-0 px-0 py-2"><b>Compassion:</b>
+                                                Demonstrating empathy, respect, and genuine care in all interactions by
+                                                responding to the needs of students, patients, staff, and the community
+                                                with understanding, kindness, and professionalism.
+                                            </li>
                                         </ol>
                                     </div>
                                 </div>
