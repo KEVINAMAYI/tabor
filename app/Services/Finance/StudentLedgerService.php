@@ -291,7 +291,7 @@ class StudentLedgerService
             ->values();
 
         return $paymentIds
-            ->map(function ($paymentId) use ($dateOwnedPayments, $crossEnrollmentAllocationGroups, $progression) {
+            ->map(function ($paymentId) use ($dateOwnedPayments, $crossEnrollmentAllocationGroups, $progression, $student, $startDate) {
                 $payment = $dateOwnedPayments->get($paymentId);
 
                 $crossAllocations = collect();
@@ -305,13 +305,20 @@ class StudentLedgerService
                     return null;
                 }
 
+                $isDateOwned = $dateOwnedPayments->has($payment->id);
+
+                if (
+                    !$isDateOwned &&
+                    $this->isPreviousGermanCoursePayment($payment, $progression)
+                ) {
+                    return null;
+                }
+
                 $payment->loadMissing(['allocations.studentFeeItem']);
 
                 $paymentDate = Carbon::parse(
                     $payment->payment_date ?? $payment->paid_at ?? now()
                 );
-
-                $isDateOwned = $dateOwnedPayments->has($payment->id);
 
                 $currentProgressionAllocations = $payment->allocations
                     ->filter(function ($allocation) use ($progression) {
@@ -341,29 +348,25 @@ class StudentLedgerService
                 if ($isDateOwned) {
                     /*
                     |--------------------------------------------------------------------------
-                    | Date-Owned Same Enrollment Payment
+                    | German Chain Carry-Forward Protection
                     |--------------------------------------------------------------------------
                     |
-                    | If the payment belongs to this enrollment and its payment date belongs
-                    | to this statement period, show the full money received here.
-                    |
-                    | Allocations may point to later charges, but that must not remove the
-                    | actual payment from the period where money was received.
+                    | For German courses GLA1 -> GLA2 -> GLB1 -> GLB2, if this statement already
+                    | has a negative opening balance brought forward from a previous German
+                    | course, do not show the same old payment again.
                     |
                     */
+
+                    if (
+                        $this->isGermanChainProgression($progression) &&
+                        $this->hasGermanPreviousEnrollmentBalance($student, $progression) &&
+                        $paymentDate->lt($startDate)
+                    ) {
+                        return null;
+                    }
 
                     $creditAmount = (float) $payment->amount;
                 } else {
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Cross-Enrollment Allocation
-                    |--------------------------------------------------------------------------
-                    |
-                    | If this payment belongs to another enrollment, show only the amount
-                    | allocated to this progression.
-                    |
-                    */
-
                     $creditAmount = (float) $crossAllocations->sum('amount_allocated');
                 }
 
@@ -405,6 +408,75 @@ class StudentLedgerService
                 ['sort_id', 'asc'],
             ])
             ->values();
+    }
+
+    protected function isPreviousGermanCoursePayment(
+        Payment $payment,
+        EnrollmentProgression $progression
+    ): bool {
+        $progression->loadMissing(['enrollment.course']);
+        $payment->loadMissing(['enrollment.course']);
+
+        $order = [
+            'GLA1' => 1,
+            'GLA2' => 2,
+            'GLB1' => 3,
+            'GLB2' => 4,
+        ];
+
+        $currentCode = strtoupper(trim($progression->enrollment?->course?->code ?? ''));
+        $paymentCode = strtoupper(trim($payment->enrollment?->course?->code ?? ''));
+
+        if (!isset($order[$currentCode], $order[$paymentCode])) {
+            return false;
+        }
+
+        return $order[$paymentCode] < $order[$currentCode];
+    }
+
+    protected function isGermanChainProgression(EnrollmentProgression $progression): bool
+    {
+        $progression->loadMissing(['enrollment.course']);
+
+        return in_array(
+            strtoupper(trim($progression->enrollment?->course?->code ?? '')),
+            ['GLA1', 'GLA2', 'GLB1', 'GLB2'],
+            true
+        );
+    }
+
+    protected function hasGermanPreviousEnrollmentBalance(
+        Student $student,
+        EnrollmentProgression $progression
+    ): bool {
+        $progression->loadMissing(['enrollment.course']);
+
+        $currentCode = strtoupper(trim($progression->enrollment?->course?->code ?? ''));
+
+        $order = [
+            'GLA1' => 1,
+            'GLA2' => 2,
+            'GLB1' => 3,
+            'GLB2' => 4,
+        ];
+
+        if (!isset($order[$currentCode])) {
+            return false;
+        }
+
+        return EnrollmentProgression::query()
+            ->where('student_id', $student->id)
+            ->whereHas('enrollment.course', function ($q) use ($order, $currentCode) {
+                $q->whereIn('code', array_keys($order))
+                    ->whereIn(
+                        'code',
+                        collect($order)
+                            ->filter(fn($rank) => $rank < $order[$currentCode])
+                            ->keys()
+                            ->all()
+                    );
+            })
+            ->exists();
     }
 
     protected function isFirstProgression(EnrollmentProgression $progression): bool
