@@ -235,6 +235,14 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="{{ route('front-end.blog.index') }}"
+                                class="{{ request()->routeIs('front-end.blog.index') || request()->routeIs('front-end.blog.show')
+                                    ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
+                                    : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">
+                                Blogs
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{{ route('front-end.courses') }}"
                                 class="{{ request()->routeIs('front-end.courses')
                                     ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
