@@ -94,7 +94,8 @@
                         <ul class="collapse first-level {{ request()->routeIs('settings.*') ? 'show' : '' }}"
                             id="settingsMenu">
                             <li class="sidebar-item">
-                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.academic-calendar') ? 'active' : '' }}"
+                                <a wire:navigate
+                                    class="sidebar-link {{ request()->routeIs('settings.academic-calendar') ? 'active' : '' }}"
                                     href="{{ route('settings.academic-calendar') }}">
                                     <i class="ti ti-calendar-event"></i>
                                     <span class="hide-menu">Academic Calendar</span>
@@ -102,7 +103,8 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.fee-definitions') ? 'active' : '' }}"
+                                <a wire:navigate
+                                    class="sidebar-link {{ request()->routeIs('settings.fee-definitions') ? 'active' : '' }}"
                                     href="{{ route('settings.fee-definitions') }}">
                                     <i class="ti ti-file-invoice"></i>
                                     <span class="hide-menu">Fee Definitions</span>
@@ -110,7 +112,8 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.course-fee-plans') ? 'active' : '' }}"
+                                <a wire:navigate
+                                    class="sidebar-link {{ request()->routeIs('settings.course-fee-plans') ? 'active' : '' }}"
                                     href="{{ route('settings.course-fee-plans') }}">
                                     <i class="ti ti-report-money"></i>
                                     <span class="hide-menu">Course Fee Plans</span>
@@ -118,7 +121,8 @@
                             </li>
 
                             <li class="sidebar-item">
-                                <a wire:navigate class="sidebar-link {{ request()->routeIs('settings.student-fee-items') ? 'active' : '' }}"
+                                <a wire:navigate
+                                    class="sidebar-link {{ request()->routeIs('settings.student-fee-items') ? 'active' : '' }}"
                                     href="{{ route('settings.student-fee-items') }}">
                                     <i class="ti ti-file-invoice"></i>
                                     <span class="hide-menu">Student Fee Items</span>
@@ -201,6 +205,52 @@
 
                     </ul>
                 </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link {{ request()->routeIs('admin.blog.*') ? 'active' : '' }}"
+                        href="#blogsMenu" data-bs-toggle="collapse"
+                        aria-expanded="{{ request()->routeIs('blogs.*') ? 'true' : 'false' }}"
+                        aria-controls="blogsMenu">
+                        <iconify-icon icon="ph:student-light"></iconify-icon>
+                        <span class="hide-menu">Blogs</span>
+                    </a>
+                    <ul class="collapse first-level {{ request()->routeIs('admin.blog.*') ? 'show' : '' }}"
+                        id="blogsMenu">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->routeIs('admin.blog.posts') ? 'active' : '' }}"
+                                href="{{ route('admin.blog.posts') }}">
+                                <span class="icon-small"></span>
+                                <span class="hide-menu">All Blogs</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->routeIs('admin.blog.categories') ? 'active' : '' }}"
+                                href="{{ route('admin.blog.categories') }}">
+                                <span class="icon-small"></span>
+                                <span class="hide-menu">Blog Categories</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- <li class="sidebar-item">
+                    <a class="sidebar-link has-arrow" href="javascript:void(0)">
+                        <i class="ti ti-news"></i>
+                        <span>Blogs</span>
+                    </a>
+
+                    <ul class="collapse first-level">
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.blog.posts') }}" class="sidebar-link">
+                                <span>Posts</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.blog.categories') }}" class="sidebar-link">
+                                <span>Categories</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li> --}}
 
                 <li class="sidebar-item">
                     <a class="sidebar-link {{ request()->routeIs('team.index') ? 'active' : '' }}"
