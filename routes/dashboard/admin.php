@@ -5,6 +5,7 @@ use Livewire\Volt\Volt;
 use App\Http\Controllers\StatementController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\StudentStatementController;
+use App\Http\Controllers\Admin\BlogContentImageUploadController;
 
 // Group all admin routes under the 'admin' prefix
 Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->group(function () {
@@ -73,6 +74,12 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('settings/fee-definitions', 'admin.settings.fee-definitions.index')->name('settings.fee-definitions');
     Volt::route('settings/course-fee-plans', 'admin.settings.course-fee-plans')->name('settings.course-fee-plans');
     Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
+
+    Volt::route('blog/categories', 'admin.blog.categories')
+        ->name('admin.blog.categories');
+    Volt::route('blog/posts', 'admin.blog.posts')->name('admin.blog.posts');
+    Route::post('blog/content-images/upload', BlogContentImageUploadController::class)
+        ->name('admin.blog.content-images.upload');
 
     Route::get('/students/{student}/statements/{progression}', [StudentStatementController::class, 'show'])
         ->name('students.statement');
