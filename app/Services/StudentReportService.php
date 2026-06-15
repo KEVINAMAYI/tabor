@@ -28,7 +28,7 @@ class StudentReportService
     public function getEnrollments()
     {
         return Enrollment::whereIn('status', ['active'])
-            ->with(['student.user', 'course', 'intake','assignedStartTrimester','studentFeeItems'])
+            ->with(['student.user', 'course', 'intake','assignedStartTrimester.academicYear','studentFeeItems'])
             ->get();
     }
 

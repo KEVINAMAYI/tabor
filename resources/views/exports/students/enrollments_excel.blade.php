@@ -5,11 +5,11 @@
             <th style="font-weight: bold;">NAME</th>
             <th style="font-weight: bold;">COURSE</th>
             <th style="font-weight: bold;">INTAKE</th>
-            <th style="font-weight: bold;">CHARGES</th>
+            {{-- <th style="font-weight: bold;">CHARGES</th>
             <th style="font-weight: bold;">DISCOUNTS / CREDITS</th>
             <th style="font-weight: bold;">PAID AMOUNT</th>
             <th style="font-weight: bold;">BALANCE</th>
-            <th style="font-weight: bold;">APPROVED ON</th>
+            <th style="font-weight: bold;">APPROVED ON</th> --}}
         </tr>
     </thead>
 
@@ -59,10 +59,10 @@
                 </td>
 
                 <td>
-                    {{  $enrollment->assignedStartTrimester?->name ?? '—' }}
+                    {{  $enrollment->assignedStartTrimester?->name ?? '—' }} {{ $enrollment->assignedStartTrimester?->academicYear?->name ?? '—' }}
                 </td>
 
-                <td>
+                {{-- <td>
                     {{ number_format($charges, 2) }}
                 </td>
 
@@ -80,7 +80,7 @@
 
                 <td>
                     {{ $enrollment->created_at->format('d-m-Y') }}
-                </td>
+                </td> --}}
             </tr>
         @endforeach
 
