@@ -703,6 +703,13 @@ new class extends Component {
         .hover-bg:hover {
             background-color: #f8f9fa;
         }
+        #addPaymentModal .modal-content {
+    max-height: 90vh;
+}
+
+#addPaymentModal .modal-body {
+    overflow-y: auto;
+}
     </style>
 @endpush
 
@@ -945,90 +952,91 @@ new class extends Component {
                                             Add Row
                                         </button>
                                     </div>
+                                    {{-- <div style="max-height:400px; overflow-y:auto;"> --}}
 
-                                    @foreach ($paymentAllocationRows as $index => $row)
-                                        @php
-                                            $rowStudentId = $row['student_id'] ?? '';
-                                            $rowEnrollmentId = $row['enrollment_id'] ?? '';
+                                        @foreach ($paymentAllocationRows as $index => $row)
+                                            @php
+                                                $rowStudentId = $row['student_id'] ?? '';
+                                                $rowEnrollmentId = $row['enrollment_id'] ?? '';
 
-                                            $rowEnrollments = $allocationEnrollments->when(
-                                                $rowStudentId,
-                                                fn($items) => $items->where('student_id', (int) $rowStudentId),
-                                            );
-
-                                            $rowFeeItems = $allocationFeeItems
-                                                ->when(
+                                                $rowEnrollments = $allocationEnrollments->when(
                                                     $rowStudentId,
                                                     fn($items) => $items->where('student_id', (int) $rowStudentId),
-                                                )
-                                                ->when(
-                                                    $rowEnrollmentId,
-                                                    fn($items) => $items->where(
-                                                        'enrollment_id',
-                                                        (int) $rowEnrollmentId,
-                                                    ),
                                                 );
-                                        @endphp
 
-                                        <div class="row g-2 align-items-end mb-2">
-                                            <div class="col-md-3">
-                                                <label class="form-label small">Student</label>
-                                                <select class="form-select"
-                                                    wire:model.live="paymentAllocationRows.{{ $index }}.student_id">
-                                                    <option value="">Select student</option>
-                                                    @foreach ($allocationStudents as $student)
-                                                        <option value="{{ $student->id }}">
-                                                            {{ $student->admission_number }} -
-                                                            {{ $student->first_name }} {{ $student->last_name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                                $rowFeeItems = $allocationFeeItems
+                                                    ->when(
+                                                        $rowStudentId,
+                                                        fn($items) => $items->where('student_id', (int) $rowStudentId),
+                                                    )
+                                                    ->when(
+                                                        $rowEnrollmentId,
+                                                        fn($items) => $items->where(
+                                                            'enrollment_id',
+                                                            (int) $rowEnrollmentId,
+                                                        ),
+                                                    );
+                                            @endphp
+
+                                            <div class="row g-2 align-items-end mb-2">
+                                                <div class="col-md-3">
+                                                    <label class="form-label small">Student</label>
+                                                    <select class="form-select"
+                                                        wire:model.live="paymentAllocationRows.{{ $index }}.student_id">
+                                                        <option value="">Select student</option>
+                                                        @foreach ($allocationStudents as $student)
+                                                            <option value="{{ $student->id }}">
+                                                                {{ $student->admission_number }} -
+                                                                {{ $student->first_name }} {{ $student->last_name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-3">
+                                                    <label class="form-label small">Enrollment</label>
+                                                    <select class="form-select"
+                                                        wire:model.live="paymentAllocationRows.{{ $index }}.enrollment_id">
+                                                        <option value="">Any enrollment</option>
+                                                        @foreach ($rowEnrollments as $enrollment)
+                                                            <option value="{{ $enrollment->id }}">
+                                                                {{ $enrollment->course?->title }} -
+                                                                {{ $enrollment->course?->level }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-3">
+                                                    <label class="form-label small">Fee Item</label>
+                                                    <select class="form-select"
+                                                        wire:model.live="paymentAllocationRows.{{ $index }}.student_fee_item_id">
+                                                        <option value="">Select fee item</option>
+                                                        @foreach ($rowFeeItems as $item)
+                                                            <option value="{{ $item->id }}">
+                                                                {{ $item->description }} — Bal KES
+                                                                {{ number_format($item->balance, 2) }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-2">
+                                                    <label class="form-label small">Amount</label>
+                                                    <input type="number" step="0.01" min="1"
+                                                        class="form-control"
+                                                        wire:model="paymentAllocationRows.{{ $index }}.amount">
+                                                </div>
+
+                                                <div class="col-md-1">
+                                                    <button type="button" class="btn btn-outline-danger w-100"
+                                                        wire:click="removePaymentAllocationRow({{ $index }})">
+                                                        ×
+                                                    </button>
+                                                </div>
                                             </div>
-
-                                            <div class="col-md-3">
-                                                <label class="form-label small">Enrollment</label>
-                                                <select class="form-select"
-                                                    wire:model.live="paymentAllocationRows.{{ $index }}.enrollment_id">
-                                                    <option value="">Any enrollment</option>
-                                                    @foreach ($rowEnrollments as $enrollment)
-                                                        <option value="{{ $enrollment->id }}">
-                                                            {{ $enrollment->course?->title }} -
-                                                            {{ $enrollment->course?->level }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-3">
-                                                <label class="form-label small">Fee Item</label>
-                                                <select class="form-select"
-                                                    wire:model.live="paymentAllocationRows.{{ $index }}.student_fee_item_id">
-                                                    <option value="">Select fee item</option>
-                                                    @foreach ($rowFeeItems as $item)
-                                                        <option value="{{ $item->id }}">
-                                                            {{ $item->description }} — Bal KES
-                                                            {{ number_format($item->balance, 2) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label class="form-label small">Amount</label>
-                                                <input type="number" step="0.01" min="1"
-                                                    class="form-control"
-                                                    wire:model="paymentAllocationRows.{{ $index }}.amount">
-                                            </div>
-
-                                            <div class="col-md-1">
-                                                <button type="button" class="btn btn-outline-danger w-100"
-                                                    wire:click="removePaymentAllocationRow({{ $index }})">
-                                                    ×
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-
+                                        @endforeach
+                                    {{-- </div> --}}
                                     <div class="small text-muted mt-3">
                                         Total payment amount:
                                         <strong>KES {{ number_format((float) $amount, 2) }}</strong>
