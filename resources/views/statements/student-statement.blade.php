@@ -354,7 +354,7 @@
                     @endforeach
                 @endif --}}
 
-                @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
+                {{-- @if (($entry['source_type'] ?? null) === 'payment' && !empty($entry['allocations']))
                     @foreach ($entry['allocations'] as $allocation)
                         @php
                             $allocationAmount =
@@ -374,7 +374,7 @@
                             <td class="text-end muted"></td>
                         </tr>
                     @endforeach
-                @endif
+                @endif --}}
             @empty
                 <tr>
                     <td colspan="6" class="text-center muted">
