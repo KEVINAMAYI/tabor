@@ -157,25 +157,15 @@ class PaymentPostingService
          AND fee_definitions.applies_once = 1
         THEN 0
 
-        WHEN LOWER(student_fee_items.description) LIKE '%tuition%'
-          OR LOWER(fee_definitions.name) LIKE '%tuition%'
+        WHEN LOWER(COALESCE(fee_definitions.name, '')) LIKE '%tuition%'
+          OR LOWER(COALESCE(student_fee_items.description, '')) LIKE '%tuition%'
         THEN 1
 
         ELSE 2
-    END
+    END ASC
 ")
-
-            ->orderByRaw("
-            CASE
-                WHEN student_fee_items.enrollment_id = ?
-                THEN 0
-                ELSE 1
-            END
-        ", [$payment->enrollment_id])
-
-            ->orderBy('student_fee_items.charge_date')
-
-            ->orderBy('student_fee_items.id')
+            ->orderBy('student_fee_items.charge_date', 'asc')
+            ->orderBy('student_fee_items.id', 'asc')
 
             ->lockForUpdate()
 

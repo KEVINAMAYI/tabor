@@ -689,11 +689,14 @@ class StudentLedgerService
                 default => 3,
             };
 
-            $endDate = $startDate
-                ->copy()
-                ->addMonths($durationMonths)
-                ->subDay()
-                ->endOfDay();
+            $endDate = Carbon::parse(
+                $progression->completed_at
+            ) ??
+                $startDate
+                    ->copy()
+                    ->addMonths($durationMonths)
+                    ->subDay()
+                    ->endOfDay();
 
             return [$startDate, $endDate];
         }

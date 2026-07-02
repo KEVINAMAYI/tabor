@@ -68,6 +68,11 @@ new class extends Component {
     public $statementEnrollmentId = null;
     public $statementEnrollmentFilter = '';
 
+    //progression dates edit modal
+    public $edit_start_date = '';
+    public $edit_end_date = '';
+    public $editProgressionDateId = null;
+
     public function rules()
     {
         return [
@@ -394,6 +399,43 @@ new class extends Component {
         $this->edit_enrollment_status = $enrollment->status;
 
         $this->dispatch('show-edit-enrollment-modal');
+    }
+    public function editProgressionDatesModal(int $progressionDateId): void
+    {
+        $this->editProgressionDateId = $progressionDateId;
+        $progressionDate = EnrollmentProgression::findOrFail($progressionDateId);
+
+        $this->edit_start_date = $progressionDate->started_at->format('Y-m-d');
+        $this->edit_end_date = $progressionDate->completed_at->format('Y-m-d');
+
+        // dd($this->edit_start_date, $this->edit_end_date);
+
+        $this->dispatch('show-edit-progression-dates-modal');
+    }
+
+    public function updateProgressionDates()
+    {
+        $this->validate([
+            'edit_start_date' => ['required', 'date'],
+            'edit_end_date' => ['date'],
+        ]);
+
+        try {
+            $progressionDate = EnrollmentProgression::findOrFail($this->editProgressionDateId);
+
+            if ($progressionDate) {
+                $progressionDate->update([
+                    'started_at' => $this->edit_start_date,
+                    'completed_at' => $this->edit_end_date,
+                ]);
+            }
+            $this->dispatch('hide-edit-progression-dates-modal');
+            $this->reset(['edit_start_date', 'edit_end_date', 'editProgressionDateId']);
+
+            LivewireAlert::text('Progression dates updated successfully.')->success()->toast()->position('top-end')->show();
+        } catch (\Throwable $th) {
+            LivewireAlert::text($th->getMessage())->error()->toast()->position('top-end')->show();
+        }
     }
 
     public function updateEnrollment(): void
@@ -1326,7 +1368,7 @@ new class extends Component {
                                 <th>Sequence</th>
                                 <th>Period</th>
                                 <th>Status</th>
-                                <th class="text-end">Statement</th>
+                                <th class="text-end">Statement Actions</th>
                             </tr>
                         </thead>
 
@@ -1373,6 +1415,10 @@ new class extends Component {
                                     </td>
 
                                     <td class="text-end">
+                                        <button type="button" class="btn btn-primary btn-sm rounded-3"
+                                            wire:click="editProgressionDatesModal({{ $progression->id }})">
+                                            <i class="ti ti-pencil me-1"></i> Edit
+                                        </button>
                                         <a href="{{ route('students.statement', [
                                             'student' => $student->id,
                                             'progression' => $progression->id,
@@ -1592,6 +1638,245 @@ new class extends Component {
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" wire:click="updateEnrollment">
                         Update Enrollment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- GENERATE CHARGES MODAL --}}
+    <div class="modal fade" id="generateChargesModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Generate Initial Charges</h5>
+                        <small class="text-muted">This will post starting charges for the selected enrollment.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if ($selectedEnrollment)
+                        <div class="p-3 rounded-3 bg-light mb-3">
+                            <div class="small text-muted mb-1">Enrollment</div>
+                            <div class="fw-semibold text-dark">
+                                {{ $selectedEnrollment->course->title }} - {{ $selectedEnrollment->course->level }}
+                            </div>
+                            <div class="small text-muted mt-1">
+                                {{ optional($selectedEnrollment->admission_date)->format('d M Y') ?? '—' }}
+                                •
+                                {{ $selectedEnrollment->assignedStartTrimester->name ?? '—' }}
+                                {{ $selectedEnrollment->assignedStartTrimester?->academicYear?->name }}
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="alert alert-warning border-0 rounded-3 mb-0">
+                        <div class="fw-semibold mb-2">Charges to be generated</div>
+
+                        @if (count($chargePreview))
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr class="text-muted small">
+                                            <th>Scope</th>
+                                            <th>Fee</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($chargePreview as $item)
+                                            <tr>
+                                                <td class="small text-muted">{{ $item['type'] }}</td>
+                                                <td class="fw-medium">{{ $item['name'] }}</td>
+                                                <td class="text-end fw-semibold">
+                                                    KES {{ number_format($item['amount'], 2) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="2" class="text-end">Total</th>
+                                            <th class="text-end">
+                                                KES {{ number_format(collect($chargePreview)->sum('amount'), 2) }}
+                                            </th>
+                                        </tr>
+                                    </tfoot>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="text-muted small">
+                                No new charges will be generated. All applicable fees already exist.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary rounded-3" wire:click="generateInitialCharges"
+                        wire:loading.attr="disabled">
+
+                        {{-- Normal state --}}
+                        <span wire:loading.remove wire:target="generateInitialCharges">
+                            <i class="ti ti-receipt me-1"></i> Generate Charges
+                        </span>
+
+                        {{-- Loading state --}}
+                        <span wire:loading wire:target="generateInitialCharges">
+                            <i class="ti ti-loader animate-spin me-1"></i> Processing...
+                        </span>
+
+                    </button>
+
+                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- POST PAYMENT MODAL --}}
+    <div class="modal fade" id="paymentModal" tabindex="-1" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1">Post Payment</h5>
+                        <small class="text-muted">Record a payment for this student and allocate it to outstanding
+                            charges.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form wire:submit.prevent="savePayment">
+                    <div class="modal-body">
+                        @if ($selectedEnrollment)
+                            <div class="p-3 rounded-3 bg-light mb-4">
+                                <div class="fw-semibold text-dark">
+                                    {{ $selectedEnrollment->course->title }} -
+                                    {{ $selectedEnrollment->course->level }}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    {{ $student->first_name }} {{ $student->last_name }}
+                                    •
+                                    {{ 'TTI/' . $student->admission_number . '/' . $selectedEnrollment->course->code . '/' . $student->created_at->format('Y') }}
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Payment Date</label>
+                                <input type="date" class="form-control rounded-3" wire:model="payment_date">
+                                @error('payment_date')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-medium">Amount</label>
+                                <input type="number" step="0.01" min="0" class="form-control rounded-3"
+                                    wire:model="payment_amount" placeholder="0.00">
+                                @error('payment_amount')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Method</label>
+                                <select class="form-select rounded-3" wire:model="payment_method">
+                                    <option value="">Select method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="mpesa">M-PESA</option>
+                                    <option value="bank">Bank</option>
+                                    <option value="card">Card</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                @error('payment_method')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Reference No</label>
+                                <input type="text" class="form-control rounded-3" wire:model="payment_reference"
+                                    placeholder="Transaction reference">
+                                @error('payment_reference')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-medium">Receipt No</label>
+                                <input type="text" class="form-control rounded-3" wire:model="payment_receipt_no"
+                                    placeholder="Receipt number">
+                                @error('payment_receipt_no')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Notes</label>
+                            <textarea class="form-control rounded-3" rows="3" wire:model="payment_notes" placeholder="Optional notes"></textarea>
+                            @error('payment_notes')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="alert alert-info border-0 rounded-3 mb-0">
+                            Payment will be allocated to the oldest outstanding fee items first.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary rounded-3">
+                            <i class="ti ti-cash me-1"></i> Save Payment
+                        </button>
+
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {{-- edit progression dates modal --}}
+    <div wire:ignore.self class="modal fade" id="editProgressionDatesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Progression Dates</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" wire:model="edit_start_date">
+                        @error('edit_start_date')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" wire:model="edit_end_date">
+                        @error('edit_end_date')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" wire:click="updateProgressionDates">
+                        Update Progression Dates
                     </button>
                 </div>
             </div>
@@ -2140,5 +2425,10 @@ new class extends Component {
 
         window.addEventListener('show-discount-modal', () => modalInstance('discountModal')?.show());
         window.addEventListener('hide-discount-modal', () => modalInstance('discountModal')?.hide());
+
+        window.addEventListener('show-edit-progression-dates-modal', () => modalInstance('editProgressionDatesModal')
+        ?.show());
+        window.addEventListener('hide-edit-progression-dates-modal', () => modalInstance('editProgressionDatesModal')
+        ?.hide());
     </script>
 @endpush
