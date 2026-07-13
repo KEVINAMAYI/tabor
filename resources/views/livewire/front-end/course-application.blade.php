@@ -622,7 +622,9 @@ class extends Component {
                                             By checking the box below and submitting my application, I confirm that I
                                             have read and understood this consent statement and voluntarily agree to the
                                             processing of my data and media as described.
-                                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and
+                                            {{-- <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and
+                                                Conditions</a>. --}}
+                                            <a href="{{ route('front-end.terms-conditions') }}" target="_blank">Terms and
                                                 Conditions</a>.
                                         </label>
                                         @error('terms')
