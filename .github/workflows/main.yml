@@ -1,3 +1,46 @@
+# name: 🚀 Deploy website to cPanel
+
+# on:
+#   push:
+#     branches:
+#       - master
+#       - feature/finance-module
+
+# jobs:
+#   deploy-master:
+#     name: 🎉 Deploy website to production
+#     if: github.ref == 'refs/heads/master'
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 🚚 Get latest code
+#         uses: actions/checkout@v4
+
+#       - name: 📂 Sync files via FTP
+#         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+#         with:
+#           server: ${{ secrets.FTP_SERVER }}
+#           username: ${{ secrets.FTP_USER }}
+#           password: ${{ secrets.FTP_PASSWORD }}
+#           server-dir: /public_html/
+
+#   deploy-finance:
+#     name: 💰 Deploy finance branch
+#     if: github.ref == 'refs/heads/feature/finance-module'
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 🚚 Get latest code
+#         uses: actions/checkout@v4
+
+#       - name: 📂 Sync files via FTP
+#         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+#         with:
+#           server: ${{ secrets.FTP_SERVER }}
+#           username: ${{ secrets.FTP_USER }}
+#           password: ${{ secrets.FTP_PASSWORD }}
+#           server-dir: /uat.tabor.ac.ke/
+
 name: 🚀 Deploy website to cPanel
 
 on:
@@ -11,32 +54,96 @@ jobs:
     name: 🎉 Deploy website to production
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, intl, bcmath, curl, dom, fileinfo, openssl, pdo_mysql, tokenizer, xml
+          coverage: none
+          tools: composer:v2
+
+      - name: 📦 Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: 📚 Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: ✅ Confirm Purifier package
+        run: composer show mews/purifier
+
       - name: 📂 Sync files via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
 
   deploy-finance:
     name: 💰 Deploy finance branch
     if: github.ref == 'refs/heads/feature/finance-module'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, intl, bcmath, curl, dom, fileinfo, openssl, pdo_mysql, tokenizer, xml
+          coverage: none
+          tools: composer:v2
+
+      - name: 📦 Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: 📚 Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: ✅ Confirm Purifier package
+        run: composer show mews/purifier
+
       - name: 📂 Sync files via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /uat.tabor.ac.ke/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
