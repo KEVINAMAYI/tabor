@@ -26,7 +26,7 @@ jobs:
 
   deploy-uat:
     name: 💰 Deploy uat branch
-    if: github.ref == 'refs/heads/feature/uat'
+    if: github.ref == 'refs/heads/uat'
     runs-on: ubuntu-latest
 
     steps:
