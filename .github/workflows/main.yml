@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - feature/finance-module
+      - uat
 
 jobs:
   deploy-master:
