@@ -239,7 +239,7 @@
                                 class="{{ request()->routeIs('front-end.blog.index') || request()->routeIs('front-end.blog.show')
                                     ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
                                     : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">
-                                Blogs
+                                Blogss
                             </a>
                         </li>
                         <li class="nav-item">
