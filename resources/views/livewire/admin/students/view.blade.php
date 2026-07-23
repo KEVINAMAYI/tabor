@@ -405,8 +405,8 @@ new class extends Component {
         $this->editProgressionDateId = $progressionDateId;
         $progressionDate = EnrollmentProgression::findOrFail($progressionDateId);
 
-        $this->edit_start_date = $progressionDate->started_at->format('Y-m-d');
-        $this->edit_end_date = $progressionDate->completed_at->format('Y-m-d');
+        $this->edit_start_date = $progressionDate->started_at?->format('Y-m-d');
+        $this->edit_end_date = $progressionDate->completed_at?->format('Y-m-d');
 
         // dd($this->edit_start_date, $this->edit_end_date);
 
