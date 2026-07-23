@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Student extends Model
+{
+    use HasFactory;
+
+    protected $guarded = ['id'];
+
+
+    /* -----------------------------------------------------------------
+     |  Direct relationships
+     |------------------------------------------------------------------
+     */
+
+    // linked to a user (for login credentials / portal access)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // every intake‑course the student is enrolled in
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    // tuition payments hang off each enrolment
+    public function payments()
+    {
+        return $this->hasManyThrough(
+            Payment::class,
+            Enrollment::class,   // through
+            'student_id',       // FK on Enrolment
+            'enrollment_id'      // FK on Payment
+        );
+    }
+
+    /* -----------------------------------------------------------------
+     |  Convenient “through” relationships
+     |------------------------------------------------------------------
+     */
+
+    // quick access to all courses (distinct) the student has ever taken
+    public function courses()
+    {
+        return $this->hasManyThrough(
+            Course::class,
+            Enrollment::class,
+            'student_id',   // FK on Enrolment
+            'id',           // PK on Course
+            'id',           // PK on Student
+            'course_id'     // FK on Enrolment
+        )->distinct();
+    }
+
+    // all intakes the student has participated in
+    public function intakes()
+    {
+        return $this->hasManyThrough(
+            Intake::class,
+            Enrollment::class,
+            'student_id',
+            'id',
+            'id',
+            'intake_id'
+        )->distinct();
+    }
+
+    // attendance records via enrolments → sessions → attendance pivot
+    public function sessions()
+    {
+        return $this->belongsToMany(
+            ModuleSession::class,
+            'attendances',
+            'enrollment_id',
+            'module_session_id'
+        )
+            ->withPivot('status')
+            ->withTimestamps();
+    }
+
+
+    public function classGroup()
+    {
+        return $this->belongsTo(ClassGroup::class);
+    }
+
+    // Generate a unique admission number for the student
+    public static function generateAdmissionNumber()
+{
+    do {
+        // Get the latest admission number
+        $lastStudent = Student::orderBy('admission_number', 'desc')->first();
+
+        if ($lastStudent && is_numeric($lastStudent->admission_number)) {
+            $lastNumber = (int) $lastStudent->admission_number;
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $nextAdmissionNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
+        // Check if the generated number already exists
+        $exists = Student::where('admission_number', $nextAdmissionNumber)->exists();
+    } while ($exists);
+    return $nextAdmissionNumber;
+}
+
+}
+
