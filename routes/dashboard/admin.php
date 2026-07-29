@@ -58,6 +58,11 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
 
     // Route to manage reports resources
     Volt::route('reports', 'admin.reports.index')->name('reports.index');
+    Volt::route('reports/arrears', 'admin.reports.arrears')->name('reports.arrears');
+    Volt::route('reports/revenue', 'admin.reports.revenue')->name('reports.revenue');
+    Volt::route('reports/course-applications', 'admin.reports.course-application-funnel')->name('reports.applications-funnel');
+    Volt::route('reports/enrollment-retention', 'admin.reports.enrollment-retention')->name('reports.retention');
+    Volt::route('reports/reconciliation', 'admin.reports.reconciliation-health')->name('reports.reconciliation');
 
     // Route to manage payments
     // Volt::route('payments', 'admin.payments.index')->name('payments.index');

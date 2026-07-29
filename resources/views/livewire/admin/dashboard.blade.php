@@ -6,6 +6,7 @@ use App\Models\Lecturer;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\Reports\ArrearsReportService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
@@ -15,24 +16,33 @@ new class extends Component {
     public $courses;
     public $lecturers;
     public $statusData;
+    public $statusLabels;
     public $courseData;
     public $monthlyEnrollments;
     public $months;
     public $total_revenue;
+    public $outstandingTotal;
     public $recentEnrollments = [];
     public $monthlyPayments = [];
     public $recentPayments = [];
 
-    public function mount()
+    public function mount(ArrearsReportService $arrearsReportService)
     {
-        $this->students = Enrollment::with('student')->where('enrollments.status', 'approved')->count();
+        $this->students = Enrollment::whereIn('status', ['active', 'course_completed', 'pending_graduation', 'graduated'])
+            ->distinct('student_id')
+            ->count('student_id');
 
         $this->courses = Course::count();
         $this->lecturers = Lecturer::count();
         $this->total_revenue = Payment::where('payment_method', '!=', 'discount')->sum('amount');
+        $this->outstandingTotal = $arrearsReportService->summary()['total_outstanding'];
 
         // Group by status
         $this->statusData = Enrollment::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->toArray();
+        $this->statusLabels = array_map(
+            fn ($label) => ucwords(str_replace('_', ' ', $label)),
+            array_keys($this->statusData)
+        );
 
         // Group by course
         $this->courseData = Enrollment::join('courses', 'enrollments.course_id', '=', 'courses.id')->selectRaw('courses.title as course_name, COUNT(*) as total')->groupBy('courses.title')->pluck('total', 'course_name')->toArray();
@@ -242,7 +252,7 @@ new class extends Component {
                 <div class="stat-text">
                     <h6 class="text-muted mb-1">Total Students</h6>
                     <h3 class="fw-bold text-dark">{{ $students }}</h3>
-                    <small class="text-muted">Enrolled & Approved</small>
+                    <small class="text-muted">Active & Billable</small>
                 </div>
                 <div class="stat-icon icon-blue">
                     <span class="iconify" data-icon="mdi:school-outline"></span>
@@ -297,6 +307,24 @@ new class extends Component {
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Outstanding Balances -->
+    <div class="col-lg-3 col-6">
+        <a href="{{ route('reports.arrears') }}" class="text-decoration-none">
+            <div class="card shadow-sm h-100">
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <h6 class="text-muted mb-1">Outstanding Balances</h6>
+                        <h4 class="text-small text-danger">KES {{ number_format($outstandingTotal, 2) }}</h4>
+                        <small class="text-muted">Across All Students</small>
+                    </div>
+                    <div class="stat-icon icon-red">
+                        <span class="iconify" data-icon="mdi:cash-remove"></span>
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 
     <!-- Live Map -->
@@ -366,6 +394,24 @@ new class extends Component {
                             <span class="iconify mb-2" data-icon="mdi:shield-account-outline"
                                 style="font-size: 28px;"></span>
                             <span>Add Role</span>
+                        </a>
+                    </div>
+
+                    <!-- Arrears Report -->
+                    <div class="col-6">
+                        <a href="{{ route('reports.arrears') }}" class="card-action">
+                            <span class="iconify mb-2" data-icon="mdi:cash-remove"
+                                style="font-size: 28px;"></span>
+                            <span>Arrears Report</span>
+                        </a>
+                    </div>
+
+                    <!-- Revenue Report -->
+                    <div class="col-6">
+                        <a href="{{ route('reports.revenue') }}" class="card-action">
+                            <span class="iconify mb-2" data-icon="mdi:chart-line"
+                                style="font-size: 28px;"></span>
+                            <span>Revenue Report</span>
                         </a>
                     </div>
 
@@ -543,16 +589,22 @@ new class extends Component {
 
             // Data from Livewire
             const statusData = @json(array_values($statusData));
-            const statusLabels = @json(array_map(fn($label) => ucfirst($label), array_keys($statusData)));
+            const statusLabels = @json($statusLabels);
 
             const courseData = @json(array_values($courseData));
             const courseLabels = @json(array_map(fn($label) => ucfirst($label), array_keys($courseData)));
 
             // Match specific colors to statuses
             const statusColorsMap = {
-                'Approved': '#39b69a', // green
-                'Pending': '#ffae1f', // yellow
-                'Rejected': '#fa896b' // red
+                'Pending': '#ffae1f',
+                'Active': '#39b69a',
+                'Deferred': '#a1aab2',
+                'Withdrawn': '#fa896b',
+                'Rejected': '#fa896b',
+                'Cancelled': '#736f93',
+                'Course Completed': '#28c76f',
+                'Pending Graduation': '#00cfe8',
+                'Graduated': '#7367f0',
             };
 
             const statusColors = statusLabels.map(status => statusColorsMap[status] || '#ccc');

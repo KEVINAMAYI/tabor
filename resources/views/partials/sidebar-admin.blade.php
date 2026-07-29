@@ -195,7 +195,7 @@
                     </li>
                 @endcan
 
-                @can('manage-reports')
+                @can('view-reports')
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('reports.index') ? 'active' : '' }}"
                             href="{{ route('reports.index') }}" aria-expanded="false">

@@ -102,6 +102,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'create-payments',
                 'view-payments',
                 'edit-payments',
+                'view-reports',
             ],
 
             'student' => [
