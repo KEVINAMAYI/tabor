@@ -400,13 +400,11 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-year-modal', () => new bootstrap.Modal(document.getElementById('yearModal')).show());
-            window.addEventListener('hide-year-modal', () => bootstrap.Modal.getInstance(document.getElementById('yearModal'))?.hide());
-            window.addEventListener('show-period-modal', () => new bootstrap.Modal(document.getElementById('periodModal')).show());
-            window.addEventListener('hide-period-modal', () => bootstrap.Modal.getInstance(document.getElementById('periodModal'))?.hide());
-        });
+        window.addEventListener('show-year-modal', () => new bootstrap.Modal(document.getElementById('yearModal')).show());
+        window.addEventListener('hide-year-modal', () => bootstrap.Modal.getInstance(document.getElementById('yearModal'))?.hide());
+        window.addEventListener('show-period-modal', () => new bootstrap.Modal(document.getElementById('periodModal')).show());
+        window.addEventListener('hide-period-modal', () => bootstrap.Modal.getInstance(document.getElementById('periodModal'))?.hide());
     </script>
-@endpush
+@endscript

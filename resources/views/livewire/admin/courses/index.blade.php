@@ -1142,7 +1142,9 @@ new class extends Component {
 
 @push('scripts')
     <script src="assets/libs/select2/dist/js/select2.full.min.js"></script>
+@endpush
 
+@script
     <script>
         function initializeMultiSelect(context = document) {
             $(context).find('select.select2[multiple]').each(function() {
@@ -1180,9 +1182,7 @@ new class extends Component {
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMultiSelect();
-        });
+        initializeMultiSelect();
 
         window.addEventListener('show-course-modal', () => {
             const modalEl = document.getElementById('addCourseModal');
@@ -1214,4 +1214,4 @@ new class extends Component {
             }
         });
     </script>
-@endpush
+@endscript

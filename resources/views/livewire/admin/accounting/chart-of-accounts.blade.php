@@ -267,15 +267,13 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-account-modal', () => {
-                new bootstrap.Modal(document.getElementById('accountModal')).show();
-            });
-            window.addEventListener('hide-account-modal', () => {
-                bootstrap.Modal.getInstance(document.getElementById('accountModal'))?.hide();
-            });
+        window.addEventListener('show-account-modal', () => {
+            new bootstrap.Modal(document.getElementById('accountModal')).show();
+        });
+        window.addEventListener('hide-account-modal', () => {
+            bootstrap.Modal.getInstance(document.getElementById('accountModal'))?.hide();
         });
     </script>
-@endpush
+@endscript

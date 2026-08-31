@@ -369,13 +369,11 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-expense-modal', () => new bootstrap.Modal(document.getElementById('expenseModal')).show());
-            window.addEventListener('hide-expense-modal', () => bootstrap.Modal.getInstance(document.getElementById('expenseModal'))?.hide());
-            window.addEventListener('show-reject-modal', () => new bootstrap.Modal(document.getElementById('rejectModal')).show());
-            window.addEventListener('hide-reject-modal', () => bootstrap.Modal.getInstance(document.getElementById('rejectModal'))?.hide());
-        });
+        window.addEventListener('show-expense-modal', () => new bootstrap.Modal(document.getElementById('expenseModal')).show());
+        window.addEventListener('hide-expense-modal', () => bootstrap.Modal.getInstance(document.getElementById('expenseModal'))?.hide());
+        window.addEventListener('show-reject-modal', () => new bootstrap.Modal(document.getElementById('rejectModal')).show());
+        window.addEventListener('hide-reject-modal', () => bootstrap.Modal.getInstance(document.getElementById('rejectModal'))?.hide());
     </script>
-@endpush
+@endscript

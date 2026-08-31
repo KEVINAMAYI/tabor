@@ -228,9 +228,9 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        {
             const initialTrend = @json($this->trend);
 
             const options = {
@@ -274,6 +274,6 @@ new class extends Component {
                     },
                 });
             });
-        });
+        }
     </script>
-@endpush
+@endscript

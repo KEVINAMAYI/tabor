@@ -295,9 +295,9 @@ new class extends Component {
 
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        {
             const tabs = document.querySelectorAll('button[data-bs-toggle="pill"]');
 
             tabs.forEach(tab => {
@@ -322,7 +322,7 @@ new class extends Component {
                     Livewire.dispatch('tabChanged', {tabId: mappedTab});
                 });
             });
-        });
+        }
     </script>
-@endpush
+@endscript
 

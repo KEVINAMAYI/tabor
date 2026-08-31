@@ -282,13 +282,11 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-custodian-modal', () => new bootstrap.Modal(document.getElementById('custodianModal')).show());
-            window.addEventListener('hide-custodian-modal', () => bootstrap.Modal.getInstance(document.getElementById('custodianModal'))?.hide());
-            window.addEventListener('show-float-modal', () => new bootstrap.Modal(document.getElementById('floatModal')).show());
-            window.addEventListener('hide-float-modal', () => bootstrap.Modal.getInstance(document.getElementById('floatModal'))?.hide());
-        });
+        window.addEventListener('show-custodian-modal', () => new bootstrap.Modal(document.getElementById('custodianModal')).show());
+        window.addEventListener('hide-custodian-modal', () => bootstrap.Modal.getInstance(document.getElementById('custodianModal'))?.hide());
+        window.addEventListener('show-float-modal', () => new bootstrap.Modal(document.getElementById('floatModal')).show());
+        window.addEventListener('hide-float-modal', () => bootstrap.Modal.getInstance(document.getElementById('floatModal'))?.hide());
     </script>
-@endpush
+@endscript

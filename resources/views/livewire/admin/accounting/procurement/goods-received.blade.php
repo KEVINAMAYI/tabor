@@ -189,11 +189,9 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-grn-modal', () => new bootstrap.Modal(document.getElementById('grnModal')).show());
-            window.addEventListener('hide-grn-modal', () => bootstrap.Modal.getInstance(document.getElementById('grnModal'))?.hide());
-        });
+        window.addEventListener('show-grn-modal', () => new bootstrap.Modal(document.getElementById('grnModal')).show());
+        window.addEventListener('hide-grn-modal', () => bootstrap.Modal.getInstance(document.getElementById('grnModal'))?.hide());
     </script>
-@endpush
+@endscript

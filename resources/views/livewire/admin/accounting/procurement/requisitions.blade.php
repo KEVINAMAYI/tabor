@@ -326,13 +326,11 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-requisition-modal', () => new bootstrap.Modal(document.getElementById('requisitionModal')).show());
-            window.addEventListener('hide-requisition-modal', () => bootstrap.Modal.getInstance(document.getElementById('requisitionModal'))?.hide());
-            window.addEventListener('show-reject-modal', () => new bootstrap.Modal(document.getElementById('rejectModal')).show());
-            window.addEventListener('hide-reject-modal', () => bootstrap.Modal.getInstance(document.getElementById('rejectModal'))?.hide());
-        });
+        window.addEventListener('show-requisition-modal', () => new bootstrap.Modal(document.getElementById('requisitionModal')).show());
+        window.addEventListener('hide-requisition-modal', () => bootstrap.Modal.getInstance(document.getElementById('requisitionModal'))?.hide());
+        window.addEventListener('show-reject-modal', () => new bootstrap.Modal(document.getElementById('rejectModal')).show());
+        window.addEventListener('hide-reject-modal', () => bootstrap.Modal.getInstance(document.getElementById('rejectModal'))?.hide());
     </script>
-@endpush
+@endscript

@@ -346,13 +346,11 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-vh-modal', () => new bootstrap.Modal(document.getElementById('vhModal')).show());
-            window.addEventListener('hide-vh-modal', () => bootstrap.Modal.getInstance(document.getElementById('vhModal'))?.hide());
-            window.addEventListener('show-svh-modal', () => new bootstrap.Modal(document.getElementById('svhModal')).show());
-            window.addEventListener('hide-svh-modal', () => bootstrap.Modal.getInstance(document.getElementById('svhModal'))?.hide());
-        });
+        window.addEventListener('show-vh-modal', () => new bootstrap.Modal(document.getElementById('vhModal')).show());
+        window.addEventListener('hide-vh-modal', () => bootstrap.Modal.getInstance(document.getElementById('vhModal'))?.hide());
+        window.addEventListener('show-svh-modal', () => new bootstrap.Modal(document.getElementById('svhModal')).show());
+        window.addEventListener('hide-svh-modal', () => bootstrap.Modal.getInstance(document.getElementById('svhModal'))?.hide());
     </script>
-@endpush
+@endscript

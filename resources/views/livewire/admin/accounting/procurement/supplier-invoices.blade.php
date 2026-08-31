@@ -246,11 +246,9 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-invoice-modal', () => new bootstrap.Modal(document.getElementById('invoiceModal')).show());
-            window.addEventListener('hide-invoice-modal', () => bootstrap.Modal.getInstance(document.getElementById('invoiceModal'))?.hide());
-        });
+        window.addEventListener('show-invoice-modal', () => new bootstrap.Modal(document.getElementById('invoiceModal')).show());
+        window.addEventListener('hide-invoice-modal', () => bootstrap.Modal.getInstance(document.getElementById('invoiceModal'))?.hide());
     </script>
-@endpush
+@endscript

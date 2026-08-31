@@ -190,6 +190,18 @@ new class extends Component {
             'status' => 'required|in:upcoming,active,closed',
         ]);
 
+        $duplicate = Trimester::query()
+            ->where('academic_year_id', $this->trimester_academic_year_id)
+            ->where('trimester_number', $this->trimester_number)
+            ->when($this->trimesterId, fn($q) => $q->where('id', '!=', $this->trimesterId))
+            ->exists();
+
+        if ($duplicate) {
+            $this->addError('trimester_number', 'This academic year already has a trimester numbered ' . $this->trimester_number . '. Choose a different number.');
+
+            return;
+        }
+
         try {
             $trimester = Trimester::updateOrCreate(
                 ['id' => $this->trimesterId],
@@ -891,9 +903,9 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        {
 
             // === Academic Year Modal ===
             window.addEventListener('show-academic-year-modal', () => {
@@ -919,6 +931,6 @@ new class extends Component {
                 modal?.hide();
             });
 
-        });
+        }
     </script>
-@endpush
+@endscript

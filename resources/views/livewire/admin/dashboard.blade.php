@@ -583,9 +583,11 @@ new class extends Component {
 
 @push('scripts')
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+@endpush
 
+@script
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        {
 
             // Data from Livewire
             const statusData = @json(array_values($statusData));
@@ -755,6 +757,6 @@ new class extends Component {
                 options_line
             );
             chart_line_basic.render();
-        });
+        }
     </script>
-@endpush
+@endscript

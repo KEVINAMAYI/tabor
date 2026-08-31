@@ -290,11 +290,9 @@ new class extends Component {
     </div>
 </div>
 
-@push('scripts')
+@script
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.addEventListener('show-po-modal', () => new bootstrap.Modal(document.getElementById('poModal')).show());
-            window.addEventListener('hide-po-modal', () => bootstrap.Modal.getInstance(document.getElementById('poModal'))?.hide());
-        });
+        window.addEventListener('show-po-modal', () => new bootstrap.Modal(document.getElementById('poModal')).show());
+        window.addEventListener('hide-po-modal', () => bootstrap.Modal.getInstance(document.getElementById('poModal'))?.hide());
     </script>
-@endpush
+@endscript
