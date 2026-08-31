@@ -123,6 +123,13 @@ new class extends Component {
         $this->slug = Str::slug($this->slug);
     }
 
+    public function updatedStatus(): void
+    {
+        if ($this->status === 'published' && blank($this->published_at)) {
+            $this->published_at = now()->format('Y-m-d\TH:i');
+        }
+    }
+
     public function generateExcerpt(): void
     {
         if (blank($this->content)) {
@@ -182,6 +189,21 @@ new class extends Component {
 
     public function save(BlogPostService $service): void
     {
+        // A "standard" blog post only requires a title and content — everything
+        // else (excerpt, meta title/description) is derived automatically so the
+        // author isn't forced to fill in SEO fields to publish a post.
+        if (blank($this->excerpt)) {
+            $this->excerpt = Str::limit(trim(strip_tags($this->content)), 250);
+        }
+
+        if (blank($this->meta_title)) {
+            $this->meta_title = Str::limit($this->title, 60, '');
+        }
+
+        if (blank($this->meta_description)) {
+            $this->meta_description = Str::limit(trim($this->excerpt ?: strip_tags($this->content)), 155, '');
+        }
+
         $validated = $this->validate();
 
         try {
@@ -418,25 +440,6 @@ new class extends Component {
                                                     @enderror
                                                 </div>
 
-                                                <div class="mb-3">
-                                                    <div
-                                                        class="d-flex justify-content-between align-items-center gap-2">
-                                                        <label class="form-label fw-semibold mb-0">Excerpt</label>
-
-                                                        <button type="button" class="btn btn-sm btn-outline-info"
-                                                            wire:click="generateExcerpt">
-                                                            Generate
-                                                        </button>
-                                                    </div>
-
-                                                    <textarea class="form-control mt-2" rows="3" placeholder="Short summary shown on blog listings..."
-                                                        wire:model.live.debounce.500ms="excerpt"></textarea>
-
-                                                    @error('excerpt')
-                                                        <small class="text-danger">{{ $message }}</small>
-                                                    @enderror
-                                                </div>
-
                                                 <div
                                                     class="d-flex justify-content-between align-items-center gap-2 mb-2">
                                                     <label class="form-label fw-semibold mb-0">Content</label>
@@ -488,7 +491,7 @@ new class extends Component {
                                             <div class="card-body">
                                                 <div class="mb-3">
                                                     <label class="form-label">Status</label>
-                                                    <select class="form-select" wire:model="status">
+                                                    <select class="form-select" wire:model.live="status">
                                                         <option value="draft">Draft</option>
                                                         <option value="published">Published</option>
                                                         <option value="archived">Archived</option>
@@ -499,15 +502,17 @@ new class extends Component {
                                                     @enderror
                                                 </div>
 
-                                                <div class="mb-3">
-                                                    <label class="form-label">Published At</label>
-                                                    <input type="datetime-local" class="form-control"
-                                                        wire:model="published_at">
+                                                @if ($status === 'published')
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Published At</label>
+                                                        <input type="datetime-local" class="form-control"
+                                                            wire:model="published_at">
 
-                                                    @error('published_at')
-                                                        <small class="text-danger">{{ $message }}</small>
-                                                    @enderror
-                                                </div>
+                                                        @error('published_at')
+                                                            <small class="text-danger">{{ $message }}</small>
+                                                        @enderror
+                                                    </div>
+                                                @endif
 
                                                 <div>
                                                     <label class="form-label">Category</label>
@@ -559,16 +564,42 @@ new class extends Component {
                                         </div>
 
                                         <div class="card blog-editor-card mb-3">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <strong>SEO</strong>
+                                            <button type="button"
+                                                class="card-header d-flex justify-content-between align-items-center w-100 border-0 bg-transparent text-start"
+                                                data-bs-toggle="collapse" data-bs-target="#blogAdvancedPanel"
+                                                aria-expanded="false" aria-controls="blogAdvancedPanel">
+                                                <span>
+                                                    <strong>Advanced options</strong>
+                                                    <small class="text-muted d-block">Excerpt &amp; SEO (optional)</small>
+                                                </span>
 
                                                 <span
                                                     class="badge bg-{{ $this->seoScore() >= 80 ? 'success' : ($this->seoScore() >= 50 ? 'warning' : 'danger') }}">
-                                                    {{ $this->seoScore() }}%
+                                                    SEO {{ $this->seoScore() }}%
                                                 </span>
-                                            </div>
+                                            </button>
 
+                                            <div class="collapse" id="blogAdvancedPanel">
                                             <div class="card-body">
+                                                <div class="mb-3">
+                                                    <div
+                                                        class="d-flex justify-content-between align-items-center gap-2">
+                                                        <label class="form-label fw-semibold mb-0">Excerpt</label>
+
+                                                        <button type="button" class="btn btn-sm btn-outline-info"
+                                                            wire:click="generateExcerpt">
+                                                            Generate
+                                                        </button>
+                                                    </div>
+
+                                                    <textarea class="form-control mt-2" rows="3" placeholder="Auto-generated from content if left blank..."
+                                                        wire:model.live.debounce.500ms="excerpt"></textarea>
+
+                                                    @error('excerpt')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+
                                                 <div class="mb-3">
                                                     <div
                                                         class="d-flex justify-content-between align-items-center gap-2">
@@ -629,6 +660,7 @@ new class extends Component {
                                                         </li>
                                                     @endforeach
                                                 </ul>
+                                            </div>
                                             </div>
                                         </div>
 

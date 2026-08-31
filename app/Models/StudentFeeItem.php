@@ -42,6 +42,11 @@ class StudentFeeItem extends Model
     {
         return $this->hasMany(PaymentAllocation::class);
     }
+
+    public function audits()
+    {
+        return $this->hasMany(FeeItemAudit::class)->latest('id');
+    }
     public function progression()
 {
     return $this->belongsTo(\App\Models\EnrollmentProgression::class, 'enrollment_progression_id');

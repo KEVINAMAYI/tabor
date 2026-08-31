@@ -323,13 +323,23 @@ new class extends Component {
         $intake = Intake::findOrFail($this->intakeId);
         $intake->modules()->syncWithoutDetaching($this->selected);
 
-        // For each selected module, assign default lecturer (if set)
+        // Resolve which academic-calendar trimester this intake's start date falls in,
+        // so new intake_modules rows are visible to the trimester-scoped LMS pages.
+        $trimesterId = \App\Models\Trimester::where('start_date', '<=', $intake->starts_at)
+            ->where('end_date', '>=', $intake->starts_at)
+            ->value('id');
+
+        // For each selected module, backfill trimester_id and assign default lecturer (if set)
         foreach ($this->selected as $moduleId) {
             $intakeModule = IntakeModule::where('intake_id', $this->intakeId)
                 ->where('module_id', $moduleId)
                 ->first();
 
             if ($intakeModule) {
+                if ($trimesterId && !$intakeModule->trimester_id) {
+                    $intakeModule->update(['trimester_id' => $trimesterId]);
+                }
+
                 $module = Module::find($moduleId);
 
                 if ($module && $module->default_lecturer_id) {

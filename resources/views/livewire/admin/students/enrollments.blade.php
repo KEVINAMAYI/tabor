@@ -57,10 +57,9 @@ new class extends Component {
                         ->orWhere('payments.reference', 'like', "%{$this->search}%"); // Payment reference search
                 });
             })
-            ->orderBy('students.first_name', 'asc')
             ->select('enrollments.*') // Avoid ambiguous column issues
-            ->distinct() // on the server
-            // ->groupBy('enrollments.id')  // on my local machine
+            ->groupBy('enrollments.id')
+            ->orderBy('students.first_name', 'asc')
             ->paginate($this->perPage);
 
         return [

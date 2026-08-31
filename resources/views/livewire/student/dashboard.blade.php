@@ -33,7 +33,7 @@ new class extends Component {
 
         // 1. My Courses
         $this->myCourses = Enrollment::where('student_id', $student->id)
-            ->where('status', 'approved')
+            ->whereIn('status', ['active', 'course_completed', 'pending_graduation', 'graduated'])
             ->count();
 
         // 2. My Payments

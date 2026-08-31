@@ -9,6 +9,18 @@ class Assessment extends Model
 {
     use HasFactory;
 
+    const TYPE_CAT        = 'CAT';
+    const TYPE_EXAM       = 'Exam';
+    const TYPE_ASSIGNMENT = 'Assignment';
+    const TYPE_QUIZ       = 'Quiz';
+
+    const TYPES = [
+        self::TYPE_CAT        => 'CAT',
+        self::TYPE_EXAM       => 'End-Term Exam',
+        self::TYPE_ASSIGNMENT => 'Assignment',
+        self::TYPE_QUIZ       => 'Quiz',
+    ];
+
     /** Mass‑assignable columns */
     protected $fillable = [
         'intake_module_id',
@@ -18,6 +30,7 @@ class Assessment extends Model
         'max_marks',
         'file_path',
         'original_name',
+        'instructions',
     ];
 
 

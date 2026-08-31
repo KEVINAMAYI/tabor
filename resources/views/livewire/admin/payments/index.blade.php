@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\StudentFeeItem;
 use App\Models\PaymentAllocation;
+use App\Services\PaymentPostingService;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\DB;
@@ -24,12 +25,10 @@ new class extends Component {
     public $studentFilter = '';
     public $allocationFilter = '';
     public $methodFilter = '';
-    public $paymentForFilter = '';
     public $perPage = 10;
 
     public $amount;
     public $payment_method;
-    public $payment_reason;
     public $reference;
     public $paid_at;
     public $enrollment_id;
@@ -54,7 +53,6 @@ new class extends Component {
         return [
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string'],
-            'payment_reason' => ['required', 'string'],
             'reference' => ['nullable', 'string', 'max:255'],
             'paid_at' => ['nullable', 'date'],
             'enrollment_id' => ['nullable', 'exists:enrollments,id'],
@@ -101,11 +99,6 @@ new class extends Component {
         $this->resetPage();
     }
 
-    public function updatedPaymentForFilter(): void
-    {
-        $this->resetPage();
-    }
-
     public function updatedPerPage(): void
     {
         $this->resetPage();
@@ -136,7 +129,7 @@ new class extends Component {
 
         $enrollment = Enrollment::with(['student', 'course'])->findOrFail($id);
 
-        $this->student_search = $enrollment->student?->first_name . ' ' . $enrollment->student?->last_name . ' — ' . $enrollment->course?->title;
+        $this->student_search = $enrollment->student?->first_name . ' ' . $enrollment->student?->last_name . ' - ' . $enrollment->course?->title;
 
         if (empty($this->paymentAllocationRows)) {
             $this->addPaymentAllocationRow();
@@ -181,9 +174,6 @@ new class extends Component {
                 $q->where(function ($query) {
                     $query->where('method', $this->methodFilter)->orWhere('payment_method', $this->methodFilter);
                 });
-            })
-            ->when(filled($this->paymentForFilter), function ($q) {
-                $q->where('payment_reason', $this->paymentForFilter);
             });
 
         $paymentsForSummary = (clone $baseQuery)->get();
@@ -216,8 +206,6 @@ new class extends Component {
             'students' => Student::query()->orderBy('first_name')->orderBy('last_name')->get(),
 
             'methods' => Payment::query()->selectRaw('COALESCE(method, payment_method) as method_name')->whereRaw('COALESCE(method, payment_method) IS NOT NULL')->distinct()->orderBy('method_name')->pluck('method_name'),
-
-            'paymentReasons' => Payment::query()->whereNotNull('payment_reason')->distinct()->orderBy('payment_reason')->pluck('payment_reason'),
 
             'allocationStudents' => Student::query()->orderBy('first_name')->orderBy('last_name')->get(),
 
@@ -424,8 +412,7 @@ new class extends Component {
                 'unallocated_balance' => $amount,
                 'method' => $this->payment_method,
                 'payment_method' => $this->payment_method,
-                'payment_reason' => $this->payment_reason,
-                'status' => 'completed', // 'unallocated', since we will allocate immediately after
+                'status' => 'completed',
                 'reference' => $this->reference,
                 'payment_date' => $this->paid_at ?: now()->toDateString(),
                 'paid_at' => $this->paid_at ?: now(),
@@ -433,6 +420,12 @@ new class extends Component {
             ]);
 
             $this->applyPaymentAllocationRows($payment->fresh());
+
+            // Auto-allocate any remaining unallocated balance using priority order
+            $freshPayment = $payment->fresh();
+            if ((float) $freshPayment->unallocated_balance > 0) {
+                app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+            }
 
             DB::commit();
 
@@ -466,7 +459,7 @@ new class extends Component {
         $this->paid_at = optional($payment->payment_date ?? $payment->paid_at)->format('Y-m-d');
         $this->payer = $payment->payer;
 
-        $this->student_search = $payment->enrollment ? trim(($payment->enrollment->student?->first_name ?? '') . ' ' . ($payment->enrollment->student?->last_name ?? '') . ' — ' . ($payment->enrollment->course?->title ?? '')) : '';
+        $this->student_search = $payment->enrollment ? trim(($payment->enrollment->student?->first_name ?? '') . ' ' . ($payment->enrollment->student?->last_name ?? '') . ' - ' . ($payment->enrollment->course?->title ?? '')) : '';
 
         $this->paymentAllocationRows = $payment->allocations
             ->map(function ($allocation) {
@@ -513,15 +506,19 @@ new class extends Component {
                 'unallocated_balance' => $amount,
                 'method' => $this->payment_method,
                 'payment_method' => $this->payment_method,
-                'payment_reason' => $this->payment_reason,
                 'reference' => $this->reference,
-                'status' => 'completed', // 'unallocated', since we will allocate immediately after
+                'status' => 'completed',
                 'payment_date' => $this->paid_at ?: now()->toDateString(),
                 'paid_at' => $this->paid_at ?: now(),
                 'payer' => $this->payer,
             ]);
 
             $this->applyPaymentAllocationRows($payment->fresh());
+
+            $freshPayment = $payment->fresh();
+            if ((float) $freshPayment->unallocated_balance > 0) {
+                app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+            }
 
             DB::commit();
 
@@ -636,7 +633,6 @@ new class extends Component {
         $this->student_search = '';
         $this->amount = null;
         $this->payment_method = null;
-        $this->payment_reason = null;
         $this->reference = null;
         $this->paid_at = now()->toDateString();
         $this->payer = null;
@@ -757,16 +753,6 @@ new class extends Component {
                         </select>
                     </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Payment For</label>
-                        <select class="form-select" wire:model.live="paymentForFilter">
-                            <option value="">All</option>
-                            @foreach ($paymentReasons as $reason)
-                                <option value="{{ $reason }}">{{ ucfirst($reason) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <div class="col-md-1 text-end">
                         @can('create-payments')
                             <button type="button" wire:click="openCreatePaymentModal" class="btn btn-primary w-100">
@@ -859,7 +845,7 @@ new class extends Component {
                                                                     ' ' .
                                                                     ($student?->last_name ?? ''),
                                                             ) .
-                                                            ' — ' .
+                                                            ' - ' .
                                                             ($course?->title ?? '');
                                                     @endphp
 
@@ -903,20 +889,6 @@ new class extends Component {
                                             <option value="cash">Cash</option>
                                         </select>
                                         @error('payment_method')
-                                            <small class="text-danger">{{ $message }}</small>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Payment For</label>
-                                        <select wire:model="payment_reason" class="form-control">
-                                            <option value="">Select Reason</option>
-                                            <option value="tuition">Tuition</option>
-                                            <option value="exam">Exam</option>
-                                            <option value="attachment">Industrial Attachment</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                        @error('payment_reason')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
@@ -1014,7 +986,7 @@ new class extends Component {
                                                         <option value="">Select fee item</option>
                                                         @foreach ($rowFeeItems as $item)
                                                             <option value="{{ $item->id }}">
-                                                                {{ $item->description }} — Bal KES
+                                                                {{ $item->description }} - Bal KES
                                                                 {{ number_format($item->balance, 2) }}
                                                             </option>
                                                         @endforeach
@@ -1197,7 +1169,6 @@ new class extends Component {
                                 <th class="text-end">Amount</th>
                                 <th>Allocation</th>
                                 <th>Method</th>
-                                <th>For</th>
                                 <th>Paid On</th>
                                 <th>Narration</th>
                                 <th>Action</th>
@@ -1266,7 +1237,6 @@ new class extends Component {
                                     </td>
 
                                     <td>{{ ucfirst($payment->method ?? ($payment->payment_method ?? 'N/A')) }}</td>
-                                    <td>{{ ucfirst($payment->payment_reason ?? 'N/A') }}</td>
                                     <td>{{ optional($payment->payment_date ?? $payment->paid_at)->format('d/m/y') }}
                                     </td>
                                     <td>{{ $payment->payer }}</td>
@@ -1299,7 +1269,7 @@ new class extends Component {
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="text-center text-muted">No payments found.</td>
+                                    <td colspan="11" class="text-center text-muted">No payments found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

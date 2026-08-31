@@ -69,18 +69,25 @@ Route::get('/migrate-finance-rollback', function () {
     return nl2br(Artisan::output());
 });
 
-/* Route::get('/team-image/{filename}', function ($filename) {
-    $path = storage_path('app/public/team/' . $filename);
+Route::get('/migrate-lms', function () {
+    Artisan::call('migrate', [
+        '--path'  => 'database/migrations/lms',
+        '--force' => true,
+    ]);
+    return nl2br(Artisan::output());
+});
 
-    if (!file_exists($path)) {
-        abort(404);
-    }
-
-    return response()->file($path);
-}); */
+Route::get('/migrate-lms-rollback', function () {
+    Artisan::call('migrate:rollback', [
+        '--path'  => 'database/migrations/lms',
+        '--force' => true,
+    ]);
+    return nl2br(Artisan::output());
+});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/dashboard/admin.php';
 require __DIR__ . '/dashboard/student.php';
+require __DIR__ . '/dashboard/lecturer.php';
 require __DIR__ . '/front-end/index.php';
 require __DIR__ . '/pdf-generators/index.php';

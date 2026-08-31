@@ -1,10 +1,10 @@
 <?php
 
+use App\Actions\Student\CreateStudentAccountAction;
 use App\Exports\StudentExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Student;
 use App\Models\Course;
-use App\Models\User;
 use App\Models\Intake;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
@@ -12,7 +12,6 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Hash;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
@@ -94,48 +93,23 @@ new class extends Component {
         $this->validate();
 
         try {
-            DB::beginTransaction();
-
-            $user = User::create([
-                'name' => $this->first_name . ' ' . $this->last_name,
+            $student = app(CreateStudentAccountAction::class)->execute([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'email' => $this->email,
-                'password' => Hash::make($this->phone_number),
-                'active' => true,
-            ]);
-
-            // Create the student
-            if (!$this->admission_number) {
-                $admissionnumber = Student::generateAdmissionNumber();
-            } else {
-                $admissionnumber = $this->admission_number;
-            }
-            // Generate the next admission number
-
-            $this->admission_number = $admissionnumber;
-
-            // Create the student with the next admission number
-            $student = Student::create([
-                'first_name' => $this->first_name,
-                'last_name' => $this->last_name,
-                'admission_number' => $this->admission_number,
-                'email' => $this->email,
-                'phone' => $this->phone_number,
+                'phone_number' => $this->phone_number,
                 'id_number' => $this->id_number,
-                'dob' => $this->date_of_birth,
+                'date_of_birth' => $this->date_of_birth,
                 'address' => $this->address,
                 'country' => $this->country,
                 'highest_level_of_education' => $this->highest_level_of_education,
+                'admission_number' => $this->admission_number ?: null,
                 'id_url' => $this->id_url ? $this->id_url->store('students/ids', 'public') : null,
                 'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates', 'public') : null,
                 'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size', 'public') : null,
-                'user_id' => $user->id,
             ]);
 
-            $user->assignRole('student');
-
-            DB::commit();
+            $this->admission_number = $student->admission_number;
 
             $this->resetForm();
             $this->resetPage();
@@ -143,10 +117,6 @@ new class extends Component {
 
             LivewireAlert::text('Student added successfully.!')->success()->toast()->position('top-end')->show();
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            dd($e->getMessage());
-
             Log::error('Error adding student: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to add student.!')->error()->toast()->position('top-end')->show();

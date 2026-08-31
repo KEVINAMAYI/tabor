@@ -1,12 +1,17 @@
 <?php
 
 use App\Models\BlogPost;
+use App\Models\BlogPostLike;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
 new #[Layout('components.layouts.app.frontend')] class extends Component {
     public BlogPost $post;
+    public bool $liked = false;
+    public int $likesCount = 0;
 
     public function mount(string $uuid): void
     {
@@ -15,6 +20,47 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             ->published()
             ->where('uuid', $uuid)
             ->firstOrFail();
+
+        $this->likesCount = $this->post->likes()->count();
+        $this->liked = BlogPostLike::query()
+            ->where('blog_post_id', $this->post->id)
+            ->where('visitor_token', $this->visitorToken())
+            ->exists();
+    }
+
+    public function toggleLike(): void
+    {
+        $token = $this->visitorToken();
+
+        $like = BlogPostLike::query()
+            ->where('blog_post_id', $this->post->id)
+            ->where('visitor_token', $token)
+            ->first();
+
+        if ($like) {
+            $like->delete();
+            $this->liked = false;
+        } else {
+            BlogPostLike::create([
+                'blog_post_id' => $this->post->id,
+                'visitor_token' => $token,
+            ]);
+            $this->liked = true;
+        }
+
+        $this->likesCount = $this->post->likes()->count();
+    }
+
+    private function visitorToken(): string
+    {
+        $token = request()->cookie('tabor_visitor');
+
+        if (! $token) {
+            $token = (string) Str::uuid();
+            Cookie::queue('tabor_visitor', $token, 60 * 24 * 365 * 5);
+        }
+
+        return $token;
     }
 
     public function title(): string
@@ -57,8 +103,15 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                 <h1 class="fw-bold mb-3">{{ $post->title }}</h1>
 
                 @if ($post->excerpt)
-                    <p class="lead text-muted mb-0">{{ $post->excerpt }}</p>
+                    <p class="lead text-muted mb-3">{{ $post->excerpt }}</p>
                 @endif
+
+                <button type="button" wire:click="toggleLike"
+                    class="btn btn-sm {{ $liked ? 'btn-danger' : 'btn-outline-danger' }} d-inline-flex align-items-center gap-1">
+                    <i class="ti {{ $liked ? 'ti-heart-filled' : 'ti-heart' }}"></i>
+                    <span>{{ $likesCount }}</span>
+                    <span class="d-none d-sm-inline">{{ $liked ? 'Liked' : 'Like' }}</span>
+                </button>
             </div>
         </div>
     </section>
@@ -68,7 +121,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
             <div class="container">
                 <div class="mx-auto" style="max-width: 1000px;">
                     <img src="{{ asset('storage/' . $post->featured_image) }}" class="img-fluid rounded shadow-sm w-100"
-                        style="max-height: 520px; object-fit: cover;" alt="{{ $post->title }}">
+                        style="max-height: 520px; object-fit: contain; background-color: #f1f3f7;" alt="{{ $post->title }}">
                 </div>
             </div>
         </section>
@@ -94,7 +147,7 @@ new #[Layout('components.layouts.app.frontend')] class extends Component {
                                 @if ($related->featured_image)
                                     <a href="{{ route('front-end.blog.show', $related->uuid) }}">
                                         <img src="{{ asset('storage/' . $related->featured_image) }}"
-                                            class="card-img-top" style="height: 180px; object-fit: cover;"
+                                            class="card-img-top" style="height: 180px; object-fit: contain; background-color: #f1f3f7;"
                                             alt="{{ $related->title }}">
                                     </a>
                                 @endif

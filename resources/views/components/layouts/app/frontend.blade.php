@@ -239,7 +239,7 @@
                                 class="{{ request()->routeIs('front-end.blog.index') || request()->routeIs('front-end.blog.show')
                                     ? 'btn btn-dark btn-sm py-2 px-4 mx-1'
                                     : 'nav-link fs-4 fw-bold text-dark link-primary px-3' }}">
-                                Blogss
+                                Blogs
                             </a>
                         </li>
                         <li class="nav-item">
@@ -406,9 +406,9 @@
                         Contact
                     </a>
                 </li>
-                <li class="nav-item d-flex align-items-center">
+                {{-- <li class="nav-item d-flex align-items-center">
                     <ul class="nav flex-row flex-nowrap gap-3">
-                        <li>
+                         <li>
                             <a href="https://api.whatsapp.com/send?phone=254115278369&text=Hello, I'm interested in learning more about Tabor TVET courses."
                                 target="_blank" class="nav-link fs-4 fw-bold text-dark link-primary px-3"
                                 data-bs-toggle="tooltip" data-bs-title="Chat with us">
@@ -423,7 +423,7 @@
                             </a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <li class="mt-3">
                     <a href="{{ route('login') }}" class="btn btn-primary w-100">Log In</a>

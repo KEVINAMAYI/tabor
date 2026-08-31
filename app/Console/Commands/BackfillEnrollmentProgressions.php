@@ -26,7 +26,10 @@ class BackfillEnrollmentProgressions extends Command
     protected $signature = 'finance:backfill-progressions
         {--dry-run : Show counts only}
         {--yes : Run without confirmation}
-        {--skip-allocations : Do not rebuild payment allocations}';
+        {--skip-allocations : Do not rebuild payment allocations}
+        {--incremental : Skip enrollments that already have progressions}
+        {--enrollment_id= : Target a single enrollment by ID}
+        {--skip-if-progressions-exist : Alias for --incremental}';
 
     protected $description = 'Backfill finance data: courses, enrollments, progressions, fee items, payments, and allocations';
 
@@ -200,29 +203,47 @@ class BackfillEnrollmentProgressions extends Command
         $this->info('Backfilling enrollment progressions...');
 
         $processed = 0;
+        $skipped = 0;
 
-        Enrollment::query()
+        $isIncremental = $this->option('incremental') || $this->option('skip-if-progressions-exist');
+        $targetEnrollmentId = $this->option('enrollment_id');
+
+        $query = Enrollment::query()
             ->whereIn('status', $this->billableEnrollmentStatuses)
             ->with(['course', 'assignedStartTrimester.academicYear'])
             ->whereNotNull('assigned_start_trimester_id')
-            ->orderBy('id')
-            ->chunkById(100, function ($enrollments) use (&$processed) {
-                foreach ($enrollments as $enrollment) {
-                    $progressions = $this->createProgressionsUpToCurrentTrimester($enrollment);
+            ->orderBy('id');
 
-                    foreach ($progressions as $progression) {
-                        if ((int) $progression->trimester_sequence === 1) {
-                            app(FeeGenerationService::class)
-                                ->generateStudentOnceFees($enrollment);
-                        }
+        if ($targetEnrollmentId) {
+            $query->where('id', $targetEnrollmentId);
+        }
 
+        $query->chunkById(100, function ($enrollments) use (&$processed, &$skipped, $isIncremental) {
+            foreach ($enrollments as $enrollment) {
+                if ($isIncremental && $enrollment->progressions()->exists()) {
+                    $skipped++;
+                    continue;
+                }
+
+                $progressions = $this->createProgressionsUpToCurrentTrimester($enrollment);
+
+                foreach ($progressions as $progression) {
+                    if ((int) $progression->trimester_sequence === 1) {
                         app(FeeGenerationService::class)
-                            ->generateChargesForProgression($progression);
+                            ->generateStudentOnceFees($enrollment);
                     }
 
-                    $processed++;
+                    app(FeeGenerationService::class)
+                        ->generateChargesForProgression($progression);
                 }
-            });
+
+                $processed++;
+            }
+        });
+
+        if ($isIncremental && $skipped > 0) {
+            $this->info("Skipped {$skipped} enrollment(s) that already have progressions (--incremental).");
+        }
 
         $this->info("Progressions processed for {$processed} enrollment(s).");
     }

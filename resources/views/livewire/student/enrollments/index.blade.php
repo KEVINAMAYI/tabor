@@ -67,27 +67,28 @@ new class extends Component {
                     @forelse($enrollments as $enrollment)
                         <tr>
                             <td>{{ $enrollment->course->title }}</td>
-                            <td>{{ $enrollment->intake->name }}</td>
+                            <td>{{ $enrollment->currentTrimesterLabel() }}</td>
                             <td>{{ number_format($enrollment->payments->sum('amount'), 2) }}</td>
                             @php
                                 $totalPaid = $enrollment->payments->sum('amount');
                                 $courseFee = $enrollment->course->price;
                                 $balance = $courseFee - $totalPaid;
                             @endphp
-                            <td class="{{ $balance > 0 && $enrollment->status == 'approved' ? 'text-danger' : '' }}">
+                            <td class="{{ $balance > 0 && $enrollment->status == 'active' ? 'text-danger' : '' }}">
                                 {{ number_format($balance, 2) }}
-                                @if ($balance > 0 && $enrollment->status == 'approved')
+                                @if ($balance > 0 && $enrollment->status == 'active')
                                     <button wire:click="payEnrollment({{ $enrollment->id }})" class="float-end btn btn-success btn-sm">Pay</button>
                                 @endif
                             </td>
                             <td>
                                     <span class="badge
-                                        @if($enrollment->status == 'approved') bg-primary
-                                        @elseif($enrollment->status == 'completed') bg-success
+                                        @if($enrollment->status == 'active') bg-primary
+                                        @elseif(in_array($enrollment->status, ['course_completed', 'pending_graduation', 'graduated'])) bg-success
                                         @elseif($enrollment->status == 'rejected') bg-danger
+                                        @elseif(in_array($enrollment->status, ['withdrawn', 'cancelled'])) bg-secondary
                                         @else bg-warning
                                         @endif">
-                                        {{ ucfirst($enrollment->status=='approved' ? 'Active' : $enrollment->status) }}
+                                        {{ ucwords(str_replace('_', ' ', $enrollment->status)) }}
                                     </span>
                             </td>
                             <td>

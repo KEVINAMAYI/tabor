@@ -20,6 +20,7 @@ class Payment extends Model
         'paid_at' => 'datetime',
         'amount' => 'decimal:2',
         'unallocated_balance' => 'decimal:2',
+        'is_sponsored' => 'boolean',
     ];
 
     /* -----------------------------------------------------------------
@@ -41,6 +42,16 @@ class Payment extends Model
     public function allocations()
     {
         return $this->hasMany(PaymentAllocation::class);
+    }
+
+    public function refunds()
+    {
+        return $this->hasMany(PaymentRefund::class);
+    }
+
+    public function totalRefunded(): float
+    {
+        return (float) $this->refunds()->where('status', 'processed')->sum('amount');
     }
 
     public function course()

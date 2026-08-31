@@ -66,6 +66,42 @@ class RolesAndPermissionsSeeder extends Seeder
             'delete-payments',
             'give-discounts',
 
+            // Accounting / General Ledger
+            'view-chart-of-accounts',
+            'create-chart-of-accounts',
+            'edit-chart-of-accounts',
+            'manage-accounting-periods',
+            'view-journal-entries',
+            'create-journal-entries',
+            'approve-journal-entries',
+            'view-trial-balance',
+
+            // Accounting / Petty Cash & Imprest (Phase 2)
+            'view-vote-heads',
+            'manage-vote-heads',
+            'view-petty-cash',
+            'manage-petty-cash-custodians',
+            'create-petty-cash-expense',
+            'approve-petty-cash-expense',
+
+            // Accounting / Budget Management (Phase 3)
+            'view-budgets',
+            'manage-budgets',
+
+            // Accounting / Procurement & Supplier Payments (Phase 4)
+            'view-suppliers',
+            'manage-suppliers',
+            'view-purchase-requisitions',
+            'create-purchase-requisitions',
+            'approve-purchase-requisitions-department',
+            'approve-purchase-requisitions-finance',
+            'view-purchase-orders',
+            'create-purchase-orders',
+            'record-goods-received',
+            'view-supplier-invoices',
+            'record-supplier-invoices',
+            'create-supplier-payments',
+
             //reports
             'view-reports',
 
@@ -102,6 +138,45 @@ class RolesAndPermissionsSeeder extends Seeder
                 'create-payments',
                 'view-payments',
                 'edit-payments',
+                'view-reports',
+                // Segregation of duties (SRS "Journal Approval"): finance-manager
+                // can view/create GL records but not approve journal entries or
+                // open/close/lock accounting periods.
+                'view-chart-of-accounts',
+                'view-journal-entries',
+                'create-journal-entries',
+                'view-trial-balance',
+                // Petty Cash: Finance is the natural approver of expenses
+                // submitted by non-finance custodians (Registrar, etc.), so
+                // unlike journal-entry approval this isn't withheld — but
+                // vote-head master data stays with admin, same as
+                // chart-of-accounts create/edit.
+                'view-vote-heads',
+                'view-petty-cash',
+                'manage-petty-cash-custodians',
+                'create-petty-cash-expense',
+                'approve-petty-cash-expense',
+                // SRS §8: "Finance shall prepare annual budgets" — budget
+                // prep/edit is explicitly a Finance responsibility, unlike
+                // vote-head master data.
+                'view-budgets',
+                'manage-budgets',
+                // Procurement: both approval stages granted to finance-manager
+                // (no segregation-of-duties reason to withhold department
+                // approval, since finance-manager already holds the finance
+                // approval anyway — unlike journal-entry approval above).
+                // manage-suppliers (master data) stays admin-only.
+                'view-suppliers',
+                'view-purchase-requisitions',
+                'create-purchase-requisitions',
+                'approve-purchase-requisitions-department',
+                'approve-purchase-requisitions-finance',
+                'view-purchase-orders',
+                'create-purchase-orders',
+                'record-goods-received',
+                'view-supplier-invoices',
+                'record-supplier-invoices',
+                'create-supplier-payments',
             ],
 
             'student' => [

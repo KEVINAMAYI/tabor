@@ -126,7 +126,7 @@ new class extends Component {
             ->orderBy('courses.title')
             ->orderByRaw(
                 "
-        FIELD(charge_timing, 'on_enrollment', 'every_trimester', 'specific_trimester', 'on_completion')
+        FIELD(charge_timing, 'on_enrollment', 'every_trimester', 'every_trimester_after_first', 'specific_trimester', 'on_completion', 'on_course_completion', 'on_graduation_processing')
     ",
             )
             ->orderBy('trimester_sequence')

@@ -51,6 +51,12 @@ class CreateEnrollmentAction
 
             app(FeeGenerationService::class)
                 ->generateChargesForProgression($progression);
+
+            if (!empty($data['fee_overrides'])) {
+                app(FeeGenerationService::class)
+                    ->applyFeeOverrides($enrollment, $data['fee_overrides']);
+            }
+
             return $enrollment->fresh();
         });
     }

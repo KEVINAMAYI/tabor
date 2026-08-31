@@ -13,7 +13,8 @@ class IntakeModule extends Pivot
 
     // we kept an auto‑increment id, so leave $incrementing = true
     protected $fillable = [
-        'intake_id',
+        'intake_id', // legacy — kept for historical data, no longer written by new assignments
+        'trimester_id',
         'module_id',
     ];
 
@@ -21,9 +22,15 @@ class IntakeModule extends Pivot
      | Relationships
      |------------------------------------------------------------ */
 
+    // legacy — superseded by trimester(), kept so old records/UI paths still resolve
     public function intake()
     {
         return $this->belongsTo(Intake::class);
+    }
+
+    public function trimester()
+    {
+        return $this->belongsTo(Trimester::class);
     }
 
     public function enrollments()
@@ -41,26 +48,34 @@ class IntakeModule extends Pivot
     {
         return $this->belongsToMany(
             Lecturer::class,
-            'intake_module_lecturers'   // child pivot table
+            'intake_module_lecturers',
+            'intake_module_id',
+            'lecturer_id'
         )->withTimestamps();
     }
 
     // teaching sessions (for attendance)
     public function sessions()
     {
-        return $this->hasMany(ModuleSession::class);
+        return $this->hasMany(ModuleSession::class, 'intake_module_id');
     }
 
     // materials uploaded for this module in this intake
     public function materials()
     {
-        return $this->hasMany(Material::class);
+        return $this->hasMany(Material::class, 'intake_module_id');
     }
 
-    // assessments (quizzes / assignments) in this intake
+    // assessments (CATs / exams / assignments) in this intake
     public function assessments()
     {
-        return $this->hasMany(Assessment::class);
+        return $this->hasMany(Assessment::class, 'intake_module_id');
+    }
+
+    // announcements posted by lecturers
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class, 'intake_module_id')->orderByDesc('is_pinned')->orderByDesc('published_at');
     }
 
 

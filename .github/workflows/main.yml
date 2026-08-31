@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - uat
+      - new-uat
 
 jobs:
   deploy-master:
@@ -24,9 +24,9 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /public_html/
 
-  deploy-uat:
-    name: 💰 Deploy uat branch
-    if: github.ref == 'refs/heads/uat'
+  deploy-finance:
+    name: 💰 Deploy finance branch
+    if: github.ref == 'refs/heads/new-uat'
     runs-on: ubuntu-latest
 
     steps:

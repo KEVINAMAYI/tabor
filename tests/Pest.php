@@ -45,3 +45,27 @@ function something()
 {
     // ..
 }
+
+/**
+ * Shared helper for Accounting tests: creates a FinancialYear + a single
+ * AccountingPeriod covering the given range, since JournalPostingService
+ * refuses to post outside an open period.
+ */
+function makeOpenPeriod(string $start = '2026-08-01', string $end = '2026-08-31', string $status = 'open'): \App\Models\AccountingPeriod
+{
+    $year = \App\Models\FinancialYear::create([
+        'name' => 'FY-' . $start,
+        'start_date' => '2026-01-01',
+        'end_date' => '2026-12-31',
+        'active' => true,
+    ]);
+
+    return \App\Models\AccountingPeriod::create([
+        'financial_year_id' => $year->id,
+        'name' => 'Period ' . $start,
+        'period_number' => (int) date('n', strtotime($start)),
+        'start_date' => $start,
+        'end_date' => $end,
+        'status' => $status,
+    ]);
+}

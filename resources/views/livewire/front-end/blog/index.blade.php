@@ -18,6 +18,7 @@ new #[Layout('components.layouts.app.frontend')] #[Title('Blogs')] class extends
         return [
             'posts' => BlogPost::query()
                 ->with('category')
+                ->withCount('likes')
                 ->published()
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
@@ -95,7 +96,7 @@ new #[Layout('components.layouts.app.frontend')] #[Title('Blogs')] class extends
                             @if ($post->featured_image)
                                 <a href="{{ route('front-end.blog.show', $post->uuid) }}">
                                     <img src="{{ asset('storage/' . $post->featured_image) }}" class="card-img-top"
-                                        style="height: 220px; object-fit: cover;" alt="{{ $post->title }}">
+                                        style="height: 220px; object-fit: contain; background-color: #f1f3f7;" alt="{{ $post->title }}">
                                 </a>
                             @endif
 
@@ -109,6 +110,10 @@ new #[Layout('components.layouts.app.frontend')] #[Title('Blogs')] class extends
 
                                     <span class="text-muted small ms-1">
                                         {{ $post->published_at?->format('d M Y') }}
+                                    </span>
+
+                                    <span class="text-muted small ms-1">
+                                        <i class="ti ti-heart"></i> {{ $post->likes_count }}
                                     </span>
                                 </div>
 

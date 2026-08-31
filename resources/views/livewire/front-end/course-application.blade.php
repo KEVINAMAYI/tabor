@@ -3,20 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Intake;
-use App\Models\Student;
-use App\Models\User;
-use App\Notifications\EnrollmentStatus;
-use Illuminate\Support\Facades\Hash;
+use App\Models\CourseApplication;
+use App\Models\Trimester;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Illuminate\Support\Facades\Notification;
-use App\Notifications\NewEnrollmentSubmitted;
+use App\Notifications\NewCourseApplicationSubmitted;
 
 new #[Layout('components.layouts.app.frontend')]
 class extends Component {
@@ -25,8 +20,8 @@ class extends Component {
 
     // Declare variables that will be used in the component
     public $first_name, $last_name, $admission_number, $email, $phone_number, $address, $country, $highest_level_of_education, $status;
-    public $selected_course_id, $selected_intake_id, $id_url, $kcse_certificate, $passport_size_url, $date_of_birth;
-    public $courses = [], $intakes = [];
+    public $selected_course_id, $selected_trimester_id, $id_url, $kcse_certificate, $passport_size_url, $date_of_birth;
+    public $courses = [], $trimesters = [];
     public $terms = false;
     public $step = 1;
 
@@ -36,102 +31,54 @@ class extends Component {
         $this->courses = Course::all();
         $this->selected_course_id = !empty($course_id) ? $course_id : $this->courses->first()->id;
 
-        /* $this->intakes = Intake::whereHas('intakeModules.module', function ($query) use ($course_id) {
-            $query->where('course_id', $course_id);
-        })->distinct()->get(); */
+        // Only offer trimesters that haven't ended yet (current + upcoming intakes)
+        $this->trimesters = Trimester::query()
+            ->where('end_date', '>=', now())
+            ->orderBy('start_date')
+            ->get();
 
-        $this->intakes = Intake::all();
-
-
-        $this->selected_intake_id = $this->intakes->first()->id ?? null;
+        $this->selected_trimester_id = $this->trimesters->first()->id ?? null;
     }
 
 
-    public function addStudent()
+    public function submitApplication()
     {
 
         $this->validateStep(1);
         $this->validateStep(2);
-        $this->validateStep(3);
         $this->validateStep(4);
 
         try {
-            DB::beginTransaction();
-
-            // Create the user
-            $user = User::create([
-                'name' => $this->first_name . ' ' . $this->last_name,
-                'email' => $this->email,
-                'password' => Hash::make($this->phone_number),
-            ]);
-
-            $admission_number = Student::generateAdmissionNumber();
-            // Set the admission number
-            $this->admission_number = $admission_number;
-
-            // Create the student
-            $student = Student::create([
+            $application = CourseApplication::create([
+                'course_id' => $this->selected_course_id,
+                'preferred_trimester_id' => $this->selected_trimester_id,
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
-                'admission_number' => $this->admission_number,
                 'email' => $this->email,
-                'phone' => $this->phone_number,
-                'dob' => $this->date_of_birth,
+                'phone_number' => $this->phone_number,
                 'address' => $this->address,
                 'country' => $this->country,
+                'date_of_birth' => $this->date_of_birth,
                 'highest_level_of_education' => $this->highest_level_of_education,
                 'id_url' => $this->id_url ? $this->id_url->store('students/ids', 'public') : null,
                 'kcse_certificate' => $this->kcse_certificate ? $this->kcse_certificate->store('students/certificates', 'public') : null,
                 'passport_size_url' => $this->passport_size_url ? $this->passport_size_url->store('students/passport_size', 'public') : null,
-                'user_id' => $user->id,
             ]);
 
-            // Assign the 'student' role
-            $user->assignRole('student');
+            // Ensure the course/trimester relationships are loaded for the notification
+            $application->load(['course', 'preferredTrimester']);
 
-            // Enroll the student in the selected course
-            $enrollment = Enrollment::create([
-                'student_id' => $student->id,
-                'course_id' => $this->selected_course_id,
-                'intake_id' => $this->selected_intake_id,
-                'status' => 'pending',
-                'remarks' => 'Awaiting approval',
-                'enrolled_at' => now(),
-            ]);
-
-            DB::commit();
-
-            // Ensure the course relationship is loaded
-            $enrollment->load('course');
-
-            // Send email notification to the student about their enrollment status
-            /* if ($user) {
-                $notification = new EnrollmentStatus(
-                    $this->status,
-                    $enrollment->course->title ?? 'Unknown Program'
-                );
-
-                $user->notify($notification);
-            } */
-
-            //notify admins about new enrollment
+            //notify admins about the new application
             Notification::route('mail', 'office@tabor.ac.ke')
-            ->notify(new NewEnrollmentSubmitted($enrollment));
+                ->notify(new NewCourseApplicationSubmitted($application));
 
             $this->resetForm();
-
-            /* LivewireAlert::text('Application submitted successfully!')
-            ->success()
-            ->toast()
-            ->position('top-end')
-            ->show(); */
 
             session()->flash('success', 'Application submitted successfully!');
             return redirect()->route('front-end.courses');
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error adding student: ' . $e->getMessage());
+            Log::error('Error submitting course application: ' . $e->getMessage());
 
             LivewireAlert::text('Failed to submit application!')
                 ->error()
@@ -153,7 +100,7 @@ class extends Component {
         $this->country = '';
         $this->highest_level_of_education = '';
         $this->selected_course_id = null;
-        $this->selected_intake_id = null;
+        $this->selected_trimester_id = null;
         $this->id_url = null;
         $this->kcse_certificate = null;
         $this->passport_size_url = null;
@@ -167,7 +114,7 @@ class extends Component {
         if ($step === 1) {
             $this->validate([
                 'selected_course_id' => 'required|exists:courses,id',
-                'selected_intake_id' => 'required|exists:intakes,id',
+                'selected_trimester_id' => 'required|exists:trimesters,id',
             ]);
         }
 
@@ -383,7 +330,7 @@ class extends Component {
                             <h4 class="card-title mb-0">Online Course Application</h4>
 
 
-                            <form x-data="{ step: @entangle('step') }" wire:submit.prevent="addStudent"
+                            <form x-data="{ step: @entangle('step') }" wire:submit.prevent="submitApplication"
                                   class="wizard-form mt-5">
 
 
@@ -413,13 +360,13 @@ class extends Component {
                                     <div class="row g-4">
                                         <div class="col-md-6">
                                             <label class="form-label">Preferred Intake</label>
-                                            <select wire:model="selected_intake_id" class="form-select">
+                                            <select wire:model="selected_trimester_id" class="form-select">
                                                 <option value="">Select Intake</option>
-                                                @foreach($intakes as $intake)
-                                                    <option value="{{ $intake->id }}">{{ $intake->name }}</option>
+                                                @foreach($trimesters as $trimester)
+                                                    <option value="{{ $trimester->id }}">{{ $trimester->start_date->format('M Y') }}</option>
                                                 @endforeach
                                             </select>
-                                            @error('selected_intake_id') <span
+                                            @error('selected_trimester_id') <span
                                                 class="text-danger">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-md-6">
@@ -587,7 +534,8 @@ class extends Component {
                                             <strong>Course:</strong> {{ optional($courses->find($selected_course_id))->title ?? '-' }}
                                         </p>
                                         <p>
-                                            <strong>Intake:</strong> {{ optional($intakes->find($selected_intake_id))->name ?? '-' }}
+                                            <strong>Intake:</strong>
+                                            {{ optional($trimesters->find($selected_trimester_id))->start_date?->format('M Y') ?? '-' }}
                                         </p>
                                     </div>
 
@@ -622,9 +570,7 @@ class extends Component {
                                             By checking the box below and submitting my application, I confirm that I
                                             have read and understood this consent statement and voluntarily agree to the
                                             processing of my data and media as described.
-                                            {{-- <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and
-                                                Conditions</a>. --}}
-                                            <a href="{{ route('front-end.terms-conditions') }}" target="_blank">Terms and
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and
                                                 Conditions</a>.
                                         </label>
                                         @error('terms')

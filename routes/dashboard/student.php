@@ -3,26 +3,22 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
-// Group all students routes under the 'student' prefix
-Route::middleware(['auth','active','password_changed'])->prefix('student')->group(function () {
+Route::middleware(['auth', 'active', 'password_changed'])->prefix('student')->group(function () {
 
-    // Route to manage dashboard
-    Volt::route('dashboard', 'student.dashboard')->name('student.dashboard');
+    Volt::route('dashboard',  'student.dashboard')->name('student.dashboard');
+    Volt::route('profile',    'student.profile')->name('student.profile');
 
-    // Route to manage profile
-    Volt::route('profile', 'student.profile')->name('student.profile');
+    // Enrollments / finance
+    Volt::route('enrollments',          'student.enrollments.index')->name('student.enrollments.index');
+    Volt::route('enrollments/view/{id}','student.enrollments.view')->name('student.enrollments.view');
+    Volt::route('payments',             'student.payments')->name('student.payments.index');
 
-    // Route to manage enrollments
-    Volt::route('enrollments', 'student.enrollments.index')->name('student.enrollments.index');
-    Volt::route('enrollments/view/{id}', 'student.enrollments.view')->name('student.enrollments.view');
-
-    // Route to manage payments
-    Volt::route('payments', 'student.payments')->name('student.payments.index');
-
-    // Route to manage attendance
-    Volt::route('attendance', 'student.attendance')->name('student.attendance.index');
-
-    // Route to manage assignments
-    Volt::route('assignments', 'student.assignments')->name('student.assignments.index');
-
+    // LMS
+    Volt::route('modules',                    'student.modules')->name('student.modules.index');
+    Volt::route('modules/{intakeModule}',     'student.module-view')->name('student.module.view');
+    Volt::route('grades',                     'student.grades')->name('student.grades.index');
+    Volt::route('timetable',                  'student.timetable')->name('student.timetable.index');
+    Volt::route('announcements',              'student.announcements')->name('student.announcements.index');
+    Volt::route('attendance',                 'student.attendance')->name('student.attendance.index');
+    Volt::route('assignments',                'student.assignments')->name('student.assignments.index');
 });

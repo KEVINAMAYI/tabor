@@ -15,7 +15,7 @@ new class extends Component {
 
     public $enrollment;
     public $activeCourseModules;
-    public $intakeId;
+    public $trimesterIds;
     public $selectedModuleId;
     public $materials = [];
     public $assessments = [];
@@ -24,13 +24,16 @@ new class extends Component {
 
     public function mount($id)
     {
-        $this->enrollment = Enrollment::with(['course', 'intake'])->findOrFail($id);
+        $this->enrollment = Enrollment::with(['course'])->findOrFail($id);
 
-        $this->intakeId = $this->enrollment->intake->id;
+        $this->trimesterIds = $this->enrollment->resolvedTrimesterIds();
 
-        $this->activeCourseModules = $this->enrollment->intake
-            ->modules()
-            ->where('course_id', $this->enrollment->course->id)
+        $this->activeCourseModules = \App\Models\Module::where('course_id', $this->enrollment->course->id)
+            ->whereIn('id', function ($query) {
+                $query->select('module_id')
+                    ->from('intake_modules')
+                    ->whereIn('trimester_id', $this->trimesterIds);
+            })
             ->get();
     }
 
@@ -111,7 +114,7 @@ new class extends Component {
 
     public function getIntakeModuleId()
     {
-        $intakeModule = IntakeModule::where('intake_id', $this->intakeId)
+        $intakeModule = IntakeModule::whereIn('trimester_id', $this->trimesterIds)
             ->where('module_id', $this->selectedModuleId)
             ->first();
 
@@ -495,7 +498,6 @@ new class extends Component {
                                         @php
                                             $course = $enrollment->course;
                                             $modules = $course->modules;
-                                            $intake = $enrollment->intake;
                                             $enrollmentStatus = $enrollment->status ?? 'In Progress'; // Default status
                                         @endphp
                                         <tr class="search-items">
@@ -518,7 +520,7 @@ new class extends Component {
                                                                 data-name="{{ $course->title }}">
                                                                 {{ $course->title }}</h6>
                                                             <small class="text-muted d-block mb-1">
-                                                                {{ 'Intake: ' }}{{ $intake->name ?? '' }}
+                                                                {{ $enrollment->currentTrimesterLabel() }}
                                                             </small>
                                                             <span class="usr-course-amount fs-3"
                                                                   data-amount="">{{ 'Fee: KES ' }}{{ number_format($course->price, 2) }}</span>

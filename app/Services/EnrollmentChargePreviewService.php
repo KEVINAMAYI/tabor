@@ -10,7 +10,7 @@ use App\Models\StudentFeeItem;
 
 class EnrollmentChargePreviewService
 {
-    public function preview(Student $student, Course $course): array
+    public function preview(?Student $student, Course $course): array
     {
         $items = [];
 
@@ -24,7 +24,7 @@ class EnrollmentChargePreviewService
             ->get();
 
         foreach ($studentOnceFees as $fee) {
-            $alreadyCharged = StudentFeeItem::query()
+            $alreadyCharged = $student && StudentFeeItem::query()
                 ->where('student_id', $student->id)
                 ->where('fee_definition_id', $fee->id)
                 ->exists();
@@ -35,6 +35,8 @@ class EnrollmentChargePreviewService
                     'description' => $fee->name,
                     'timing' => 'Once in student lifetime',
                     'amount' => (float) $fee->default_amount,
+                    'fee_definition_id' => $fee->id,
+                    'course_fee_plan_id' => null,
                 ];
             }
         }
@@ -60,6 +62,8 @@ class EnrollmentChargePreviewService
                     default => $plan->charge_timing,
                 },
                 'amount' => (float) $plan->amount,
+                'fee_definition_id' => $plan->fee_definition_id,
+                'course_fee_plan_id' => $plan->id,
             ];
         }
 

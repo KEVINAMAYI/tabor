@@ -16,7 +16,9 @@
 <div id="main-wrapper">
 
     @role('student')
-       @include('partials.sidebar-student')
+        @include('partials.sidebar-student')
+    @elserole('lecturer')
+        @include('partials.sidebar-lecturer')
     @else
         @include('partials.sidebar-admin')
     @endrole

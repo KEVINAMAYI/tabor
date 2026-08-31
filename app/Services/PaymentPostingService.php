@@ -4,34 +4,89 @@ namespace App\Services;
 
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Models\PaymentMethodAccountMap;
 use App\Models\StudentFeeItem;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use LogicException;
 
 class PaymentPostingService
 {
+    public function __construct(
+        private JournalPostingService $journalPostingService
+    ) {}
+
     public function post(array $data): Payment
     {
-        return DB::transaction(function () use ($data) {
+        $payment = DB::transaction(function () use ($data) {
             $payment = Payment::create([
-                'student_id' => $data['student_id'],
-                'enrollment_id' => $data['enrollment_id'] ?? null,
-                'payment_date' => $data['payment_date'],
-                'amount' => $data['amount'],
+                'student_id'          => $data['student_id'],
+                'enrollment_id'       => $data['enrollment_id'] ?? null,
+                'payment_date'        => $data['payment_date'],
+                'amount'              => $data['amount'],
                 'unallocated_balance' => $data['amount'],
-                'method' => $data['method'] ?? null,
-                'reference' => $data['reference'] ?? null,
-                'receipt_no' => $data['receipt_no'] ?? null,
-                'status' => $data['status'] ?? 'completed',
-                'notes' => $data['notes'] ?? null,
-                'paid_at' => now(),
-                'payer' => $data['payer'] ?? null,
-                'phone' => $data['phone'] ?? null,
+                'method'              => $data['method'] ?? null,
+                'reference'           => $data['reference'] ?? null,
+                'receipt_no'          => $data['receipt_no'] ?? null,
+                'status'              => $data['status'] ?? 'completed',
+                'notes'               => $data['notes'] ?? null,
+                'paid_at'             => now(),
+                'payer'               => $data['payer'] ?? null,
+                'phone'               => $data['phone'] ?? null,
+                'is_sponsored'        => $data['is_sponsored'] ?? false,
+                'sponsored_by'        => $data['sponsored_by'] ?? null,
+                'sponsor_reference'   => $data['sponsor_reference'] ?? null,
             ]);
 
             $this->allocatePayment($payment);
 
             return $payment->fresh()->load(['allocations.studentFeeItem']);
         });
+
+        // GL posting is intentionally outside the allocation transaction's
+        // failure path: money has already changed hands, so a GL error must
+        // never roll back or block the payment itself — see resolveMethodAccountCode().
+        $this->postPaymentToLedger($payment, $data['created_by'] ?? null);
+
+        return $payment;
+    }
+
+    protected function postPaymentToLedger(Payment $payment, ?int $createdBy): void
+    {
+        try {
+            $this->journalPostingService->post([
+                'entry_date'  => $payment->payment_date,
+                'description' => "Payment received — {$payment->reference}",
+                'reference'   => $payment->receipt_no ?? $payment->reference,
+                'source_type' => Payment::class,
+                'source_id'   => $payment->id,
+                'created_by'  => $createdBy,
+                'lines' => [
+                    ['account_code' => $this->resolveMethodAccountCode($payment->method), 'debit' => $payment->amount],
+                    ['account_code' => config('accounting.student_debtors_account_code'), 'credit' => $payment->amount],
+                ],
+            ]);
+        } catch (LogicException $e) {
+            Log::warning("GL posting failed for Payment #{$payment->id}: {$e->getMessage()}");
+        }
+    }
+
+    protected function resolveMethodAccountCode(?string $method): string
+    {
+        $map = $method
+            ? PaymentMethodAccountMap::active()->where('method', $method)->first()
+            : null;
+
+        if ($map) {
+            return $map->account->account_code;
+        }
+
+        if ($method) {
+            Log::warning("Payment method '{$method}' has no chart-of-accounts mapping; posting to default cash account.");
+        }
+
+        return config('accounting.default_cash_account_code');
     }
 
     public function allocateExistingPayment(Payment $payment): void
@@ -151,21 +206,19 @@ class PaymentPostingService
             |
             */
 
+            ->orderBy('fee_definitions.priority_order')
+
             ->orderByRaw("
-    CASE
-        WHEN fee_definitions.scope = 'student'
-         AND fee_definitions.applies_once = 1
-        THEN 0
+            CASE
+                WHEN student_fee_items.enrollment_id = ?
+                THEN 0
+                ELSE 1
+            END
+        ", [$payment->enrollment_id])
 
-        WHEN LOWER(COALESCE(fee_definitions.name, '')) LIKE '%tuition%'
-          OR LOWER(COALESCE(student_fee_items.description, '')) LIKE '%tuition%'
-        THEN 1
+            ->orderBy('student_fee_items.charge_date')
 
-        ELSE 2
-    END ASC
-")
-            ->orderBy('student_fee_items.charge_date', 'asc')
-            ->orderBy('student_fee_items.id', 'asc')
+            ->orderBy('student_fee_items.id')
 
             ->lockForUpdate()
 
