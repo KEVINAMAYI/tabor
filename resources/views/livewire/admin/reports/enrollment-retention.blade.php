@@ -255,7 +255,6 @@ new class extends Component {
 
 @script
     <script>
-        {
             const initialChart = @json($this->trimesterChart);
 
             const options = {
@@ -302,6 +301,5 @@ new class extends Component {
                     },
                 });
             });
-        }
     </script>
 @endscript

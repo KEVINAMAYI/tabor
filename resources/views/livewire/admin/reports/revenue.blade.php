@@ -230,7 +230,6 @@ new class extends Component {
 
 @script
     <script>
-        {
             const initialTrend = @json($this->trend);
 
             const options = {
@@ -274,6 +273,5 @@ new class extends Component {
                     },
                 });
             });
-        }
     </script>
 @endscript

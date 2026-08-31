@@ -587,8 +587,6 @@ new class extends Component {
 
 @script
     <script>
-        {
-
             // Data from Livewire
             const statusData = @json(array_values($statusData));
             const statusLabels = @json($statusLabels);
@@ -757,6 +755,5 @@ new class extends Component {
                 options_line
             );
             chart_line_basic.render();
-        }
     </script>
 @endscript

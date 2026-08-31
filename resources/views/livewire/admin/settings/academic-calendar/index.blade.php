@@ -519,7 +519,7 @@ new class extends Component {
                                                 <li>
                                                     <a class="dropdown-item text-danger" href="javascript:void(0)"
                                                         wire:click="deleteAcademicYear({{ $year->id }})"
-                                                        onclick="return confirm('Are you sure you want to delete this academic year?')">
+                                                        wire:confirm="Delete this academic year? This cannot be undone.">
                                                         <i class="ti ti-trash me-2"></i> Delete
                                                     </a>
                                                 </li>
@@ -607,7 +607,7 @@ new class extends Component {
                                             <li>
                                                 <a class="dropdown-item text-danger" href="javascript:void(0)"
                                                     wire:click="deleteTrimester({{ $trimester->id }})"
-                                                    onclick="return confirm('Are you sure you want to delete this trimester?')">
+                                                    wire:confirm="Delete this trimester? This cannot be undone.">
                                                     <i class="ti ti-trash me-2"></i> Delete
                                                 </a>
                                             </li>
@@ -634,7 +634,8 @@ new class extends Component {
                                         <i class="ti ti-pencil fs-5"></i>
                                     </a>
                                     <a href="javascript:void(0)" class="text-danger"
-                                        wire:click="deleteTrimester({{ $selectedTrimester->id }})" title="Delete">
+                                        wire:click="deleteTrimester({{ $selectedTrimester->id }})"
+                                        wire:confirm="Delete this trimester? This cannot be undone." title="Delete">
                                         <i class="ti ti-trash fs-5"></i>
                                     </a>
                                 </div>
@@ -905,8 +906,6 @@ new class extends Component {
 
 @script
     <script>
-        {
-
             // === Academic Year Modal ===
             window.addEventListener('show-academic-year-modal', () => {
                 const modal = new bootstrap.Modal(document.getElementById('academicYearModal'));
@@ -930,7 +929,5 @@ new class extends Component {
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 modal?.hide();
             });
-
-        }
     </script>
 @endscript
