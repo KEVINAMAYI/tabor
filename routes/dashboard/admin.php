@@ -84,6 +84,30 @@ Route::middleware(['auth', 'active', 'password_changed'])->prefix('admin')->grou
     Volt::route('settings/course-fee-plans', 'admin.settings.course-fee-plans')->name('settings.course-fee-plans');
     Volt::route('settings/student-fee-items', 'admin.settings.student-fee-items')->name('settings.student-fee-items');
 
+    // Accounting / General Ledger (Phase 1)
+    Volt::route('accounting/chart-of-accounts', 'admin.accounting.chart-of-accounts')->name('accounting.chart-of-accounts');
+    Volt::route('accounting/financial-years', 'admin.accounting.financial-years')->name('accounting.financial-years');
+    Volt::route('accounting/journal-entries', 'admin.accounting.journal-entries.index')->name('accounting.journal-entries.index');
+    Volt::route('accounting/journal-entries/create', 'admin.accounting.journal-entries.create')->name('accounting.journal-entries.create');
+    Volt::route('accounting/trial-balance', 'admin.accounting.trial-balance')->name('accounting.trial-balance');
+
+    // Petty Cash & Imprest (Phase 2)
+    Volt::route('accounting/petty-cash/vote-heads', 'admin.accounting.petty-cash.vote-heads')->name('accounting.petty-cash.vote-heads');
+    Volt::route('accounting/petty-cash/custodians', 'admin.accounting.petty-cash.custodians')->name('accounting.petty-cash.custodians');
+    Volt::route('accounting/petty-cash/expenses', 'admin.accounting.petty-cash.expenses')->name('accounting.petty-cash.expenses');
+
+    // Budget Management (Phase 3)
+    Volt::route('accounting/budget', 'admin.accounting.budget.manage')->name('accounting.budget.manage');
+    Volt::route('accounting/budget/report', 'admin.accounting.budget.report')->name('accounting.budget.report');
+
+    // Procurement & Supplier Payments (Phase 4)
+    Volt::route('accounting/procurement/suppliers', 'admin.accounting.procurement.suppliers')->name('accounting.procurement.suppliers');
+    Volt::route('accounting/procurement/requisitions', 'admin.accounting.procurement.requisitions')->name('accounting.procurement.requisitions');
+    Volt::route('accounting/procurement/purchase-orders', 'admin.accounting.procurement.purchase-orders')->name('accounting.procurement.purchase-orders');
+    Volt::route('accounting/procurement/goods-received', 'admin.accounting.procurement.goods-received')->name('accounting.procurement.goods-received');
+    Volt::route('accounting/procurement/supplier-invoices', 'admin.accounting.procurement.supplier-invoices')->name('accounting.procurement.supplier-invoices');
+    Volt::route('accounting/procurement/supplier-payments', 'admin.accounting.procurement.supplier-payments')->name('accounting.procurement.supplier-payments');
+
     Volt::route('blog/categories', 'admin.blog.categories')
         ->name('admin.blog.categories');
     Volt::route('blog/posts', 'admin.blog.posts')->name('admin.blog.posts');

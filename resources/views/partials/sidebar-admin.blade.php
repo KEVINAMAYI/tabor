@@ -195,6 +195,163 @@
                     </li>
                 @endcan
 
+                @canany(['view-chart-of-accounts', 'view-journal-entries', 'view-trial-balance', 'manage-accounting-periods', 'view-vote-heads', 'view-petty-cash', 'view-budgets', 'view-suppliers', 'view-purchase-requisitions', 'view-purchase-orders', 'view-supplier-invoices'])
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('accounting.*') ? 'active' : '' }}"
+                            href="#accountingMenu" data-bs-toggle="collapse"
+                            aria-expanded="{{ request()->routeIs('accounting.*') ? 'true' : 'false' }}"
+                            aria-controls="accountingMenu">
+                            <iconify-icon icon="solar:calculator-line-duotone"></iconify-icon>
+                            <span class="hide-menu">Accounting</span>
+                        </a>
+                        <ul class="collapse first-level {{ request()->routeIs('accounting.*') ? 'show' : '' }}"
+                            id="accountingMenu">
+                            @can('view-chart-of-accounts')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.chart-of-accounts') ? 'active' : '' }}"
+                                        href="{{ route('accounting.chart-of-accounts') }}">
+                                        <i class="ti ti-list-details"></i>
+                                        <span class="hide-menu">Chart of Accounts</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @canany(['view-chart-of-accounts', 'manage-accounting-periods'])
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.financial-years') ? 'active' : '' }}"
+                                        href="{{ route('accounting.financial-years') }}">
+                                        <i class="ti ti-calendar-time"></i>
+                                        <span class="hide-menu">Financial Years & Periods</span>
+                                    </a>
+                                </li>
+                            @endcanany
+                            @can('view-journal-entries')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.journal-entries.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.journal-entries.index') }}">
+                                        <i class="ti ti-notebook"></i>
+                                        <span class="hide-menu">Journal Entries</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-trial-balance')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.trial-balance') ? 'active' : '' }}"
+                                        href="{{ route('accounting.trial-balance') }}">
+                                        <i class="ti ti-scale"></i>
+                                        <span class="hide-menu">Trial Balance</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-vote-heads')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.petty-cash.vote-heads') ? 'active' : '' }}"
+                                        href="{{ route('accounting.petty-cash.vote-heads') }}">
+                                        <i class="ti ti-category-2"></i>
+                                        <span class="hide-menu">Vote Heads</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-petty-cash')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.petty-cash.custodians') ? 'active' : '' }}"
+                                        href="{{ route('accounting.petty-cash.custodians') }}">
+                                        <i class="ti ti-cash"></i>
+                                        <span class="hide-menu">Petty Cash Custodians</span>
+                                    </a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.petty-cash.expenses') ? 'active' : '' }}"
+                                        href="{{ route('accounting.petty-cash.expenses') }}">
+                                        <i class="ti ti-receipt"></i>
+                                        <span class="hide-menu">Petty Cash Expenses</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-budgets')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.budget.manage') ? 'active' : '' }}"
+                                        href="{{ route('accounting.budget.manage') }}">
+                                        <i class="ti ti-report-money"></i>
+                                        <span class="hide-menu">Manage Budgets</span>
+                                    </a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.budget.report') ? 'active' : '' }}"
+                                        href="{{ route('accounting.budget.report') }}">
+                                        <i class="ti ti-chart-bar"></i>
+                                        <span class="hide-menu">Budget vs Actual</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-suppliers')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.suppliers') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.suppliers') }}">
+                                        <i class="ti ti-truck-delivery"></i>
+                                        <span class="hide-menu">Suppliers</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-purchase-requisitions')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.requisitions') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.requisitions') }}">
+                                        <i class="ti ti-clipboard-list"></i>
+                                        <span class="hide-menu">Purchase Requisitions</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-purchase-orders')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.purchase-orders') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.purchase-orders') }}">
+                                        <i class="ti ti-shopping-cart"></i>
+                                        <span class="hide-menu">Purchase Orders</span>
+                                    </a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.goods-received') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.goods-received') }}">
+                                        <i class="ti ti-package"></i>
+                                        <span class="hide-menu">Goods Received</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('view-supplier-invoices')
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.supplier-invoices') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.supplier-invoices') }}">
+                                        <i class="ti ti-file-invoice"></i>
+                                        <span class="hide-menu">Supplier Invoices</span>
+                                    </a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a wire:navigate
+                                        class="sidebar-link {{ request()->routeIs('accounting.procurement.supplier-payments') ? 'active' : '' }}"
+                                        href="{{ route('accounting.procurement.supplier-payments') }}">
+                                        <i class="ti ti-cash-banknote"></i>
+                                        <span class="hide-menu">Supplier Payments</span>
+                                    </a>
+                                </li>
+                            @endcan
+                        </ul>
+                    </li>
+                @endcanany
+
                 @can('view-reports')
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('reports.index') ? 'active' : '' }}"

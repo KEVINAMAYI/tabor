@@ -7,7 +7,9 @@ use App\Models\EnrollmentProgression;
 use App\Models\Payment;
 use App\Models\StudentFeeItem;
 use App\Models\User;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use LogicException;
 
 /**
@@ -25,7 +27,8 @@ use LogicException;
 class CreditService
 {
     public function __construct(
-        private PaymentPostingService $paymentService
+        private PaymentPostingService $paymentService,
+        private JournalPostingService $journalPostingService
     ) {}
 
     /**
@@ -158,6 +161,30 @@ class CreditService
                 'reason' => $reason,
             ]);
         });
+
+        // waiveFee() bypasses Payment entirely (unlike discounts/scholarships,
+        // which route through postCredit() -> PaymentPostingService), so it
+        // needs its own explicit GL posting call.
+        $this->postWaiverToLedger($feeItem, $waiveAmount, $reason, $admin);
+    }
+
+    protected function postWaiverToLedger(StudentFeeItem $feeItem, float $waiveAmount, string $reason, User $admin): void
+    {
+        try {
+            $this->journalPostingService->post([
+                'entry_date'  => now()->toDateString(),
+                'description' => "Fee waiver — {$feeItem->description} ({$reason})",
+                'source_type' => StudentFeeItem::class,
+                'source_id'   => $feeItem->id,
+                'created_by'  => $admin->id,
+                'lines' => [
+                    ['account_code' => config('accounting.waiver_expense_account_code'), 'debit' => $waiveAmount],
+                    ['account_code' => config('accounting.student_debtors_account_code'), 'credit' => $waiveAmount],
+                ],
+            ]);
+        } catch (LogicException $e) {
+            Log::warning("GL posting failed for waived StudentFeeItem #{$feeItem->id}: {$e->getMessage()}");
+        }
     }
 
     /**

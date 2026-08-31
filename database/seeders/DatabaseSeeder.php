@@ -17,7 +17,12 @@ class DatabaseSeeder extends Seeder
             DemoUsersSeeder::class,
             CourseCategorySeeder::class,
             AdminFeeItemsSeeder::class,
-            FeeCategorySeeder::class
+            FeeCategorySeeder::class,
+            ChartOfAccountsSeeder::class,
+            PaymentMethodAccountMapSeeder::class,
+            FeeCategoryAccountMapSeeder::class,
+            AccountingPeriodSeeder::class,
+            VoteHeadSeeder::class,
         ]);
     }
 }

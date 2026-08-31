@@ -1,6 +1,7 @@
 <?php
 
 // This routes will handle the PDFs download
+use App\Http\Controllers\PDFExports\AccountingController;
 use App\Http\Controllers\PDFExports\ClassGroupsController;
 use App\Http\Controllers\PDFExports\CoursesController;
 use App\Http\Controllers\PDFExports\IntakesController;
@@ -25,4 +26,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/course-applications/export/pdf', [ReportsController::class, 'exportCourseApplicationFunnelPdf'])->name('reports.applications-funnel.export.pdf');
     Route::get('/reports/enrollment-retention/export/pdf', [ReportsController::class, 'exportEnrollmentRetentionPdf'])->name('reports.retention.export.pdf');
     Route::get('/reports/reconciliation/export/pdf', [ReportsController::class, 'exportReconciliationHealthPdf'])->name('reports.reconciliation.export.pdf');
+    Route::get('/accounting/trial-balance/export/pdf', [AccountingController::class, 'exportTrialBalancePdf'])->name('accounting.trial-balance.export.pdf');
+    Route::get('/accounting/budget-report/export/pdf', [AccountingController::class, 'exportBudgetReportPdf'])->name('accounting.budget.report.export.pdf');
 });

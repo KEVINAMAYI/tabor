@@ -12,4 +12,9 @@ class FeeCategory extends Model
     {
         return $this->hasMany(FeeDefinition::class);
     }
+
+    public function revenueAccount()
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'revenue_account_id');
+    }
 }
