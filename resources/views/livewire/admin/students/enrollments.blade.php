@@ -224,7 +224,7 @@ new class extends Component {
                                             {{ !empty($enrollment) ? $enrollment->course->title . '-' . $enrollment->course->level : 'N/A' }}
                                         </a>
                                     </td>
-                                    <td>{{ $enrollment->intake->name }}</td>
+                                    <td>{{ $enrollment->intake?->name }}</td>
                                     <td class="text-success fw-bold">
                                         {{ number_format($enrollment->payments->sum('amount'), 2) }}
                                     </td>

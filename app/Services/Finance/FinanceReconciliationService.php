@@ -112,12 +112,20 @@ class FinanceReconciliationService
                 ]);
             }
 
-            // 5. Per-enrollment: unallocated payment with outstanding fees on the SAME enrollment
-            // (cross-enrollment unallocated is intentional — admin must allocate manually)
-            if ($expectedUnallocated > 0.01 && !empty($payment->enrollment_id)) {
+            // 5. Unallocated payment with outstanding fees. When the payment
+            // is tied to a specific enrollment, only that enrollment's
+            // outstanding fees count (cross-enrollment unallocated is
+            // intentional — admin must allocate manually). When the payment
+            // has no enrollment_id (e.g. a student-only M-Pesa match — see
+            // MpesaApi::c2bConfirmation()), check the student's outstanding
+            // balance as a whole instead of skipping this check entirely.
+            if ($expectedUnallocated > 0.01) {
                 $hasMatchingOutstanding = StudentFeeItem::query()
                     ->where('student_id', $studentId)
-                    ->where('enrollment_id', $payment->enrollment_id)
+                    ->when(
+                        !empty($payment->enrollment_id),
+                        fn ($q) => $q->where('enrollment_id', $payment->enrollment_id)
+                    )
                     ->where('balance', '>', 0.01)
                     ->whereIn('status', ['pending', 'partial'])
                     ->exists();

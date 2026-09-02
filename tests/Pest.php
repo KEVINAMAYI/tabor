@@ -51,7 +51,7 @@ function something()
  * AccountingPeriod covering the given range, since JournalPostingService
  * refuses to post outside an open period.
  */
-function makeOpenPeriod(string $start = '2026-08-01', string $end = '2026-08-31', string $status = 'open'): \App\Models\AccountingPeriod
+function makeOpenPeriod(string $start = '2026-08-01', string $end = '2026-12-31', string $status = 'open'): \App\Models\AccountingPeriod
 {
     $year = \App\Models\FinancialYear::create([
         'name' => 'FY-' . $start,

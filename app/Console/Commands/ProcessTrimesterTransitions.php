@@ -1,77 +1,5 @@
 <?php
 
-/* namespace App\Console\Commands;
-
-use App\Models\Trimester;
-use App\Models\EnrollmentProgression;
-use App\Services\AcademicCalendarService;
-use App\Services\FeeGenerationService;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-
-class ProcessTrimesterTransitions extends Command
-{
-    protected $signature = 'finance:process-trimester-transitions';
-    protected $description = 'Close ended trimesters, activate current trimesters, and generate fees for active progressions';
-
-    public function handle(): int
-    {
-        DB::transaction(function () {
-            Trimester::query()
-                ->whereDate('end_date', '<', now())
-                ->where('status', '!=', 'closed')
-                ->update(['status' => 'closed']);
-
-            Trimester::query()
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->update(['status' => 'active']);
-
-            Trimester::query()
-                ->whereDate('start_date', '>', now())
-                ->where('status', '!=', 'upcoming')
-                ->update(['status' => 'upcoming']);
-
-            $activeTrimester = Trimester::query()
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->first();
-
-            if (! $activeTrimester) {
-                $activeTrimester = app(AcademicCalendarService::class)
-                    ->getOrCreateTrimesterForDate(now());
-            }
-
-            EnrollmentProgression::query()
-                ->where('trimester_id', $activeTrimester->id)
-                ->whereIn('status', ['upcoming', 'active'])
-                ->chunkById(100, function ($progressions) {
-                    foreach ($progressions as $progression) {
-                        $progression->update([
-                            'status' => 'active',
-                            'started_at' => $progression->started_at ?? $progression->trimester->start_date,
-                        ]);
-
-                        app(FeeGenerationService::class)
-                            ->generateChargesForProgression($progression);
-                    }
-                });
-
-            EnrollmentProgression::query()
-                ->whereHas('trimester', fn ($q) => $q->whereDate('end_date', '<', now()))
-                ->where('status', 'active')
-                ->update([
-                    'status' => 'completed',
-                    'completed_at' => now()->toDateString(),
-                ]);
-        });
-
-        $this->info('Trimester transitions processed successfully.');
-
-        return self::SUCCESS;
-    }
-} */
-
 namespace App\Console\Commands;
 
 use App\Models\Enrollment;
@@ -99,6 +27,11 @@ class ProcessTrimesterTransitions extends Command
         'graduated',
     ];
 
+    // How many days before a trimester ends the system proactively creates
+    // the next one, so there's a real trimester to roll into ahead of time
+    // instead of only ever getting one reactively on the day it's needed.
+    protected int $nextTrimesterLeadDays = 14;
+
     public function handle(): int
     {
         $processDate = $this->option('date')
@@ -114,6 +47,8 @@ class ProcessTrimesterTransitions extends Command
                 $this->syncTrimesterStatuses($processDate);
 
                 $activeTrimester = $this->getActiveTrimester($processDate);
+
+                $this->ensureNextTrimesterExists($activeTrimester, $processDate);
 
                 $this->completeEndedProgressions($processDate);
 
@@ -175,6 +110,24 @@ class ProcessTrimesterTransitions extends Command
 
         return app(AcademicCalendarService::class)
             ->getOrCreateTrimesterForDate($processDate);
+    }
+
+    protected function ensureNextTrimesterExists(Trimester $activeTrimester, $processDate): void
+    {
+        if ($this->option('dry-run')) {
+            $daysToEnd = $processDate->diffInDays($activeTrimester->end_date, false);
+            if ($daysToEnd <= $this->nextTrimesterLeadDays) {
+                $this->line("Would ensure the trimester following {$activeTrimester->name} exists (within {$this->nextTrimesterLeadDays}-day lead time).");
+            }
+            return;
+        }
+
+        $created = app(AcademicCalendarService::class)
+            ->ensureNextTrimesterWithinLeadTime($activeTrimester, $this->nextTrimesterLeadDays, $processDate);
+
+        if ($created) {
+            $this->info("Created upcoming trimester {$created->name} ({$created->start_date->toDateString()} - {$created->end_date->toDateString()}).");
+        }
     }
 
     protected function completeEndedProgressions($processDate): void
@@ -283,6 +236,14 @@ class ProcessTrimesterTransitions extends Command
         $nextSequence = (int) $lastProgression->trimester_sequence + 1;
 
         if ($nextSequence > (int) $enrollment->course->number_of_trimesters) {
+            return;
+        }
+
+        // Never roll a student into a new trimester once they're
+        // course_completed/pending_graduation/graduated — MarkCourseCompletedAction
+        // doesn't verify all trimesters are actually finished before setting
+        // that status, so number_of_trimesters alone isn't a reliable guard.
+        if ($enrollment->status !== 'active') {
             return;
         }
 

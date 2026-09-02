@@ -44,13 +44,13 @@
                                     <span class="hide-menu">All Students</span>
                                 </a>
                             </li>
-                            <li class="sidebar-item">
+                            {{-- <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.pending') ? 'active' : '' }}"
                                     href="{{ route('students.pending') }}">
                                     <span class="icon-small"></span>
                                     <span class="hide-menu">Pending Enrollments</span>
                                 </a>
-                            </li>
+                            </li> --}}
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.course-applications') ? 'active' : '' }}"
                                     href="{{ route('students.course-applications') }}">
@@ -419,26 +419,6 @@
                         </li>
                     </ul>
                 </li>
-                {{-- <li class="sidebar-item">
-                    <a class="sidebar-link has-arrow" href="javascript:void(0)">
-                        <i class="ti ti-news"></i>
-                        <span>Blogs</span>
-                    </a>
-
-                    <ul class="collapse first-level">
-                        <li class="sidebar-item">
-                            <a href="{{ route('admin.blog.posts') }}" class="sidebar-link">
-                                <span>Posts</span>
-                            </a>
-                        </li>
-
-                        <li class="sidebar-item">
-                            <a href="{{ route('admin.blog.categories') }}" class="sidebar-link">
-                                <span>Categories</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> --}}
 
                 <li class="sidebar-item">
                     <a class="sidebar-link {{ request()->routeIs('team.index') ? 'active' : '' }}"

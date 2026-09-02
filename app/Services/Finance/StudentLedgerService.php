@@ -356,21 +356,29 @@ class StudentLedgerService
                     })
                     ->values();
 
-                $creditAmount = 0.00;
-
-                if ($isDateOwned) {
-                    if (
-                        $this->isGermanChainProgression($progression) &&
-                        $this->hasGermanPreviousEnrollmentBalance($student, $progression) &&
-                        $paymentDate->lt($startDate)
-                    ) {
-                        return null;
-                    }
-
-                    $creditAmount = (float) $payment->amount;
-                } else {
-                    $creditAmount = (float) $crossAllocations->sum('amount_allocated');
+                if (
+                    $isDateOwned &&
+                    $this->isGermanChainProgression($progression) &&
+                    $this->hasGermanPreviousEnrollmentBalance($student, $progression) &&
+                    $paymentDate->lt($startDate)
+                ) {
+                    return null;
                 }
+
+                // Credit only what was actually allocated to THIS progression's
+                // fee items, not the payment's raw amount — a payment sitting
+                // unallocated (e.g. one that bypassed PaymentPostingService)
+                // must not appear as applied money until it actually is one.
+                // Deliberately $currentProgressionAllocations, NOT the more
+                // narrowly filtered $visibleAllocations (which additionally
+                // hides chronologically-anomalous allocations for display
+                // purposes only, see the comment above) — the credited
+                // amount must always match what actually reduced
+                // StudentFeeItem.balance, or the statement's balance would
+                // silently disagree with the real outstanding balance even
+                // though its own sub-row breakdown looks incomplete for that
+                // rare anomaly case.
+                $creditAmount = (float) $currentProgressionAllocations->sum('amount_allocated');
 
                 if ($creditAmount <= 0) {
                     return null;

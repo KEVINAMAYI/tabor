@@ -40,7 +40,7 @@ beforeEach(function () {
     $this->seed(PaymentMethodAccountMapSeeder::class);
     $this->seed(FeeCategoryAccountMapSeeder::class);
 
-    makeOpenPeriod('2026-08-01', '2026-08-31');
+    makeOpenPeriod('2026-08-01', '2026-12-31');
 
     $this->student = createTestStudent();
 

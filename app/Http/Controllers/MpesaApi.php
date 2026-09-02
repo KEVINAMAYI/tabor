@@ -209,29 +209,59 @@ class MpesaApi extends Controller
                     return;
                 }
 
+                if ($student) {
+                    // Student resolved but course/enrollment didn't (e.g. the
+                    // BillRefNumber's course code didn't match) — still route
+                    // through PaymentPostingService so the payment gets
+                    // allocated against the student's outstanding fee items
+                    // (regardless of enrollment) instead of sitting forever
+                    // as an "Unallocated" orphan. outstandingFeeItemsForPayment()
+                    // already handles a null enrollment_id by matching on
+                    // student_id alone.
+                    app(PaymentPostingService::class)->post([
+                        'student_id' => $student->id,
+                        'enrollment_id' => null,
+                        'payment_date' => now()->toDateString(),
+                        'amount' => $amount,
+                        'method' => 'mpesa',
+                        'reference' => $account,
+                        'receipt_no' => $mpesaTransactionId,
+                        'status' => 'completed',
+                        'payer' => $payer,
+                        'phone' => $phone,
+                        'notes' => 'M-PESA payment received — could not be matched to a specific course/enrollment, allocated against outstanding balance.',
+                    ]);
+
+                    Log::warning('C2B payment matched to student only (no course/enrollment) — allocated against outstanding balance', [
+                        'reference_no' => $account,
+                        'receipt_no' => $mpesaTransactionId,
+                        'student_id' => $student->id,
+                        'course_found' => (bool) $course,
+                        'enrollment_found' => (bool) $enrollment,
+                    ]);
+
+                    return;
+                }
+
                 Payment::create([
-                    'student_id' => $student?->id,
-                    'enrollment_id' => $enrollment?->id,
+                    'student_id' => null,
+                    'enrollment_id' => null,
                     'payment_date' => now()->toDateString(),
                     'amount' => $amount,
                     'unallocated_balance' => $amount,
-                    'payment_method' => 'mpesa',
-                    'reference_no' => $account,
-                    // 'receipt_no' => $mpesaTransactionId,
+                    'method' => 'mpesa',
+                    'reference' => $account,
                     'status' => 'pending',
                     'payer' => $payer,
                     'phone' => $phone,
-                    'notes' => 'M-PESA payment received but could not be matched to a valid student/course/enrollment.',
+                    'notes' => 'M-PESA payment received but could not be matched to any student — needs manual review.',
                     'transaction_id' => $mpesaTransactionId,
                     'paid_at' => now()
                 ]);
 
-                Log::warning('C2B payment saved for manual reconciliation', [
+                Log::warning('C2B payment unmatched to any student — saved for manual reconciliation', [
                     'reference_no' => $account,
                     'receipt_no' => $mpesaTransactionId,
-                    'student_found' => (bool) $student,
-                    'course_found' => (bool) $course,
-                    'enrollment_found' => (bool) $enrollment,
                 ]);
             });
 
