@@ -44,13 +44,13 @@
                                     <span class="hide-menu">All Students</span>
                                 </a>
                             </li>
-                            {{-- <li class="sidebar-item">
+                            <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.pending') ? 'active' : '' }}"
                                     href="{{ route('students.pending') }}">
                                     <span class="icon-small"></span>
                                     <span class="hide-menu">Pending Enrollments</span>
                                 </a>
-                            </li> --}}
+                            </li>
                             <li class="sidebar-item">
                                 <a class="sidebar-link {{ request()->routeIs('students.course-applications') ? 'active' : '' }}"
                                     href="{{ route('students.course-applications') }}">
