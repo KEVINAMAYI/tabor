@@ -218,3 +218,71 @@ test('a cross-enrollment payment (date outside this progression, allocated into 
     expect($paymentRow['cr'])->toBe(1000.0)
         ->and($statement['closing_balance'])->toBe(0.0);
 });
+
+test('a same-enrollment payment dated in trimester 2 but FIFO-allocated to trimester 1\'s older unpaid charge shows on trimester 1\'s statement, not trimester 2\'s', function () {
+    // Reproduces a real production bug: PaymentPostingService allocates FIFO
+    // against the oldest unpaid charge first, regardless of the payment's
+    // own date. A payment dated well inside T2's window can legitimately
+    // land on T1's older unpaid charge. Before this fix, such a payment
+    // vanished from every statement — not "date-owned" by T1 (wrong date
+    // window) and its allocation didn't belong to T2 (the progression whose
+    // statement was being viewed), so it fell through both branches.
+    $setup = makeLedgerTestSetup('t1t2');
+    $t1Item = makeLedgerCharge($setup, 1000, 'Tuition — T1');
+
+    $t2 = \App\Models\Trimester::create([
+        'academic_year_id' => $setup['trimester']->academic_year_id,
+        'name' => 'Trimester 2',
+        'trimester_number' => 2,
+        'start_date' => '2026-05-01',
+        'end_date' => '2026-08-31',
+        'status' => 'active',
+    ]);
+
+    $progression2 = EnrollmentProgression::create([
+        'student_id' => $setup['student']->id,
+        'enrollment_id' => $setup['enrollment']->id,
+        'trimester_id' => $t2->id,
+        'trimester_sequence' => 2,
+        'status' => 'active',
+        'started_at' => '2026-05-01',
+    ]);
+
+    $t2Item = StudentFeeItem::create([
+        'student_id' => $setup['student']->id,
+        'enrollment_id' => $setup['enrollment']->id,
+        'enrollment_progression_id' => $progression2->id,
+        'fee_definition_id' => $t1Item->fee_definition_id,
+        'description' => 'Tuition — T2',
+        'amount' => 1000,
+        'balance' => 1000,
+        'charge_date' => '2026-05-05',
+        'status' => 'pending',
+    ]);
+
+    // Dated inside T2's window, but T1's charge (Jan) is older, so
+    // PaymentPostingService's FIFO allocation lands it there instead.
+    app(PaymentPostingService::class)->post([
+        'student_id' => $setup['student']->id,
+        'payment_date' => '2026-06-01',
+        'amount' => 1000,
+        'method' => 'mpesa',
+        'reference' => 'T2-DATED-T1-ALLOCATED',
+    ]);
+
+    $t1Statement = app(StudentLedgerService::class)->buildProgressionStatement($setup['student'], $setup['progression']);
+    $t2Statement = app(StudentLedgerService::class)->buildProgressionStatement($setup['student'], $progression2);
+
+    $t1PaymentRow = $t1Statement['ledger']->firstWhere('source_type', 'payment');
+    $t2PaymentRow = $t2Statement['ledger']->firstWhere('source_type', 'payment');
+
+    expect($t1PaymentRow)->not->toBeNull()
+        ->and($t1PaymentRow['cr'])->toBe(1000.0)
+        ->and($t1Statement['closing_balance'])->toBe(0.0);
+
+    expect($t2PaymentRow)->toBeNull()
+        ->and($t2Statement['closing_balance'])->toBe(1000.0);
+
+    expect($t1Item->fresh()->balance)->toEqual('0.00')
+        ->and($t2Item->fresh()->balance)->toEqual('1000.00');
+});

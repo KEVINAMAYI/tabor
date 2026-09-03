@@ -271,10 +271,22 @@ class StudentLedgerService
 
         /*
         |--------------------------------------------------------------------------
-        | Cross-enrollment allocation payments
+        | Cross-progression allocation payments
         |--------------------------------------------------------------------------
-        | A payment from a different enrollment that was allocated to fee items
-        | in this progression (e.g. cross-enrollment credit transfers).
+        | ANY payment — regardless of its own enrollment_id or payment_date —
+        | that has at least one allocation landing on THIS progression's fee
+        | items. This covers both cross-enrollment payments (credit transfers
+        | etc.) and the same-enrollment case: PaymentPostingService allocates
+        | FIFO against the oldest unpaid charge first, so a payment dated
+        | inside progression 2's window can legitimately land on progression
+        | 1's older unpaid fee item. That payment isn't "date-owned" by
+        | progression 1 (its date falls in progression 2's window) and its
+        | allocation doesn't belong to progression 2 (it went to progression
+        | 1's charge) — without this broader query it would vanish from every
+        | statement despite being correctly, fully allocated. No duplicate
+        | rows: paymentIds below is deduped, and $isDateOwned still decides
+        | which amount source (date-owned vs this group) a payment uses when
+        | it happens to match both.
         */
 
         $crossEnrollmentAllocationGroups = PaymentAllocation::query()
@@ -286,13 +298,6 @@ class StudentLedgerService
                 $q->where('student_id', $student->id)
                     ->where('enrollment_id', $progression->enrollment_id)
                     ->where('enrollment_progression_id', $progression->id);
-            })
-            ->whereHas('payment', function ($q) use ($progression) {
-                $q->where(function ($paymentQuery) use ($progression) {
-                    $paymentQuery
-                        ->whereNull('enrollment_id')
-                        ->orWhere('enrollment_id', '!=', $progression->enrollment_id);
-                });
             })
             ->get()
             ->groupBy('payment_id');
