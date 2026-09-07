@@ -403,3 +403,94 @@ test('a payment that pays in advance for a not-yet-started German-chain level is
         ->and($glb1Statement['opening_balance'])->toBe(-2000.0)
         ->and($glb1Statement['closing_balance'])->toBe(33000.0);
 });
+
+test('a payment correctly applied to an earlier German-chain level does not also duplicate onto a later level', function () {
+    // Reproduces a real production bug (Wellington Ngunyi, Sep 2026): a
+    // payment allocated ONLY to GLB1's own fee item (dated after GLB1's
+    // real window closed, so it legitimately shows there via the FIFO-
+    // overflow cross-progression match) was ALSO appearing on GLB2's
+    // statement — purely because the payment's date happened to fall
+    // inside GLB2's own calendar window. The "borrow forward" logic (pre-
+    // payments for a not-yet-started level) has no directional guard, so
+    // it pulled the same allocation backward from an already-finished
+    // earlier level too, double-counting a single payment across two
+    // statements.
+    $intake = Intake::create(['name' => 'Intake german-dup', 'starts_at' => '2026-01-01']);
+    $academicYear = \App\Models\AcademicYear::firstOrCreate(
+        ['name' => '2026'],
+        ['start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'active' => true]
+    );
+
+    $glb1Course = Course::create(['title' => 'German Language', 'code' => 'GLB1', 'number_of_trimesters' => '1', 'allows_continuous_intake' => true]);
+    $glb2Course = Course::create(['title' => 'German Language', 'code' => 'GLB2', 'number_of_trimesters' => '1', 'allows_continuous_intake' => true]);
+
+    $user = User::factory()->create();
+    $student = Student::create([
+        'first_name' => 'German', 'last_name' => 'Dup',
+        'email' => $user->email, 'user_id' => $user->id, 'admission_number' => 'LT-germandup',
+    ]);
+
+    $glb1Trimester = Trimester::create([
+        'academic_year_id' => $academicYear->id,
+        'name' => 'GLB1 Trimester', 'trimester_number' => 1,
+        'start_date' => '2026-04-01', 'end_date' => '2026-05-31', 'status' => 'closed',
+    ]);
+    $glb2Trimester = Trimester::create([
+        'academic_year_id' => $academicYear->id,
+        'name' => 'GLB2 Trimester', 'trimester_number' => 2,
+        'start_date' => '2026-08-24', 'end_date' => '2026-10-23', 'status' => 'active',
+    ]);
+
+    $glb1Enrollment = Enrollment::create([
+        'course_id' => $glb1Course->id, 'intake_id' => $intake->id, 'student_id' => $student->id,
+        'status' => 'course_completed', 'assigned_start_trimester_id' => $glb1Trimester->id, 'admission_date' => '2026-04-01',
+    ]);
+    $glb2Enrollment = Enrollment::create([
+        'course_id' => $glb2Course->id, 'intake_id' => $intake->id, 'student_id' => $student->id,
+        'status' => 'active', 'assigned_start_trimester_id' => $glb2Trimester->id, 'admission_date' => '2026-08-24',
+    ]);
+
+    $glb1Progression = EnrollmentProgression::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb1Enrollment->id, 'trimester_id' => $glb1Trimester->id,
+        'trimester_sequence' => 1, 'status' => 'completed', 'started_at' => '2026-04-01',
+    ]);
+    $glb2Progression = EnrollmentProgression::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb2Enrollment->id, 'trimester_id' => $glb2Trimester->id,
+        'trimester_sequence' => 1, 'status' => 'active', 'started_at' => '2026-08-24',
+    ]);
+
+    $category = FeeCategory::create(['code' => 'ltc-germandup', 'name' => 'Tuition']);
+    $glb1FeeDefinition = FeeDefinition::create(['fee_category_id' => $category->id, 'name' => 'Tuition Fee', 'scope' => 'student', 'default_amount' => 35000, 'active' => true]);
+    $glb2FeeDefinition = FeeDefinition::create(['fee_category_id' => $category->id, 'name' => 'Tuition Fee', 'scope' => 'student', 'default_amount' => 35000, 'active' => true]);
+
+    $glb1Item = StudentFeeItem::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb1Enrollment->id, 'enrollment_progression_id' => $glb1Progression->id,
+        'fee_definition_id' => $glb1FeeDefinition->id, 'description' => 'Tuition Fee', 'amount' => 35000, 'balance' => 12100,
+        'amount_paid' => 22900, 'charge_date' => '2026-04-01', 'status' => 'partial',
+    ]);
+    $glb2Item = StudentFeeItem::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb2Enrollment->id, 'enrollment_progression_id' => $glb2Progression->id,
+        'fee_definition_id' => $glb2FeeDefinition->id, 'description' => 'Tuition Fee', 'amount' => 35000, 'balance' => 35000,
+        'charge_date' => '2026-08-24', 'status' => 'pending',
+    ]);
+
+    // Dated 26 Aug — well after GLB1's own window closed, but squarely
+    // inside GLB2's window (24 Aug onward). Allocated ONLY to GLB1.
+    $payment = Payment::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb1Enrollment->id,
+        'payment_date' => '2026-08-26', 'amount' => 1300, 'unallocated_balance' => 0,
+        'method' => 'mpesa', 'status' => 'completed', 'reference' => 'GERMAN-DUP',
+    ]);
+
+    PaymentAllocation::create(['payment_id' => $payment->id, 'student_fee_item_id' => $glb1Item->id, 'amount_allocated' => 1300]);
+
+    $service = app(StudentLedgerService::class);
+    $glb1Statement = $service->buildProgressionStatement($student, $glb1Progression);
+    $glb2Statement = $service->buildProgressionStatement($student, $glb2Progression);
+
+    $glb1PaymentRow = $glb1Statement['ledger']->firstWhere('source_type', 'payment');
+    $glb2PaymentRow = $glb2Statement['ledger']->firstWhere('source_type', 'payment');
+
+    expect($glb1PaymentRow['cr'])->toBe(1300.0)
+        ->and($glb2PaymentRow)->toBeNull('a payment that already correctly displays on GLB1 must not also appear on GLB2');
+});
