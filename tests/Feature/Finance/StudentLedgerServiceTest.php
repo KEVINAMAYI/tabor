@@ -286,3 +286,104 @@ test('a same-enrollment payment dated in trimester 2 but FIFO-allocated to trime
     expect($t1Item->fresh()->balance)->toEqual('0.00')
         ->and($t2Item->fresh()->balance)->toEqual('1000.00');
 });
+
+test('a payment that FIFO-overflows from an earlier German-chain course level onto a later level shows the overflow portion on the later level\'s own statement', function () {
+    // Reproduces a real production bug (Wellington Ngunyi, Sep 2026): a
+    // payment recorded against GLA1 (enrollment_id set to the GLA1
+    // enrollment) is split — via the admin allocation modal, not the
+    // auto-FIFO engine — across GLA1's own fee item AND a GLB1 fee item.
+    // GLA1's own statement correctly credits only its own portion. The
+    // overflow portion allocated to GLB1 must show on GLB1's statement —
+    // isPreviousGermanCoursePayment() incorrectly suppressed it, assuming
+    // it was "already counted" via the opening-balance chain, when in fact
+    // GLA1's own ledger never counts it either (filtered to GLA1's own
+    // progression), so it was invisible everywhere despite genuinely
+    // reducing the GLB1 fee item's real balance.
+    $intake = Intake::create(['name' => 'Intake german', 'starts_at' => '2026-01-01']);
+    $academicYear = \App\Models\AcademicYear::firstOrCreate(
+        ['name' => '2026'],
+        ['start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'active' => true]
+    );
+
+    $gla1Course = Course::create(['title' => 'German Language', 'code' => 'GLA1', 'number_of_trimesters' => '1', 'allows_continuous_intake' => false]);
+    $glb1Course = Course::create(['title' => 'German Language', 'code' => 'GLB1', 'number_of_trimesters' => '1', 'allows_continuous_intake' => false]);
+
+    $gla1Trimester = Trimester::create([
+        'academic_year_id' => $academicYear->id,
+        'name' => 'GLA1 Trimester', 'trimester_number' => 1,
+        'start_date' => '2026-01-01', 'end_date' => '2026-04-30', 'status' => 'active',
+    ]);
+    $glb1Trimester = Trimester::create([
+        'academic_year_id' => $academicYear->id,
+        'name' => 'GLB1 Trimester', 'trimester_number' => 2,
+        'start_date' => '2026-05-01', 'end_date' => '2026-08-31', 'status' => 'active',
+    ]);
+
+    $user = User::factory()->create();
+    $student = Student::create([
+        'first_name' => 'German', 'last_name' => 'Chain',
+        'email' => $user->email, 'user_id' => $user->id, 'admission_number' => 'LT-german',
+    ]);
+
+    $gla1Enrollment = Enrollment::create([
+        'course_id' => $gla1Course->id, 'intake_id' => $intake->id, 'student_id' => $student->id,
+        'status' => 'course_completed', 'assigned_start_trimester_id' => $gla1Trimester->id, 'admission_date' => '2026-01-01',
+    ]);
+    $glb1Enrollment = Enrollment::create([
+        'course_id' => $glb1Course->id, 'intake_id' => $intake->id, 'student_id' => $student->id,
+        'status' => 'active', 'assigned_start_trimester_id' => $glb1Trimester->id, 'admission_date' => '2026-05-01',
+    ]);
+
+    $gla1Progression = EnrollmentProgression::create([
+        'student_id' => $student->id, 'enrollment_id' => $gla1Enrollment->id, 'trimester_id' => $gla1Trimester->id,
+        'trimester_sequence' => 1, 'status' => 'completed', 'started_at' => '2026-01-01',
+    ]);
+    $glb1Progression = EnrollmentProgression::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb1Enrollment->id, 'trimester_id' => $glb1Trimester->id,
+        'trimester_sequence' => 1, 'status' => 'active', 'started_at' => '2026-05-01',
+    ]);
+
+    $category = FeeCategory::create(['code' => 'ltc-german', 'name' => 'Tuition']);
+    $gla1FeeDefinition = FeeDefinition::create(['fee_category_id' => $category->id, 'name' => 'Tuition Fee', 'scope' => 'student', 'default_amount' => 25000, 'active' => true]);
+    $glb1FeeDefinition = FeeDefinition::create(['fee_category_id' => $category->id, 'name' => 'Tuition Fee', 'scope' => 'student', 'default_amount' => 35000, 'active' => true]);
+
+    $gla1Item = StudentFeeItem::create([
+        'student_id' => $student->id, 'enrollment_id' => $gla1Enrollment->id, 'enrollment_progression_id' => $gla1Progression->id,
+        'fee_definition_id' => $gla1FeeDefinition->id, 'description' => 'Tuition Fee', 'amount' => 25000, 'balance' => 25000,
+        'charge_date' => '2026-01-05', 'status' => 'pending',
+    ]);
+    $glb1Item = StudentFeeItem::create([
+        'student_id' => $student->id, 'enrollment_id' => $glb1Enrollment->id, 'enrollment_progression_id' => $glb1Progression->id,
+        'fee_definition_id' => $glb1FeeDefinition->id, 'description' => 'Tuition Fee', 'amount' => 35000, 'balance' => 35000,
+        'charge_date' => '2026-05-05', 'status' => 'pending',
+    ]);
+
+    // One 27,000 payment recorded under the GLA1 enrollment, manually split
+    // via the admin modal: 25,000 clears GLA1 in full, 2,000 overflows onto
+    // GLB1's tuition.
+    $payment = Payment::create([
+        'student_id' => $student->id, 'enrollment_id' => $gla1Enrollment->id,
+        'payment_date' => '2026-04-01', 'amount' => 27000, 'unallocated_balance' => 0,
+        'method' => 'mpesa', 'status' => 'completed', 'reference' => 'GERMAN-OVERFLOW',
+    ]);
+
+    PaymentAllocation::create(['payment_id' => $payment->id, 'student_fee_item_id' => $gla1Item->id, 'amount_allocated' => 25000]);
+    PaymentAllocation::create(['payment_id' => $payment->id, 'student_fee_item_id' => $glb1Item->id, 'amount_allocated' => 2000]);
+
+    $gla1Item->update(['amount_paid' => 25000, 'balance' => 0, 'status' => 'paid']);
+    $glb1Item->update(['amount_paid' => 2000, 'balance' => 33000, 'status' => 'partial']);
+
+    $service = app(StudentLedgerService::class);
+    $gla1Statement = $service->buildProgressionStatement($student, $gla1Progression);
+    $glb1Statement = $service->buildProgressionStatement($student, $glb1Progression);
+
+    $gla1PaymentRow = $gla1Statement['ledger']->firstWhere('source_type', 'payment');
+    $glb1PaymentRow = $glb1Statement['ledger']->firstWhere('source_type', 'payment');
+
+    expect($gla1PaymentRow['cr'])->toBe(25000.0)
+        ->and($gla1Statement['closing_balance'])->toBe(0.0);
+
+    expect($glb1PaymentRow)->not->toBeNull('the GLB1-allocated portion of the payment must appear on GLB1\'s own statement')
+        ->and($glb1PaymentRow['cr'])->toBe(2000.0)
+        ->and($glb1Statement['closing_balance'])->toBe(33000.0);
+});

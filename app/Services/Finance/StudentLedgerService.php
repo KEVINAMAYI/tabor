@@ -324,12 +324,17 @@ class StudentLedgerService
 
                 $isDateOwned = $dateOwnedPayments->has($payment->id);
 
-                if (
-                    !$isDateOwned &&
-                    $this->isPreviousGermanCoursePayment($payment, $progression)
-                ) {
-                    return null;
-                }
+                // NOTE: a payment whose own enrollment_id points to an earlier
+                // German-chain level (GLA1/GLA2) used to be excluded here on
+                // the assumption its overflow onto a later level (GLB1/GLB2)
+                // was "already counted" via the opening-balance chain. It
+                // isn't — the earlier level's own ledger only ever credits
+                // the portion of the payment allocated to ITS OWN fee items
+                // (see $currentProgressionAllocations below), so the overflow
+                // portion was invisible everywhere despite genuinely reducing
+                // a real StudentFeeItem's balance. $crossEnrollmentAllocationGroups
+                // already scopes strictly to this exact progression's fee
+                // items, so showing it here cannot double-count it.
 
                 $payment->loadMissing(['allocations.studentFeeItem']);
 
@@ -620,23 +625,6 @@ class StudentLedgerService
         )->endOfDay();
 
         return [$startDate, $endDate];
-    }
-
-    protected function isPreviousGermanCoursePayment(Payment $payment, EnrollmentProgression $progression): bool
-    {
-        $progression->loadMissing(['enrollment.course']);
-        $payment->loadMissing(['enrollment.course']);
-
-        $order = ['GLA1' => 1, 'GLA2' => 2, 'GLB1' => 3, 'GLB2' => 4];
-
-        $currentCode = strtoupper(trim($progression->enrollment?->course?->code ?? ''));
-        $paymentCode = strtoupper(trim($payment->enrollment?->course?->code ?? ''));
-
-        if (!isset($order[$currentCode], $order[$paymentCode])) {
-            return false;
-        }
-
-        return $order[$paymentCode] < $order[$currentCode];
     }
 
     protected function isGermanChainProgression(EnrollmentProgression $progression): bool
