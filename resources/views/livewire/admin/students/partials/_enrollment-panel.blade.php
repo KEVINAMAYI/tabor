@@ -88,10 +88,13 @@
                             };
                         @endphp
 
+                        @php
+                            [$progTlStart, $progTlEnd] = $prog->computedDateRange();
+                        @endphp
                         <div class="sv-tl-item">
                             <div class="sv-tl-seq">T{{ $prog->trimester_sequence }}</div>
                             <div class="sv-tl-circle {{ $tlClass }}"
-                                title="{{ optional($prog->started_at ?? $prog->trimester?->start_date)->format('d M Y') ?? '?' }} - {{ optional($prog->completed_at ?? $prog->trimester?->end_date)->format('d M Y') ?? '?' }}">
+                                title="{{ $progTlStart->format('d M Y') }} - {{ $progTlEnd->format('d M Y') }}">
                                 @if ($tlIcon)
                                     <i class="{{ $tlIcon }}" style="font-size:.9rem;"></i>
                                 @else
@@ -567,6 +570,7 @@
                                             'completed' => 'bg-success-subtle text-success',
                                             default => 'bg-light text-muted',
                                         };
+                                        [$spStart, $spEnd] = $sp->computedDateRange();
                                     @endphp
                                     <tr>
                                         <td class="fw-medium">
@@ -579,9 +583,9 @@
                                             @endif
                                         </td>
                                         <td class="text-muted" style="font-size:.78rem;">
-                                            {{ optional($sp->started_at ?? $sp->trimester?->start_date)->format('d M Y') ?? '-' }}
+                                            {{ $spStart->format('d M Y') }}
                                             -
-                                            {{ optional($sp->completed_at ?? $sp->trimester?->end_date)->format('d M Y') ?? '-' }}
+                                            {{ $spEnd->format('d M Y') }}
                                         </td>
                                         <td><span class="badge {{ $spBadge }}"
                                                 style="font-size:.7rem;">{{ ucfirst($sp->status) }}</span></td>

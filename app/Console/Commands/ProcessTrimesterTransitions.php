@@ -132,23 +132,86 @@ class ProcessTrimesterTransitions extends Command
 
     protected function completeEndedProgressions($processDate): void
     {
-        $query = EnrollmentProgression::query()
+        // Standard (trimester-calendar) courses: their real end date IS
+        // their linked trimester's end_date.
+        $standardCandidates = EnrollmentProgression::query()
+            ->where('status', 'active')
+            ->whereHas('enrollment.course', fn($q) => $q->where('allows_continuous_intake', false))
             ->whereHas('trimester', function ($q) use ($processDate) {
                 $q->whereDate('end_date', '<', $processDate);
             })
-            ->where('status', 'active');
+            ->with('trimester')
+            ->get();
 
-        $count = (clone $query)->count();
+        // Continuous-intake courses (German levels, Barista, ICT
+        // Certificate, ...) don't follow their linked trimester's calendar
+        // at all — their real end date is started_at + the course's own
+        // duration (EnrollmentProgression::computedDateRange()). A German
+        // progression attached to a trimester that already closed is often
+        // still genuinely running for weeks afterward, so each one has to
+        // be checked individually rather than via a single date comparison.
+        $continuousCandidates = EnrollmentProgression::query()
+            ->where('status', 'active')
+            ->whereHas('enrollment.course', fn($q) => $q->where('allows_continuous_intake', true))
+            ->with(['enrollment.course', 'trimester'])
+            ->get()
+            ->filter(fn(EnrollmentProgression $p) => $processDate->gt($p->computedEndDate()));
 
         if ($this->option('dry-run')) {
-            $this->line("Would complete {$count} ended active progression(s).");
+            $this->line("Would complete {$standardCandidates->count()} ended active standard progression(s).");
+            $this->line("Would complete {$continuousCandidates->count()} ended active continuous-intake progression(s).");
             return;
         }
 
-        $query->update([
-            'status' => 'completed',
-            'completed_at' => $processDate->toDateString(),
-        ]);
+        // completed_at is always stamped with the progression's real end
+        // date — never $processDate. StudentLedgerService/progressionDates()
+        // prefers completed_at over the trimester's own end_date once it's
+        // set, so if this cron is ever delayed (e.g. the schedule:run cron
+        // missing for a stretch) that would otherwise backdate every
+        // affected statement's shown period to "whenever the cron finally
+        // ran" instead of when the trimester/course genuinely ended.
+        foreach ($standardCandidates as $progression) {
+            $progression->update([
+                'status' => 'completed',
+                'completed_at' => $progression->trimester?->end_date?->toDateString() ?? $processDate->toDateString(),
+            ]);
+        }
+
+        foreach ($continuousCandidates as $progression) {
+            $progression->update([
+                'status' => 'completed',
+                'completed_at' => $progression->computedEndDate()->toDateString(),
+            ]);
+
+            $this->completeEnrollmentIfContinuousIntakeFinished($progression);
+        }
+    }
+
+    /**
+     * A continuous-intake enrollment (German level, Barista, ICT
+     * Certificate, ...) has no "next trimester" to roll into once its last
+     * progression finishes — unlike a multi-trimester course, there's no
+     * ambiguity about whether the enrollment itself is done. Left alone,
+     * Enrollment.status stays 'active' forever (nothing else ever
+     * transitions it), so the student view's sidebar badge disagrees with
+     * the progression's own "Completed" status. Standard multi-trimester
+     * courses are deliberately left untouched here — MarkCourseCompletedAction
+     * staying a manual, admin-driven step for those is the existing,
+     * intentional design.
+     */
+    protected function completeEnrollmentIfContinuousIntakeFinished(EnrollmentProgression $progression): void
+    {
+        $enrollment = $progression->enrollment;
+
+        if (!$enrollment || $enrollment->status !== 'active') {
+            return;
+        }
+
+        if ((int) $progression->trimester_sequence < (int) $enrollment->course->number_of_trimesters) {
+            return;
+        }
+
+        app(\App\Services\EnrollmentStatusService::class)->markCourseCompleted($enrollment);
     }
 
     protected function ensureActiveProgressionsForTrimester(Trimester $activeTrimester, $processDate): void

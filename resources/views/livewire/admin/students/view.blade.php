@@ -183,6 +183,16 @@ new class extends Component {
 
         $completedEnrollments = $student->enrollments->whereIn('status', ['course_completed', 'pending_graduation', 'graduated'])->count();
 
+        // Sum of every StudentFeeItem balance across ALL of this student's
+        // enrollments — not just the currently-selected one. The per-
+        // enrollment "Balance" card only shows that one course's own
+        // charges, which for chained courses (e.g. German A1->A2->B1->B2)
+        // can look like it disagrees with the student's actual statement,
+        // since a statement's closing balance also carries forward any
+        // unpaid balance from earlier levels. This total is what actually
+        // reconciles against the sum of what every statement shows owed.
+        $totalBalanceAcrossEnrollments = StudentFeeItem::where('student_id', $student->id)->sum('balance');
+
         /*
     |--------------------------------------------------------------------------
     | Dropdown Data
@@ -224,6 +234,7 @@ new class extends Component {
 
             'activeEnrollments' => $activeEnrollments,
             'completedEnrollments' => $completedEnrollments,
+            'totalBalanceAcrossEnrollments' => $totalBalanceAcrossEnrollments,
 
             'discountProgressions' => $selectedEnrollment
                 ? EnrollmentProgression::query()

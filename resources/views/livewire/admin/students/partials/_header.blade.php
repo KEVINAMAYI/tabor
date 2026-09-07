@@ -50,6 +50,12 @@
                     <div class="sv-stat-label">Completed</div>
                     <div class="sv-stat-value text-success">{{ $completedEnrollments }}</div>
                 </div>
+                <div class="sv-stat-card text-center" title="Sum of every enrollment's outstanding balance — this is the figure that reconciles against every statement's total owed, unlike a single enrollment's own balance">
+                    <div class="sv-stat-label">Total Balance</div>
+                    <div class="sv-stat-value {{ $totalBalanceAcrossEnrollments > 0 ? 'text-danger' : 'text-success' }}">
+                        {{ number_format($totalBalanceAcrossEnrollments, 2) }}
+                    </div>
+                </div>
             </div>
 
             {{-- Enroll CTA --}}

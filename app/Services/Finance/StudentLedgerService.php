@@ -302,20 +302,96 @@ class StudentLedgerService
             ->get()
             ->groupBy('payment_id');
 
+        /*
+        |--------------------------------------------------------------------------
+        | German-chain pre-payments
+        |--------------------------------------------------------------------------
+        | A German-chain level (e.g. GLB1) is a separate Enrollment, usually
+        | created via a manual "+Enroll" action while the prior level is
+        | still technically running. A payment recorded — via the payments
+        | modal — against the new level's fee item before that level's own
+        | progression has started should be attributed to whichever chain
+        | progression was actually running on the payment's own date, not
+        | to the not-yet-started level it happened to be allocated to. The
+        | balance nets out identically either way (calculateProgressionsBalance()
+        | picks it up via that earlier progression's own ledger instead) —
+        | this only changes which progression's ledger line displays it.
+        */
+
+        $germanChainBorrowedAllocations = collect();
+        $germanChainExcludedPaymentIds = collect();
+
+        if ($this->isGermanChainProgression($progression)) {
+            $chainProgressions = $this->germanChainProgressions($student);
+            $otherProgressionIds = $chainProgressions
+                ->pluck('id')
+                ->reject(fn($id) => (int) $id === (int) $progression->id)
+                ->values();
+
+            if ($otherProgressionIds->isNotEmpty()) {
+                $germanChainBorrowedAllocations = PaymentAllocation::query()
+                    ->with(['payment', 'studentFeeItem'])
+                    ->whereHas('studentFeeItem', function ($q) use ($student, $otherProgressionIds) {
+                        $q->where('student_id', $student->id)
+                            ->whereIn('enrollment_progression_id', $otherProgressionIds);
+                    })
+                    ->get()
+                    ->filter(function (PaymentAllocation $allocation) use ($startDate, $endDate) {
+                        if (!$allocation->payment) {
+                            return false;
+                        }
+                        $paymentDate = Carbon::parse($allocation->payment->payment_date ?? $allocation->payment->paid_at ?? now())->startOfDay();
+                        return $paymentDate->betweenIncluded($startDate->copy()->startOfDay(), $endDate->copy()->endOfDay());
+                    })
+                    ->groupBy('payment_id');
+            }
+
+            $germanChainExcludedPaymentIds = $crossEnrollmentAllocationGroups
+                ->filter(function ($allocations) use ($chainProgressions, $progression, $startDate) {
+                    $payment = $allocations->first()?->payment;
+                    if (!$payment) {
+                        return false;
+                    }
+
+                    $paymentDate = Carbon::parse($payment->payment_date ?? $payment->paid_at ?? now())->startOfDay();
+                    if (!$paymentDate->lt($startDate)) {
+                        return false;
+                    }
+
+                    return $chainProgressions->contains(function (EnrollmentProgression $candidate) use ($progression, $paymentDate) {
+                        if ((int) $candidate->id === (int) $progression->id) {
+                            return false;
+                        }
+                        [$cStart, $cEnd] = $candidate->computedDateRange();
+                        return $paymentDate->betweenIncluded($cStart->copy()->startOfDay(), $cEnd->copy()->endOfDay());
+                    });
+                })
+                ->keys();
+        }
+
         $paymentIds = $dateOwnedPayments
             ->keys()
             ->merge($crossEnrollmentAllocationGroups->keys())
+            ->merge($germanChainBorrowedAllocations->keys())
             ->unique()
+            ->diff($germanChainExcludedPaymentIds)
             ->values();
 
         return $paymentIds
-            ->map(function ($paymentId) use ($dateOwnedPayments, $crossEnrollmentAllocationGroups, $progression, $student, $startDate) {
+            ->map(function ($paymentId) use ($dateOwnedPayments, $crossEnrollmentAllocationGroups, $germanChainBorrowedAllocations, $progression, $student, $startDate) {
                 $payment      = $dateOwnedPayments->get($paymentId);
                 $crossAllocations = collect();
 
                 if ($crossEnrollmentAllocationGroups->has($paymentId)) {
                     $crossAllocations = $crossEnrollmentAllocationGroups->get($paymentId);
+                }
+
+                $germanChainBorrowedForThisPayment = $germanChainBorrowedAllocations->get($paymentId, collect());
+
+                if ($crossAllocations->isNotEmpty()) {
                     $payment = $crossAllocations->first()?->payment;
+                } elseif ($germanChainBorrowedForThisPayment->isNotEmpty()) {
+                    $payment = $germanChainBorrowedForThisPayment->first()?->payment;
                 }
 
                 if (!$payment) {
@@ -348,13 +424,19 @@ class StudentLedgerService
                 // corrected by `finance:reconcile --fix`).
                 // For cross-enrollment payments, the $crossAllocations collection is already
                 // filtered to this progression's items by the query above.
-                $currentProgressionAllocations = $isDateOwned
+                // Either way, a German-chain "borrowed" portion (allocated to a not-yet-
+                // started later level, but paid while THIS progression was actually
+                // running) is always folded in on top — it's a separate concern from
+                // whether the payment is otherwise date-owned by this progression.
+                $currentProgressionAllocations = ($isDateOwned
                     ? $payment->allocations
                         ->filter(fn($allocation) =>
                             (int) optional($allocation->studentFeeItem)->enrollment_progression_id === (int) $progression->id
                         )
                         ->values()
-                    : $crossAllocations;
+                    : $crossAllocations)
+                    ->merge($germanChainBorrowedForThisPayment)
+                    ->values();
 
                 $visibleAllocations = $currentProgressionAllocations
                     ->filter(function ($allocation) use ($paymentDate) {
@@ -593,38 +675,7 @@ class StudentLedgerService
 
     protected function progressionDates(EnrollmentProgression $progression): array
     {
-        $progression->loadMissing(['trimester', 'enrollment.course']);
-
-        $course = $progression->enrollment?->course;
-
-        if ((bool) $course?->allows_continuous_intake) {
-            $startDate = Carbon::parse(
-                $progression->started_at
-                ?? $progression->enrollment?->admission_date
-                ?? $progression->trimester?->start_date
-                ?? now()
-            )->startOfDay();
-
-            $durationMonths = match (true) {
-                str_contains(strtolower($course?->title ?? ''), 'b1') => 4,
-                str_contains(strtolower($course?->title ?? ''), 'b2') => 4,
-                default => 3,
-            };
-
-            $endDate = $startDate->copy()->addMonths($durationMonths)->subDay()->endOfDay();
-
-            return [$startDate, $endDate];
-        }
-
-        $startDate = Carbon::parse(
-            $progression->started_at ?? $progression->trimester?->start_date ?? now()
-        )->startOfDay();
-
-        $endDate = Carbon::parse(
-            $progression->completed_at ?? $progression->trimester?->end_date ?? now()
-        )->endOfDay();
-
-        return [$startDate, $endDate];
+        return $progression->computedDateRange();
     }
 
     protected function isGermanChainProgression(EnrollmentProgression $progression): bool
@@ -636,6 +687,19 @@ class StudentLedgerService
             ['GLA1', 'GLA2', 'GLB1', 'GLB2'],
             true
         );
+    }
+
+    /**
+     * All of this student's progressions across every German-chain level
+     * (GLA1/GLA2/GLB1/GLB2), regardless of enrollment.
+     */
+    protected function germanChainProgressions(Student $student): Collection
+    {
+        return EnrollmentProgression::query()
+            ->with(['enrollment.course', 'trimester'])
+            ->where('student_id', $student->id)
+            ->whereHas('enrollment.course', fn($q) => $q->whereIn('code', ['GLA1', 'GLA2', 'GLB1', 'GLB2']))
+            ->get();
     }
 
     protected function hasGermanPreviousEnrollmentBalance(Student $student, EnrollmentProgression $progression): bool

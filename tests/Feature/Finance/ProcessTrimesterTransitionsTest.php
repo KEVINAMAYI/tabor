@@ -186,3 +186,52 @@ test('an unpaid balance from a prior trimester is still counted after rolling in
     $totalBalance = StudentFeeItem::where('student_id', $student->id)->sum('balance');
     expect((float) $totalBalance)->toBe(2000.0);
 });
+
+test('a continuous-intake (German) progression is not completed early just because its linked trimester closed, but is completed once its own duration elapses', function () {
+    // Reproduces a real production bug (Clinton Ayaye Omwario, Sep 2026):
+    // a German course progression started 2026-08-24, attached to a
+    // trimester ending 2026-08-31 (unrelated — just whichever trimester
+    // happened to be "active" at enrollment time). The old code marked it
+    // "completed" the moment the trimester's own end_date passed (a few
+    // days later), even though the course's real 2-month duration
+    // (allows_continuous_intake) meant it should still be running until
+    // 2026-10-23.
+    $intake = Intake::create(['name' => 'Intake german-rollover', 'starts_at' => '2026-01-01']);
+    $year = AcademicYear::create(['name' => '2026', 'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'active' => true]);
+
+    $trimester = Trimester::create([
+        'academic_year_id' => $year->id,
+        'name' => 'Trimester Aug', 'trimester_number' => 1,
+        'start_date' => '2026-05-01', 'end_date' => '2026-08-31', 'status' => 'closed',
+    ]);
+
+    $course = Course::create([
+        'title' => 'German Language', 'code' => 'GLB1',
+        'number_of_trimesters' => '1', 'allows_continuous_intake' => true,
+    ]);
+
+    $user = User::factory()->create();
+    $student = Student::create(['first_name' => 'German', 'last_name' => 'Rollover', 'email' => $user->email, 'user_id' => $user->id]);
+
+    $enrollment = Enrollment::create([
+        'course_id' => $course->id, 'intake_id' => $intake->id, 'student_id' => $student->id,
+        'status' => 'active', 'assigned_start_trimester_id' => $trimester->id, 'admission_date' => '2026-08-24',
+    ]);
+
+    $progression = EnrollmentProgression::create([
+        'student_id' => $student->id, 'enrollment_id' => $enrollment->id, 'trimester_id' => $trimester->id,
+        'trimester_sequence' => 1, 'status' => 'active', 'started_at' => '2026-08-24',
+    ]);
+
+    expect($progression->computedEndDate()->toDateString())->toBe('2026-10-23');
+
+    // A week after the trimester closed, but the German course's own
+    // 2-month window (ending 2026-10-23) hasn't elapsed yet.
+    Artisan::call('finance:process-trimester-transitions', ['--date' => '2026-09-05']);
+    expect($progression->fresh()->status)->toBe('active');
+
+    // Now the German course's own duration has genuinely elapsed.
+    Artisan::call('finance:process-trimester-transitions', ['--date' => '2026-10-24']);
+    expect($progression->fresh()->status)->toBe('completed')
+        ->and($progression->fresh()->completed_at->toDateString())->toBe('2026-10-23');
+});

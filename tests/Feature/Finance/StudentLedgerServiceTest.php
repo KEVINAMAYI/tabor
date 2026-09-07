@@ -287,18 +287,26 @@ test('a same-enrollment payment dated in trimester 2 but FIFO-allocated to trime
         ->and($t2Item->fresh()->balance)->toEqual('1000.00');
 });
 
-test('a payment that FIFO-overflows from an earlier German-chain course level onto a later level shows the overflow portion on the later level\'s own statement', function () {
-    // Reproduces a real production bug (Wellington Ngunyi, Sep 2026): a
-    // payment recorded against GLA1 (enrollment_id set to the GLA1
-    // enrollment) is split — via the admin allocation modal, not the
-    // auto-FIFO engine — across GLA1's own fee item AND a GLB1 fee item.
-    // GLA1's own statement correctly credits only its own portion. The
-    // overflow portion allocated to GLB1 must show on GLB1's statement —
-    // isPreviousGermanCoursePayment() incorrectly suppressed it, assuming
-    // it was "already counted" via the opening-balance chain, when in fact
-    // GLA1's own ledger never counts it either (filtered to GLA1's own
-    // progression), so it was invisible everywhere despite genuinely
-    // reducing the GLB1 fee item's real balance.
+test('a payment that pays in advance for a not-yet-started German-chain level is attributed to whichever level was actually running on its own date', function () {
+    // Reproduces two real production bugs, fixed in sequence (Wellington
+    // Ngunyi / Clinton Ayaye Omwario, Sep 2026):
+    //
+    // 1. A payment recorded against GLA1 (enrollment_id set to the GLA1
+    //    enrollment) is split — via the admin allocation modal, not the
+    //    auto-FIFO engine — across GLA1's own fee item AND a GLB1 fee item
+    //    that doesn't exist yet from the student's perspective (GLB1 hasn't
+    //    started). isPreviousGermanCoursePayment() used to suppress the
+    //    GLB1 portion entirely, assuming it was "already counted" via the
+    //    opening-balance chain — it wasn't, so it was invisible everywhere
+    //    despite genuinely reducing the GLB1 fee item's real balance.
+    //
+    // 2. Once visible, it showed on GLB1's OWN statement — but the payment
+    //    was actually made while GLA1 was still the running level (its own
+    //    date falls inside GLA1's window). The user's expectation: a
+    //    payment made before a level even starts shouldn't appear as a
+    //    line item on that level's ledger — it belongs to whichever level
+    //    was actually running on the payment's date, and only reaches the
+    //    later level via its opening "Balance Brought Forward".
     $intake = Intake::create(['name' => 'Intake german', 'starts_at' => '2026-01-01']);
     $academicYear = \App\Models\AcademicYear::firstOrCreate(
         ['name' => '2026'],
@@ -380,10 +388,18 @@ test('a payment that FIFO-overflows from an earlier German-chain course level on
     $gla1PaymentRow = $gla1Statement['ledger']->firstWhere('source_type', 'payment');
     $glb1PaymentRow = $glb1Statement['ledger']->firstWhere('source_type', 'payment');
 
-    expect($gla1PaymentRow['cr'])->toBe(25000.0)
-        ->and($gla1Statement['closing_balance'])->toBe(0.0);
+    // The full 27,000 shows on GLA1 (the level actually running on
+    // 2026-04-01) — GLA1's own 25,000 charge is cleared, leaving a 2,000
+    // credit balance.
+    expect($gla1PaymentRow['cr'])->toBe(27000.0)
+        ->and($gla1Statement['closing_balance'])->toBe(-2000.0);
 
-    expect($glb1PaymentRow)->not->toBeNull('the GLB1-allocated portion of the payment must appear on GLB1\'s own statement')
-        ->and($glb1PaymentRow['cr'])->toBe(2000.0)
+    // GLB1 shows no direct line item for this payment — the money reaches
+    // it only via the opening balance, carrying GLA1's -2,000 credit
+    // forward. The closing balance is identical to the old (pre-refinement)
+    // expectation either way — this only changes which statement's ledger
+    // line displays the payment, not how much anyone owes.
+    expect($glb1PaymentRow)->toBeNull('the payment predates GLB1 entirely — it must not appear as a line item there')
+        ->and($glb1Statement['opening_balance'])->toBe(-2000.0)
         ->and($glb1Statement['closing_balance'])->toBe(33000.0);
 });
