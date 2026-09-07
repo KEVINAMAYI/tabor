@@ -325,6 +325,15 @@
         $opening = (float) ($statement['opening_balance'] ?? 0);
         $closing = (float) ($statement['closing_balance'] ?? 0);
 
+        // The Totals row must reconcile against the closing balance
+        // (Total DR - Total CR = Closing Balance) the same way every row
+        // above it does — so the opening balance (shown on its own B/F
+        // row, not part of any ledger entry) has to be folded into
+        // whichever side it belongs on: a debit balance (amount owed)
+        // adds to Total DR, a credit balance (overpaid) adds to Total CR.
+        $totalDebits = (float) ($statement['total_debits'] ?? 0) + max(0, $opening);
+        $totalCredits = (float) ($statement['total_credits'] ?? 0) + max(0, -$opening);
+
         $bc = fn($v) => $v > 0 ? 'bal-pos' : ($v < 0 ? 'bal-neg' : 'bal-zero');
         $tbc = fn($v) => $v > 0 ? 'bal-pos' : ($v < 0 ? 'bal-neg' : 'bal-zero');
 
@@ -483,8 +492,8 @@
             {{-- Totals --}}
             <tr class="row-totals">
                 <th colspan="3" style="text-align:right;">Total</th>
-                <th class="r">{{ number_format($statement['total_debits'], 2) }}</th>
-                <th class="r" style="color:#6ee7b7;">{{ number_format($statement['total_credits'], 2) }}</th>
+                <th class="r">{{ number_format($totalDebits, 2) }}</th>
+                <th class="r" style="color:#6ee7b7;">{{ number_format($totalCredits, 2) }}</th>
                 <th class="r {{ $tbc($closing) }}">{{ number_format($closing, 2) }}</th>
             </tr>
 
