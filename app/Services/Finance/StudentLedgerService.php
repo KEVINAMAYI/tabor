@@ -323,17 +323,29 @@ class StudentLedgerService
 
         if ($this->isGermanChainProgression($progression)) {
             $chainProgressions = $this->germanChainProgressions($student);
-            $otherProgressionIds = $chainProgressions
+            $progressionRank = $this->germanChainRank($progression);
+
+            // Only progressions for a STRICTLY LATER level (e.g. this is
+            // GLA1, so GLA2/GLB1/GLB2) — borrowing must only ever pull
+            // money FORWARD in time (a pre-payment for a level that hasn't
+            // started yet). Without this, a later level (e.g. GLB2) could
+            // wrongly "borrow" a payment that already correctly displays
+            // on an EARLIER, already-finished level (e.g. GLB1) just
+            // because the payment date happens to fall inside the later
+            // level's own calendar window — a real production bug (Sep
+            // 2026): a payment genuinely applied to GLB1 was also showing
+            // on GLB2 purely from date overlap, double-counting it.
+            $laterProgressionIds = $chainProgressions
+                ->filter(fn(EnrollmentProgression $candidate) => $this->germanChainRank($candidate) > $progressionRank)
                 ->pluck('id')
-                ->reject(fn($id) => (int) $id === (int) $progression->id)
                 ->values();
 
-            if ($otherProgressionIds->isNotEmpty()) {
+            if ($laterProgressionIds->isNotEmpty()) {
                 $germanChainBorrowedAllocations = PaymentAllocation::query()
                     ->with(['payment', 'studentFeeItem'])
-                    ->whereHas('studentFeeItem', function ($q) use ($student, $otherProgressionIds) {
+                    ->whereHas('studentFeeItem', function ($q) use ($student, $laterProgressionIds) {
                         $q->where('student_id', $student->id)
-                            ->whereIn('enrollment_progression_id', $otherProgressionIds);
+                            ->whereIn('enrollment_progression_id', $laterProgressionIds);
                     })
                     ->get()
                     ->filter(function (PaymentAllocation $allocation) use ($startDate, $endDate) {
@@ -347,7 +359,7 @@ class StudentLedgerService
             }
 
             $germanChainExcludedPaymentIds = $crossEnrollmentAllocationGroups
-                ->filter(function ($allocations) use ($chainProgressions, $progression, $startDate) {
+                ->filter(function ($allocations) use ($chainProgressions, $progression, $progressionRank, $startDate) {
                     $payment = $allocations->first()?->payment;
                     if (!$payment) {
                         return false;
@@ -358,8 +370,15 @@ class StudentLedgerService
                         return false;
                     }
 
-                    return $chainProgressions->contains(function (EnrollmentProgression $candidate) use ($progression, $paymentDate) {
+                    // Only an EARLIER level (lower rank) can claim this
+                    // payment away from its own target progression —
+                    // mirrors the same directional constraint as the
+                    // borrow query above.
+                    return $chainProgressions->contains(function (EnrollmentProgression $candidate) use ($progression, $progressionRank, $paymentDate) {
                         if ((int) $candidate->id === (int) $progression->id) {
+                            return false;
+                        }
+                        if ($this->germanChainRank($candidate) >= $progressionRank) {
                             return false;
                         }
                         [$cStart, $cEnd] = $candidate->computedDateRange();
@@ -700,6 +719,19 @@ class StudentLedgerService
             ->where('student_id', $student->id)
             ->whereHas('enrollment.course', fn($q) => $q->whereIn('code', ['GLA1', 'GLA2', 'GLB1', 'GLB2']))
             ->get();
+    }
+
+    /**
+     * GLA1=1, GLA2=2, GLB1=3, GLB2=4 — null if not a German-chain progression.
+     */
+    protected function germanChainRank(EnrollmentProgression $progression): ?int
+    {
+        $progression->loadMissing(['enrollment.course']);
+
+        $order = ['GLA1' => 1, 'GLA2' => 2, 'GLB1' => 3, 'GLB2' => 4];
+        $code = strtoupper(trim($progression->enrollment?->course?->code ?? ''));
+
+        return $order[$code] ?? null;
     }
 
     protected function hasGermanPreviousEnrollmentBalance(Student $student, EnrollmentProgression $progression): bool
