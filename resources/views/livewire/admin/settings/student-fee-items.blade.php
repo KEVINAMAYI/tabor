@@ -767,7 +767,7 @@ new class extends Component {
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Student</label>
 
-                                <select class="form-select" wire:model.live="student_id">
+                                <select class="form-select select2-searchable" data-placeholder="Search / select student" wire:model.live="student_id">
                                     <option value="">Search / select student</option>
 
                                     @foreach ($students as $student)
@@ -940,7 +940,92 @@ new class extends Component {
             return bootstrap.Modal.getOrCreateInstance(el);
         }
 
-        window.addEventListener('show-fee-item-modal', () => feeItemModalInstance()?.show());
+        window.addEventListener('show-fee-item-modal', () => {
+            feeItemModalInstance()?.show();
+            setTimeout(() => window.initFeeItemSelect2(document.getElementById('feeItemModal')), 150);
+        });
         window.addEventListener('hide-fee-item-modal', () => feeItemModalInstance()?.hide());
+
+        // Searchable (Select2) student/enrollment dropdowns — see the
+        // equivalent block in admin/payments/index.blade.php for the full
+        // rationale (a MutationObserver, not a Livewire JS hook, drives
+        // re-init on every DOM change, since Enrollment options depend on
+        // the selected Student and are re-rendered by the server; the
+        // observer disconnects during its own init to avoid re-triggering
+        // itself off Select2's own DOM mutations).
+        window.initFeeItemSelect2 = function (context) {
+            context = context || document;
+            const $ = window.jQuery;
+
+            if (!$ || !$.fn || !$.fn.select2) {
+                console.error('[fee-items] jQuery/Select2 not available yet — dropdowns will stay plain selects.');
+                return;
+            }
+
+            window.__feeItemSelect2Observer?.disconnect();
+
+            $(context).find('select.select2-searchable').each(function () {
+                const $el = $(this);
+
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+
+                $el.select2({
+                    width: '100%',
+                    dropdownParent: $el.closest('.modal').length ? $el.closest('.modal') : $(document.body),
+                    placeholder: $el.data('placeholder') || 'Search...',
+                    allowClear: true,
+                });
+            });
+
+            if (window.__feeItemSelect2Observer && window.__feeItemSelect2Target) {
+                window.__feeItemSelect2Observer.observe(window.__feeItemSelect2Target, { childList: true, subtree: true });
+            }
+        };
+
+        function bootFeeItemSelect2() {
+            window.initFeeItemSelect2();
+
+            const modal = document.getElementById('feeItemModal');
+
+            if (!modal || !window.MutationObserver) {
+                return;
+            }
+
+            let debounce = null;
+
+            window.__feeItemSelect2Target = modal;
+            window.__feeItemSelect2Observer = new MutationObserver((mutations) => {
+                // See the equivalent comment in admin/payments/index.blade.php
+                // — Select2's own dropdown mutates this modal's DOM too, so
+                // only react to mutations that touch something it doesn't own.
+                const isRealChange = mutations.some((m) =>
+                    [...m.addedNodes, ...m.removedNodes].some((n) => {
+                        if (n.nodeType !== 1) return false;
+                        const cls = String(n.className || '');
+                        return !cls.includes('select2');
+                    })
+                );
+
+                if (!isRealChange) return;
+
+                clearTimeout(debounce);
+                debounce = setTimeout(() => window.initFeeItemSelect2(modal), 60);
+            });
+            window.__feeItemSelect2Observer.observe(modal, { childList: true, subtree: true });
+        }
+
+        // 'livewire:navigated' fires on the initial load AND after every
+        // subsequent wire:navigate transition — unlike 'DOMContentLoaded',
+        // which only ever fires once per browser tab and would silently
+        // never run this setup if this page was reached via a wire:navigate
+        // link (e.g. the sidebar) rather than a full page load.
+        document.addEventListener('livewire:navigated', bootFeeItemSelect2);
+        if (document.readyState !== 'loading') {
+            bootFeeItemSelect2();
+        } else {
+            document.addEventListener('DOMContentLoaded', bootFeeItemSelect2);
+        }
     </script>
 @endpush

@@ -133,3 +133,127 @@ test('saving a payment links it to the student/enrollment picked in an allocatio
         ->and($payment->student_id)->toEqual($student->id)
         ->and($payment->enrollment_id)->toEqual($enrollment->id);
 });
+
+test('opening the edit modal and saving without changing anything preserves the existing allocation', function () {
+    // Reproduces a real production bug: allocationFeeItems (the Fee Item
+    // dropdown's option list) only ever included fee items with
+    // balance > 0 and status in [pending, partial] — but editing an
+    // existing, already-allocated payment means its own fee item is
+    // exactly the one now sitting at balance = 0 / status = paid. With no
+    // matching <option>, the dropdown rendered blank despite the row's
+    // real student_fee_item_id being correctly set. Saving in that state
+    // treated every row as empty, reversed the real allocation, and fell
+    // through to a blind FIFO re-allocation — silently moving the
+    // student's money onto a completely different fee item while still
+    // showing "Payment updated successfully."
+    $student = makeAllocationTestStudent('7');
+    $enrollment = makeAllocationTestEnrollment($student, '7');
+
+    // The item the payment actually covers.
+    $targetItem = makeAllocationTestFeeItem($student, $enrollment, '7a', 5000);
+
+    // A second, older, cheaper outstanding item that a blind FIFO
+    // re-allocation would grab first instead — makes the bug's failure
+    // mode unambiguous rather than coincidentally reproducing the same
+    // result.
+    $decoyCategory = FeeCategory::create(['code' => 'alloc-7b', 'name' => 'Exam']);
+    $decoyDefinition = FeeDefinition::create([
+        'fee_category_id' => $decoyCategory->id,
+        'name' => 'Exam Fee',
+        'scope' => 'student',
+        'default_amount' => 1000,
+        'active' => true,
+    ]);
+    $decoyItem = StudentFeeItem::create([
+        'student_id' => $student->id,
+        'enrollment_id' => $enrollment->id,
+        'fee_definition_id' => $decoyDefinition->id,
+        'description' => 'Exam Fee',
+        'amount' => 1000,
+        'balance' => 1000,
+        'charge_date' => '2025-01-01',
+        'status' => 'pending',
+    ]);
+
+    $component = Volt::test('admin.payments.index')
+        ->call('addPaymentAllocationRow')
+        ->set('paymentAllocationRows.0.student_fee_item_id', $targetItem->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->set('amount', 5000)
+        ->set('payment_method', 'mpesa')
+        ->set('paid_at', '2026-01-10')
+        ->call('addPayment');
+
+    $payment = \App\Models\Payment::latest('id')->first();
+    expect($targetItem->fresh()->balance)->toEqual('0.00');
+
+    // Simulates opening "Edit" on this payment and immediately clicking
+    // Save, without touching any field.
+    $component->call('editPayment', $payment->id)
+        ->call('updatePayment');
+
+    $payment->refresh();
+    $allocations = $payment->allocations()->get();
+
+    expect($allocations)->toHaveCount(1)
+        ->and((int) $allocations->first()->student_fee_item_id)->toBe($targetItem->id)
+        ->and((float) $allocations->first()->amount_allocated)->toBe(5000.0)
+        ->and($targetItem->fresh()->balance)->toEqual('0.00')
+        ->and($decoyItem->fresh()->balance)->toEqual('1000.00');
+});
+
+test('editing a payment to move its allocation onto a genuinely different fee item saves that change', function () {
+    // The exact real-world action this whole bug chain was blocking: an
+    // admin opens an existing payment that's wrongly allocated to fee item
+    // A, and re-points it at the correct fee item B instead.
+    $student = makeAllocationTestStudent('8');
+    $enrollment = makeAllocationTestEnrollment($student, '8');
+
+    $wrongItem = makeAllocationTestFeeItem($student, $enrollment, '8a', 5000);
+
+    $correctCategory = FeeCategory::create(['code' => 'alloc-8b', 'name' => 'German']);
+    $correctDefinition = FeeDefinition::create([
+        'fee_category_id' => $correctCategory->id,
+        'name' => 'German Tuition Fee',
+        'scope' => 'student',
+        'default_amount' => 5000,
+        'active' => true,
+    ]);
+    $correctItem = StudentFeeItem::create([
+        'student_id' => $student->id,
+        'enrollment_id' => $enrollment->id,
+        'fee_definition_id' => $correctDefinition->id,
+        'description' => 'German Tuition Fee',
+        'amount' => 5000,
+        'balance' => 5000,
+        'charge_date' => '2026-01-01',
+        'status' => 'pending',
+    ]);
+
+    $component = Volt::test('admin.payments.index')
+        ->call('addPaymentAllocationRow')
+        ->set('paymentAllocationRows.0.student_fee_item_id', $wrongItem->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->set('amount', 5000)
+        ->set('payment_method', 'mpesa')
+        ->set('paid_at', '2026-01-10')
+        ->call('addPayment');
+
+    $payment = \App\Models\Payment::latest('id')->first();
+    expect($wrongItem->fresh()->balance)->toEqual('0.00');
+
+    // Open edit, then actually change the row's fee item to the correct one.
+    $component->call('editPayment', $payment->id)
+        ->set('paymentAllocationRows.0.student_fee_item_id', $correctItem->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->call('updatePayment');
+
+    $payment->refresh();
+    $allocations = $payment->allocations()->get();
+
+    expect($allocations)->toHaveCount(1)
+        ->and((int) $allocations->first()->student_fee_item_id)->toBe($correctItem->id)
+        ->and((float) $allocations->first()->amount_allocated)->toBe(5000.0)
+        ->and($correctItem->fresh()->balance)->toEqual('0.00')
+        ->and($wrongItem->fresh()->balance)->toEqual('5000.00');
+});

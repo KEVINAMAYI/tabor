@@ -217,8 +217,29 @@ new class extends Component {
 
             'allocationFeeItems' => StudentFeeItem::query()
                 ->with(['student', 'enrollment.course', 'feeDefinition'])
-                ->where('balance', '>', 0)
-                ->whereIn('status', ['pending', 'partial'])
+                ->where(function ($q) {
+                    $q->where(function ($outstanding) {
+                        $outstanding->where('balance', '>', 0)->whereIn('status', ['pending', 'partial']);
+                    });
+
+                    // Always include whatever fee item each allocation row
+                    // is CURRENTLY set to, even if its balance is now 0 —
+                    // which it always will be for a payment being edited,
+                    // since that balance was paid down by this very
+                    // payment. Without this, the dropdown has no <option>
+                    // for the row's real value, renders blank, and saving
+                    // silently wipes every allocation on this payment (see
+                    // updatePayment()'s reverse-then-reapply flow).
+                    $rowFeeItemIds = collect($this->paymentAllocationRows)
+                        ->pluck('student_fee_item_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    if ($rowFeeItemIds->isNotEmpty()) {
+                        $q->orWhereIn('id', $rowFeeItemIds);
+                    }
+                })
                 ->orderBy('charge_date')
                 ->orderBy('id')
                 ->get(),
@@ -320,6 +341,34 @@ new class extends Component {
         }
     }
 
+    /**
+     * The payment's own student_id/enrollment_id used to come solely from
+     * the top-level "Default Student / Enrollment" search field — if that
+     * was left blank (even though a student/enrollment was picked directly
+     * in an allocation row), the payment's own student_id/enrollment_id got
+     * saved as null, silently unlinking it from the student even though its
+     * PaymentAllocation rows correctly pointed at their fee items. Falls
+     * back to the first allocation row that has a student picked.
+     */
+    protected function resolvePaymentStudentAndEnrollment(?Enrollment $enrollment): array
+    {
+        if ($enrollment) {
+            return [$enrollment->student_id, $enrollment->id];
+        }
+
+        $fallbackRow = collect($this->paymentAllocationRows)
+            ->first(fn($row) => filled($row['student_id'] ?? null));
+
+        if (!$fallbackRow) {
+            return [null, null];
+        }
+
+        return [
+            $fallbackRow['student_id'] ?: null,
+            $fallbackRow['enrollment_id'] ?: null,
+        ];
+    }
+
     protected function applyPaymentAllocationRows(Payment $payment): void
     {
         $remaining = (float) $payment->amount;
@@ -404,10 +453,11 @@ new class extends Component {
             $this->validatePaymentAllocationRows($amount);
 
             $enrollment = $this->enrollment_id ? Enrollment::find($this->enrollment_id) : null;
+            [$paymentStudentId, $paymentEnrollmentId] = $this->resolvePaymentStudentAndEnrollment($enrollment);
 
             $payment = Payment::create([
-                'student_id' => $enrollment?->student_id,
-                'enrollment_id' => $enrollment?->id,
+                'student_id' => $paymentStudentId,
+                'enrollment_id' => $paymentEnrollmentId,
                 'amount' => $amount,
                 'unallocated_balance' => $amount,
                 'method' => $this->payment_method,
@@ -498,10 +548,11 @@ new class extends Component {
             $this->validatePaymentAllocationRows($amount);
 
             $enrollment = $this->enrollment_id ? Enrollment::find($this->enrollment_id) : null;
+            [$paymentStudentId, $paymentEnrollmentId] = $this->resolvePaymentStudentAndEnrollment($enrollment);
 
             $payment->update([
-                'student_id' => $enrollment?->student_id,
-                'enrollment_id' => $enrollment?->id,
+                'student_id' => $paymentStudentId,
+                'enrollment_id' => $paymentEnrollmentId,
                 'amount' => $amount,
                 'unallocated_balance' => $amount,
                 'method' => $this->payment_method,
@@ -722,7 +773,8 @@ new class extends Component {
 
                     <div class="col-md-2">
                         <label class="form-label small text-muted">Student</label>
-                        <select class="form-select" wire:model.live="studentFilter">
+                        <select class="form-select select2-searchable" data-placeholder="All students"
+                            wire:model.live="studentFilter">
                             <option value="">All students</option>
                             @foreach ($students as $student)
                                 <option value="{{ $student->id }}">
@@ -950,10 +1002,11 @@ new class extends Component {
                                                     );
                                             @endphp
 
-                                            <div class="row g-2 align-items-end mb-2">
+                                            <div wire:key="allocation-row-{{ $index }}" class="row g-2 align-items-end mb-2">
                                                 <div class="col-md-3">
                                                     <label class="form-label small">Student</label>
-                                                    <select class="form-select"
+                                                    <select wire:key="allocation-{{ $index }}-student" class="form-select select2-searchable"
+                                                        data-placeholder="Select student"
                                                         wire:model.live="paymentAllocationRows.{{ $index }}.student_id">
                                                         <option value="">Select student</option>
                                                         @foreach ($allocationStudents as $student)
@@ -967,7 +1020,7 @@ new class extends Component {
 
                                                 <div class="col-md-3">
                                                     <label class="form-label small">Enrollment</label>
-                                                    <select class="form-select"
+                                                    <select wire:key="allocation-{{ $index }}-enrollment" class="form-select"
                                                         wire:model.live="paymentAllocationRows.{{ $index }}.enrollment_id">
                                                         <option value="">Any enrollment</option>
                                                         @foreach ($rowEnrollments as $enrollment)
@@ -981,7 +1034,7 @@ new class extends Component {
 
                                                 <div class="col-md-3">
                                                     <label class="form-label small">Fee Item</label>
-                                                    <select class="form-select"
+                                                    <select wire:key="allocation-{{ $index }}-fee-item" class="form-select"
                                                         wire:model.live="paymentAllocationRows.{{ $index }}.student_fee_item_id">
                                                         <option value="">Select fee item</option>
                                                         @foreach ($rowFeeItems as $item)
@@ -993,14 +1046,14 @@ new class extends Component {
                                                     </select>
                                                 </div>
 
-                                                <div class="col-md-2">
+                                                <div wire:key="allocation-{{ $index }}-amount-col" class="col-md-2">
                                                     <label class="form-label small">Amount</label>
                                                     <input type="number" step="0.01" min="1"
                                                         class="form-control"
                                                         wire:model="paymentAllocationRows.{{ $index }}.amount">
                                                 </div>
 
-                                                <div class="col-md-1">
+                                                <div wire:key="allocation-{{ $index }}-remove-col" class="col-md-1">
                                                     <button type="button" class="btn btn-outline-danger w-100"
                                                         wire:click="removePaymentAllocationRow({{ $index }})">
                                                         ×
@@ -1288,6 +1341,7 @@ new class extends Component {
     <script>
         window.addEventListener('show-payment-modal', () => {
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addPaymentModal')).show();
+            setTimeout(() => window.initPaymentSelect2(document.getElementById('addPaymentModal')), 150);
         });
 
         window.addEventListener('hide-payment-modal', () => {
@@ -1301,5 +1355,104 @@ new class extends Component {
         window.addEventListener('hide-allocation-modal', () => {
             bootstrap.Modal.getInstance(document.getElementById('allocationModal'))?.hide();
         });
+
+        // Searchable (Select2) student/enrollment/fee-item dropdowns.
+        //
+        // These selects keep their normal wire:model.live bindings — Select2
+        // is purely a visual layer on top, never wire:ignore'd, because the
+        // Enrollment/Fee Item options for a given allocation row are
+        // re-rendered by the server every time that row's Student (or
+        // Enrollment) changes. Select2 doesn't watch a <select> for
+        // added/removed <option>s once initialized, so we destroy and
+        // re-init any decorated select whenever the modal's DOM changes —
+        // cheap for a handful of rows, and guarantees the dropdown always
+        // reflects whatever Livewire just wrote into the DOM (including
+        // which option is pre-selected, e.g. the new-row student auto-fill).
+        // Select2 fires a native `change` event on the underlying <select>
+        // when a value is picked via its UI, which wire:model.live already
+        // listens for — no custom event bridge needed.
+        //
+        // A MutationObserver (not a Livewire JS hook) drives the re-init so
+        // this doesn't depend on a specific Livewire internal API version.
+        window.initPaymentSelect2 = function (context) {
+            context = context || document;
+            const $ = window.jQuery;
+
+            if (!$ || !$.fn || !$.fn.select2) {
+                console.error('[payments] jQuery/Select2 not available yet — dropdowns will stay plain selects.');
+                return;
+            }
+
+            // Select2 init mutates the DOM (hides the <select>, injects its
+            // own widget) — disconnect first so the observer below doesn't
+            // see that as "Livewire changed something" and re-trigger itself.
+            window.__paymentSelect2Observer?.disconnect();
+
+            $(context).find('select.select2-searchable').each(function () {
+                const $el = $(this);
+
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+
+                $el.select2({
+                    width: '100%',
+                    dropdownParent: $el.closest('.modal').length ? $el.closest('.modal') : $(document.body),
+                    placeholder: $el.data('placeholder') || 'Search...',
+                    allowClear: true,
+                });
+            });
+
+            if (window.__paymentSelect2Observer && window.__paymentSelect2Target) {
+                window.__paymentSelect2Observer.observe(window.__paymentSelect2Target, { childList: true, subtree: true });
+            }
+        };
+
+        function bootPaymentSelect2() {
+            window.initPaymentSelect2();
+
+            const modal = document.getElementById('addPaymentModal');
+
+            if (!modal || !window.MutationObserver) {
+                return;
+            }
+
+            let debounce = null;
+
+            window.__paymentSelect2Target = modal;
+            window.__paymentSelect2Observer = new MutationObserver((mutations) => {
+                // Select2 itself mutates the DOM inside this modal (its
+                // results dropdown is appended here so it positions/z-indexes
+                // correctly over a Bootstrap modal). Without this filter,
+                // opening the dropdown would immediately trigger our own
+                // destroy+rebuild below, closing it again instantly. Only
+                // react to mutations that touch something NOT select2-owned.
+                const isRealChange = mutations.some((m) =>
+                    [...m.addedNodes, ...m.removedNodes].some((n) => {
+                        if (n.nodeType !== 1) return false;
+                        const cls = String(n.className || '');
+                        return !cls.includes('select2');
+                    })
+                );
+
+                if (!isRealChange) return;
+
+                clearTimeout(debounce);
+                debounce = setTimeout(() => window.initPaymentSelect2(modal), 60);
+            });
+            window.__paymentSelect2Observer.observe(modal, { childList: true, subtree: true });
+        }
+
+        // 'livewire:navigated' fires both on the initial page load AND after
+        // every subsequent wire:navigate transition — unlike
+        // 'DOMContentLoaded', which only ever fires once per browser tab and
+        // would silently never run this setup if the Payments page was
+        // reached via a wire:navigate link rather than a full page load.
+        document.addEventListener('livewire:navigated', bootPaymentSelect2);
+        if (document.readyState !== 'loading') {
+            bootPaymentSelect2();
+        } else {
+            document.addEventListener('DOMContentLoaded', bootPaymentSelect2);
+        }
     </script>
 @endpush
