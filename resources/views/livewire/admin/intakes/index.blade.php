@@ -52,6 +52,21 @@ new class extends Component {
         ];
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function saveIntake(): void
+    {
+        if ($this->editId) {
+            $this->updateIntake();
+            return;
+        }
+
+        $this->addIntake();
+    }
+
     /* ───────── Create ──────────────────────────────── */
     public function addIntake()
     {
@@ -306,7 +321,7 @@ new class extends Component {
                         <div class="modal-header"><h5 class="modal-title">Intake</h5>
                             <button class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <form wire:submit.prevent="{{ $editId ? 'updateIntake' : 'addIntake' }}">
+                        <form wire:submit.prevent="saveIntake">
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">

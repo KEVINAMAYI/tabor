@@ -60,6 +60,21 @@ new class extends Component {
         ];
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function saveClassGroup(): void
+    {
+        if ($this->editId) {
+            $this->updateClassGroup();
+            return;
+        }
+
+        $this->addClassGroup();
+    }
+
     public function addClassGroup()
     {
         $this->validate();
@@ -288,7 +303,7 @@ new class extends Component {
                             <h5 class="modal-title">Class Group</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form wire:submit.prevent="{{ $editId ? 'updateClassGroup' : 'addClassGroup' }}">
+                        <form wire:submit.prevent="saveClassGroup">
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">

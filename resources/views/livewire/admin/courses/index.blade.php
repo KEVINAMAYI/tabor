@@ -207,6 +207,21 @@ new class extends Component {
         return (float) $this->admin_registration_fee + (float) $this->admin_student_id_fee + (float) $this->admin_stationery_fee + (float) $this->admin_caution_fee;
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function saveCourse(): void
+    {
+        if ($this->editId) {
+            $this->updateCourse();
+            return;
+        }
+
+        $this->addCourse();
+    }
+
     public function addCourse()
     {
         $this->validate();
@@ -664,7 +679,7 @@ new class extends Component {
                                 aria-label="Close"></button>
                         </div>
 
-                        <form wire:submit.prevent="{{ $editId ? 'updateCourse' : 'addCourse' }}">
+                        <form wire:submit.prevent="saveCourse">
                             <div class="modal-body">
                                 <div class="row g-3">
 

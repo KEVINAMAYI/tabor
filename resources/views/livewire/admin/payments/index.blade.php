@@ -46,6 +46,14 @@ new class extends Component {
 
     public $paymentAllocationRows = [];
 
+    // When true (the default, matching prior behavior), any amount left
+    // unallocated after the rows above is auto-swept via FIFO priority
+    // order onto the student's other outstanding fees. Toggle off to
+    // genuinely leave it unallocated — e.g. deliberately reducing/removing
+    // a wrong allocation without the freed-up money silently landing
+    // somewhere else the admin didn't choose.
+    public $autoAllocateRemaining = true;
+
     protected string $paginationTheme = 'bootstrap';
 
     public function rules()
@@ -441,6 +449,28 @@ new class extends Component {
         ]);
     }
 
+    /**
+     * The form's single, static wire:submit target — dispatches to
+     * updatePayment() or addPayment() based on current state instead of
+     * baking the method name into the rendered HTML. wire:submit.prevent
+     * with a Blade-interpolated action name (e.g. "{{ $editId ? 'x' : 'y'
+     * }}") is unreliable: this is a Bootstrap modal toggled by JS, not
+     * re-mounted between opens, and the attribute Livewire's morph applies
+     * can lag behind $editId's real value — so a save while editing could
+     * silently fire addPayment() instead of updatePayment(), touching
+     * nothing on the payment actually being edited while still looking
+     * "successful". A single static target removes the whole class of bug.
+     */
+    public function savePayment(): void
+    {
+        if ($this->editId) {
+            $this->updatePayment();
+            return;
+        }
+
+        $this->addPayment();
+    }
+
     public function addPayment()
     {
         $this->validate();
@@ -471,10 +501,15 @@ new class extends Component {
 
             $this->applyPaymentAllocationRows($payment->fresh());
 
-            // Auto-allocate any remaining unallocated balance using priority order
-            $freshPayment = $payment->fresh();
-            if ((float) $freshPayment->unallocated_balance > 0) {
-                app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+            // Auto-allocate any remaining unallocated balance using priority
+            // order — only when the admin has opted in. Otherwise the
+            // remainder genuinely stays unallocated, matching what the
+            // modal's own help text already promises.
+            if ($this->autoAllocateRemaining) {
+                $freshPayment = $payment->fresh();
+                if ((float) $freshPayment->unallocated_balance > 0) {
+                    app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+                }
             }
 
             DB::commit();
@@ -566,9 +601,15 @@ new class extends Component {
 
             $this->applyPaymentAllocationRows($payment->fresh());
 
-            $freshPayment = $payment->fresh();
-            if ((float) $freshPayment->unallocated_balance > 0) {
-                app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+            // Auto-allocate any remaining unallocated balance using priority
+            // order — only when the admin has opted in. Otherwise the
+            // remainder genuinely stays unallocated, matching what the
+            // modal's own help text already promises.
+            if ($this->autoAllocateRemaining) {
+                $freshPayment = $payment->fresh();
+                if ((float) $freshPayment->unallocated_balance > 0) {
+                    app(PaymentPostingService::class)->allocateExistingPayment($freshPayment);
+                }
             }
 
             DB::commit();
@@ -689,6 +730,7 @@ new class extends Component {
         $this->payer = null;
         $this->editId = null;
         $this->paymentAllocationRows = [];
+        $this->autoAllocateRemaining = true;
     }
 
     #[On('select-all')]
@@ -869,7 +911,7 @@ new class extends Component {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <form wire:submit.prevent="{{ $editId ? 'updatePayment' : 'addPayment' }}">
+                        <form wire:submit.prevent="savePayment">
                             <div class="modal-body">
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6 position-relative" x-data="{ open: false, studentSearch: @entangle('student_search').defer }"
@@ -975,6 +1017,16 @@ new class extends Component {
                                             wire:click="addPaymentAllocationRow">
                                             Add Row
                                         </button>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="autoAllocateRemaining"
+                                            wire:model="autoAllocateRemaining">
+                                        <label class="form-check-label small" for="autoAllocateRemaining">
+                                            Auto-allocate any remaining balance to other outstanding fees.
+                                            Uncheck to leave the unallocated portion genuinely unallocated instead
+                                            of it being swept elsewhere automatically.
+                                        </label>
                                     </div>
                                     {{-- <div style="max-height:400px; overflow-y:auto;"> --}}
 

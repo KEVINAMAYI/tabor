@@ -52,6 +52,21 @@ new class extends Component {
         $this->roles = Role::when(!empty($this->search), fn($q) => $q->where('name', 'like', "%{$this->search}%"))->get();
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function saveRole(): void
+    {
+        if ($this->editId) {
+            $this->updateRole();
+            return;
+        }
+
+        $this->store();
+    }
+
     public function store()
     {
         $this->validate();
@@ -229,7 +244,7 @@ new class extends Component {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                         </div>
-                        <form wire:submit.prevent="{{ $editId ? 'updateRole' : 'store' }}">
+                        <form wire:submit.prevent="saveRole">
                             <div class="modal-body">
                                 <div>
                                     <input type="text" wire:model.live="name" class="form-control"

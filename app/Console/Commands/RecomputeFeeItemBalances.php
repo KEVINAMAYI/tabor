@@ -4,23 +4,30 @@ namespace App\Console\Commands;
 
 use App\Models\StudentFeeItem;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Read-only audit (and optional --fix) for StudentFeeItem.amount_paid/
  * balance/status drifting away from the true sum of its own
- * PaymentAllocation rows. Confirmed real-world case (Samantha Mbithi's
- * GLA2 Tuition Fee, item #847, Sep 2026): amount_paid stored as 25,000
- * (full, status=paid) but its two real PaymentAllocation rows only sum to
- * 23,500 — silently hiding a genuine 1,500 still owed, and making the fee
- * item invisible to any future payment allocation (both the FIFO engine
- * and the payments modal's dropdown correctly exclude anything already
- * marked balance=0/paid).
+ * PaymentAllocation rows. Confirmed real-world cases (Samantha Mbithi, Sep
+ * 2026): item #847 (GLA2 Tuition) stored amount_paid=25,000/paid but its
+ * real PaymentAllocation rows only sum to 23,500 — hiding a genuine 1,500
+ * still owed; item #683 (GRBC Tuition) stored amount_paid=12,500/paid with
+ * ZERO real PaymentAllocation rows at all — no legitimate code path
+ * (checked FeeItemAdjustmentService — its own fee_item_audits trail is
+ * empty for both items — and finance:import-historical-fees, which always
+ * creates new positive charges as pending/amount_paid=0) explains that
+ * state, so it isn't a legitimate historical-import artifact either. Both
+ * patterns make the fee item invisible to future payment allocation (the
+ * FIFO engine and the payments modal's dropdown both correctly exclude
+ * anything already marked balance=0) while the real amount owed is
+ * silently hidden from the dashboard/Fee Schedule (though it still
+ * correctly surfaces on the statement PDF, which derives everything from
+ * real allocations independently — hence statement/dashboard disagreeing).
  *
- * Deliberately scoped to items with at least ONE real PaymentAllocation
- * row — items with zero allocations but amount_paid > 0 are typically
- * legitimate historical-import records (finance:import-historical-fees),
- * money received before this system existed with no formal allocation
- * trail. Recomputing those from allocations would wrongly zero them out.
+ * Excludes discounts/credits (negative amount) and waived items
+ * (status=waived or credit_type=waiver) — both legitimately reach a
+ * zero/negative balance without any real PaymentAllocation, by design.
  */
 class RecomputeFeeItemBalances extends Command
 {
@@ -31,11 +38,11 @@ class RecomputeFeeItemBalances extends Command
 
     public function handle(): int
     {
-        // Discount/credit items (negative amount) are never paid via a real
-        // PaymentAllocation — they carry their own permanent negative
-        // balance by design. Excluding them defensively even though
-        // whereHas('allocations') should already do so in practice.
-        $items = StudentFeeItem::query()->whereHas('allocations')->where('amount', '>=', 0)->get();
+        $items = StudentFeeItem::query()
+            ->where('amount', '>=', 0)
+            ->where('status', '!=', 'waived')
+            ->whereNull('credit_type')
+            ->get();
 
         $mismatches = collect();
 
@@ -80,14 +87,16 @@ class RecomputeFeeItemBalances extends Command
             return self::SUCCESS;
         }
 
-        foreach ($mismatches as [$item, $realPaid]) {
-            $newBalance = max(0, (float) $item->amount - $realPaid);
-            $item->update([
-                'amount_paid' => $realPaid,
-                'balance' => $newBalance,
-                'status' => $newBalance <= 0 ? 'paid' : ($realPaid > 0 ? 'partial' : 'pending'),
-            ]);
-        }
+        DB::transaction(function () use ($mismatches) {
+            foreach ($mismatches as [$item, $realPaid]) {
+                $newBalance = max(0, (float) $item->amount - $realPaid);
+                $item->update([
+                    'amount_paid' => $realPaid,
+                    'balance' => $newBalance,
+                    'status' => $newBalance <= 0 ? 'paid' : ($realPaid > 0 ? 'partial' : 'pending'),
+                ]);
+            }
+        });
 
         $this->info("Recomputed {$mismatches->count()} fee item(s).");
 

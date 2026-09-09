@@ -78,6 +78,21 @@ new class extends Component {
         ];
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function saveUser(): void
+    {
+        if ($this->editId) {
+            $this->updateUser();
+            return;
+        }
+
+        $this->addUser();
+    }
+
     public function addUser()
     {
         // dd($this->all());
@@ -432,7 +447,7 @@ new class extends Component {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
-                        <form wire:submit.prevent="{{ $editId ? 'updateUser' : 'addUser' }}">
+                        <form wire:submit.prevent="saveUser">
                             <div class="modal-body">
                                 <div class="row">
                                     <!-- First Name -->

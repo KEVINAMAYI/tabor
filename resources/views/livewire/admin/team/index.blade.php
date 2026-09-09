@@ -38,6 +38,21 @@ new class extends Component {
         return $teams;
     }
 
+    /**
+     * Single static wire:submit target — see payments/index.blade.php's
+     * savePayment() for why a Blade-interpolated action name in the form
+     * tag is unsafe in a JS-toggled modal.
+     */
+    public function save(): void
+    {
+        if ($this->editId) {
+            $this->update();
+            return;
+        }
+
+        $this->add();
+    }
+
     public function add()
     {
         $this->validate();
@@ -323,7 +338,7 @@ new class extends Component {
     <div class="modal fade" id="teamModal" wire:ignore.self>
         <div class="modal-dialog modal-lg">
             <div class="modal-content p-3">
-                <form wire:submit.prevent="{{ $editId ? 'update' : 'add' }}">
+                <form wire:submit.prevent="save">
                     <h5 class="modal-title mb-3">
                         {{ $editId ? 'Edit Team Member' : 'Add Team Member' }}
                     </h5>

@@ -74,6 +74,24 @@ new class extends Component {
         ];
     }
 
+    /**
+     * The form's single, static wire:submit target — a Blade-interpolated
+     * action name baked into rendered HTML (wire:submit.prevent="{{
+     * $editId ? 'x' : 'y' }}") can lag behind $editId's real value in a
+     * modal toggled by JS rather than remounted between opens, silently
+     * calling the wrong method. See payments/index.blade.php's savePayment()
+     * for the confirmed real-world case this pattern caused.
+     */
+    public function saveLecturer(): void
+    {
+        if ($this->editId) {
+            $this->updateLecturer();
+            return;
+        }
+
+        $this->addLecturer();
+    }
+
     /* ------------- Create ------------- */
     public function addLecturer()
     {
@@ -368,7 +386,7 @@ new class extends Component {
                             <h5 class="modal-title">Lecturer</h5>
                             <button class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <form wire:submit.prevent="{{ $editId ? 'updateLecturer' : 'addLecturer' }}">
+                        <form wire:submit.prevent="saveLecturer">
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">

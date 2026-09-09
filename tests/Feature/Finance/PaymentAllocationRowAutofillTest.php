@@ -257,3 +257,98 @@ test('editing a payment to move its allocation onto a genuinely different fee it
         ->and($correctItem->fresh()->balance)->toEqual('0.00')
         ->and($wrongItem->fresh()->balance)->toEqual('5000.00');
 });
+
+test('the form\'s single submit target updates the payment being edited instead of creating a new one', function () {
+    // The form used to call wire:submit.prevent="{{ $editId ? 'updatePayment'
+    // : 'addPayment' }}" — a Blade-interpolated action name baked into the
+    // rendered HTML. This is a Bootstrap modal toggled by JS, not remounted
+    // between opens, so that attribute could lag behind $editId's real
+    // value: clicking Save while editing could silently fire addPayment()
+    // instead, leaving the actual payment being edited completely
+    // untouched while still showing "successful" — exactly the symptom
+    // reported ("editing allocations doesn't persist"). savePayment() is
+    // now the form's one static target, dispatching based on $editId
+    // itself rather than a value frozen into markup.
+    $student = makeAllocationTestStudent('9');
+    $enrollment = makeAllocationTestEnrollment($student, '9');
+    $originalItem = makeAllocationTestFeeItem($student, $enrollment, '9a', 5000);
+
+    $component = Volt::test('admin.payments.index')
+        ->call('addPaymentAllocationRow')
+        ->set('paymentAllocationRows.0.student_fee_item_id', $originalItem->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->set('amount', 5000)
+        ->set('payment_method', 'mpesa')
+        ->set('paid_at', '2026-01-10')
+        ->call('addPayment');
+
+    expect(\App\Models\Payment::count())->toBe(1);
+    $payment = \App\Models\Payment::latest('id')->first();
+
+    $component->call('editPayment', $payment->id)
+        ->set('amount', 6000)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->call('savePayment');
+
+    expect(\App\Models\Payment::count())->toBe(1, 'saving while editing must not create a second payment')
+        ->and($payment->fresh()->amount)->toEqual('6000.00');
+});
+
+test('unchecking auto-allocate-remaining leaves a reduced allocation genuinely unallocated instead of sweeping it elsewhere', function () {
+    // The admin's real workflow: a payment originally fully allocated to
+    // one fee item needs its amount reduced (money belongs elsewhere,
+    // handled separately) — the freed-up portion must NOT be silently
+    // auto-swept via FIFO onto some other outstanding fee item the admin
+    // didn't choose. autoAllocateRemaining defaults to true (preserving
+    // prior behavior for every other workflow that relies on the sweep),
+    // but must be overridable.
+    $student = makeAllocationTestStudent('10');
+    $enrollment = makeAllocationTestEnrollment($student, '10');
+    $mainItem = makeAllocationTestFeeItem($student, $enrollment, '10a', 5000);
+
+    // A second outstanding item that FIFO would otherwise sweep the
+    // freed-up 2,000 onto.
+    $otherCategory = FeeCategory::create(['code' => 'alloc-10b', 'name' => 'Attachment']);
+    $otherDefinition = FeeDefinition::create([
+        'fee_category_id' => $otherCategory->id,
+        'name' => 'Attachment Fee',
+        'scope' => 'student',
+        'default_amount' => 2000,
+        'active' => true,
+    ]);
+    $otherItem = StudentFeeItem::create([
+        'student_id' => $student->id,
+        'enrollment_id' => $enrollment->id,
+        'fee_definition_id' => $otherDefinition->id,
+        'description' => 'Attachment Fee',
+        'amount' => 2000,
+        'balance' => 2000,
+        'charge_date' => '2025-01-01',
+        'status' => 'pending',
+    ]);
+
+    $component = Volt::test('admin.payments.index')
+        ->call('addPaymentAllocationRow')
+        ->set('paymentAllocationRows.0.student_fee_item_id', $mainItem->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->set('amount', 5000)
+        ->set('payment_method', 'mpesa')
+        ->set('paid_at', '2026-01-10')
+        ->call('addPayment');
+
+    $payment = \App\Models\Payment::latest('id')->first();
+    expect($mainItem->fresh()->balance)->toEqual('0.00');
+
+    // Reduce the row from 5,000 to 3,000, explicitly opting out of the
+    // auto-sweep, so 2,000 should end up genuinely unallocated.
+    $component->call('editPayment', $payment->id)
+        ->set('autoAllocateRemaining', false)
+        ->set('paymentAllocationRows.0.amount', 3000)
+        ->call('updatePayment');
+
+    $payment->refresh();
+
+    expect((float) $payment->unallocated_balance)->toBe(2000.0)
+        ->and($mainItem->fresh()->balance)->toEqual('2000.00')
+        ->and($otherItem->fresh()->balance)->toEqual('2000.00', 'must stay untouched — nothing swept onto it');
+});
