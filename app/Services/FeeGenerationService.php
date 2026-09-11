@@ -100,13 +100,11 @@ class FeeGenerationService
             $newItemsCreated++;
         }
 
-        // Apply any prior unallocated payment balances to the new fee items.
-        // Payments posted before this progression's items were generated leave an
-        // unallocated_balance that would otherwise only be consumed when the NEXT
-        // payment arrives — causing the "payment goes to wrong trimester" problem.
-        if ($newItemsCreated > 0) {
-            $this->applyUnallocatedPayments($enrollment);
-        }
+        // Auto-allocation disabled for now (Sep 2026 incident): applying
+        // prior unallocated payment balances to newly-created fee items via
+        // FIFO can override a deliberate manual allocation made elsewhere.
+        // See FeeItemAdjustmentService::update() and payments/index.blade.php's
+        // autoAllocateRemaining toggle for the same class of bug.
     }
 
     protected function applyUnallocatedPayments(Enrollment $enrollment): void

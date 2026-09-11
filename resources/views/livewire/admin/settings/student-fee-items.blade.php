@@ -260,10 +260,7 @@ new class extends Component {
             if ($this->isEditing) {
                 $item = StudentFeeItem::query()->where('id', $this->feeItemId)->lockForUpdate()->firstOrFail();
 
-                $oldStudentId = $item->student_id;
-                $oldEnrollmentId = $item->enrollment_id;
-
-                $item->update([
+                $updateData = [
                     'student_id' => $this->student_id,
                     'enrollment_id' => $this->enrollment_id ?: null,
                     'enrollment_progression_id' => $this->enrollment_progression_id ?: null,
@@ -271,32 +268,30 @@ new class extends Component {
                     'trimester_id' => $this->trimester_id ?: null,
                     'description' => $this->description,
                     'amount' => $this->normalizedFeeItemAmount(),
-                    'amount_paid' => 0,
-                    'balance' => $amount,
                     'charge_date' => $this->charge_date,
                     'due_date' => $this->due_date ?: null,
-                    'status' => $amount > 0 ? 'pending' : 'paid',
-                ]);
+                ];
 
-                /*
-            |--------------------------------------------------------------------------
-            | Rebuild Allocations
-            |--------------------------------------------------------------------------
-            |
-            | Rebuild old scope first in case student/enrollment changed,
-            | then rebuild the new scope.
-            |
-            */
-                if ($amount > 0) {
-                    $this->allocateUnallocatedPaymentsToFeeItem($item);
-                }
-                $this->rebuildAllocationsForEnrollment($oldStudentId, $oldEnrollmentId);
+                // Auto-allocation disabled for now (Sep 2026 incident): this
+                // used to unconditionally reset amount_paid to 0 and wipe +
+                // rebuild every allocation for the whole enrollment via FIFO
+                // on every single edit here — including edits that never
+                // touched the amount — silently discarding deliberate
+                // manual allocations made elsewhere. amount_paid/balance are
+                // now preserved unless the amount itself actually changed,
+                // and real PaymentAllocation rows are never touched here.
+                $oldAmount = (float) $item->amount;
+                $newAmount = $updateData['amount'];
 
-                if ((int) $oldStudentId !== (int) $item->student_id || (int) $oldEnrollmentId !== (int) $item->enrollment_id) {
-                    if ($amount > 0) {
-                        $this->rebuildAllocationsForEnrollment($item->student_id, $item->enrollment_id);
-                    }
+                if (abs($newAmount - $oldAmount) > 0.001) {
+                    $amountPaid = min((float) $item->amount_paid, $newAmount);
+                    $balance = max(0, round($newAmount - $amountPaid, 2));
+                    $updateData['amount_paid'] = $amountPaid;
+                    $updateData['balance'] = $balance;
+                    $updateData['status'] = $balance <= 0 ? 'paid' : ($amountPaid > 0 ? 'partial' : 'pending');
                 }
+
+                $item->update($updateData);
             } else {
                 $item = StudentFeeItem::create([
                     'student_id' => $this->student_id,
@@ -314,9 +309,10 @@ new class extends Component {
                     'status' => $amount > 0 ? 'pending' : 'paid',
                 ]);
 
-                if ($amount > 0) {
-                    $this->rebuildAllocationsForEnrollment($item->student_id, $item->enrollment_id);
-                }
+                // Auto-allocation disabled for now — a newly-created fee
+                // item stays genuinely unpaid/pending until a real payment
+                // is manually applied to it, instead of auto-sweeping
+                // unallocated balances from other payments onto it.
             }
 
             DB::commit();
@@ -446,18 +442,31 @@ new class extends Component {
 
             $item = StudentFeeItem::query()->with('allocations.payment')->where('id', $id)->lockForUpdate()->firstOrFail();
 
-            $studentId = $item->student_id;
-            $enrollmentId = $item->enrollment_id;
+            // Restore each allocation's amount back to its payment's
+            // unallocated_balance before removing it — previously the
+            // allocation rows were deleted outright with no such
+            // restoration, silently making that money vanish from every
+            // balance the system tracks. Auto-allocation is disabled for
+            // now (Sep 2026 incident): this used to also unconditionally
+            // wipe and rebuild every OTHER allocation for the whole
+            // enrollment via FIFO, discarding deliberate manual
+            // allocations elsewhere — deleting one fee item no longer
+            // touches any other fee item's allocations.
+            foreach ($item->allocations as $allocation) {
+                if ($allocation->payment) {
+                    $allocation->payment->update([
+                        'unallocated_balance' => round((float) $allocation->payment->unallocated_balance + (float) $allocation->amount_allocated, 2),
+                    ]);
+                }
+            }
 
             $item->allocations()->delete();
 
             $item->delete();
 
-            $this->rebuildAllocationsForEnrollment($studentId, $enrollmentId);
-
             DB::commit();
 
-            LivewireAlert::text('Fee item deleted and allocations rebuilt successfully.')->success()->toast()->position('top-end')->show();
+            LivewireAlert::text('Fee item deleted successfully. Any money it held is now unallocated on its original payment(s).')->success()->toast()->position('top-end')->show();
         } catch (\Throwable $th) {
             DB::rollBack();
 

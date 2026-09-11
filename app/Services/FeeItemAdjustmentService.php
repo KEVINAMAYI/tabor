@@ -12,15 +12,16 @@ use LogicException;
 
 /**
  * Handles corrections to already-generated fee items (description, amount,
- * dates) and keeps payment allocations consistent with the corrected amount:
+ * dates):
  *
  * - Shrinking the amount below what has been paid claws the excess back out
  *   of the fee item's most recent allocations onto their payments'
- *   unallocated balance, then re-sweeps those payments through the normal
- *   allocation engine so the freed money flows to other outstanding fees.
- * - Growing the amount reopens the balance and re-sweeps any payments that
- *   already carry an unallocated balance, so the reopened charge is settled
- *   automatically wherever possible.
+ *   unallocated balance. That freed money is left genuinely unallocated —
+ *   auto-sweeping it elsewhere is disabled for now (Sep 2026 incident: an
+ *   unconditional re-sweep of every payment with any unallocated balance
+ *   for the student silently overrode deliberate manual allocations made
+ *   elsewhere, on every edit regardless of whether the amount even
+ *   changed).
  */
 class FeeItemAdjustmentService
 {
@@ -75,18 +76,17 @@ class FeeItemAdjustmentService
 
             $feeItem->save();
 
-            $paymentsToSweep = $affectedPayments
-                ->merge(
-                    Payment::query()
-                        ->where('student_id', $feeItem->student_id)
-                        ->where('unallocated_balance', '>', 0.01)
-                        ->get()
-                )
-                ->unique('id');
-
-            foreach ($paymentsToSweep as $payment) {
-                $this->paymentPostingService->allocateExistingPayment($payment);
-            }
+            // Auto-allocation disabled for now (Sep 2026 incident): this used
+            // to unconditionally re-sweep EVERY payment with any unallocated
+            // balance for this student via FIFO — not just money freed up by
+            // THIS edit, but any pre-existing unallocated balance too,
+            // regardless of whether the edit even changed the amount. That
+            // silently overrode deliberate manual allocations elsewhere
+            // (see payments/index.blade.php's autoAllocateRemaining toggle
+            // for the same class of bug). Money freed up by shrinking this
+            // item's amount now stays genuinely unallocated — visible on the
+            // payment as unallocated_balance — instead of being swept
+            // somewhere the admin didn't choose.
 
             return $feeItem->fresh(['allocations.payment']);
         });
