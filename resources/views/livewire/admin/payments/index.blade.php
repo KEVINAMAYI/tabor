@@ -534,6 +534,19 @@ new class extends Component {
     {
         $payment = Payment::with(['enrollment.student', 'enrollment.course', 'allocations.studentFeeItem'])->findOrFail($id);
 
+        // Editing an existing payment never auto-sweeps by default — only
+        // creating a brand new one does. A real incident (Sep 2026): a
+        // manually cross-enrollment-split payment got silently reverted
+        // and FIFO-swept back onto the wrong enrollment when the payment
+        // was re-opened and re-saved with the sweep still defaulted on.
+        // Root enabler was a fee item balance drift making the intended
+        // targets disappear from the dropdown (see
+        // finance:recompute-fee-item-balances) — but defaulting the sweep
+        // off during edits means that class of bug fails safe (money sits
+        // visibly unallocated) instead of failing silently (money moves
+        // somewhere the admin didn't choose).
+        $this->autoAllocateRemaining = false;
+
         $this->editId = $payment->id;
         $this->enrollment_id = $payment->enrollment_id;
         $this->amount = $payment->amount;
@@ -1453,6 +1466,15 @@ new class extends Component {
                     placeholder: $el.data('placeholder') || 'Search...',
                     allowClear: true,
                 });
+
+                // Select2 updates the underlying <select>'s value but does
+                // not reliably reach Livewire's own wire:model.live change
+                // listener in every case — explicitly re-dispatch a native
+                // DOM 'change' event so Livewire always picks it up.
+                $el.off('select2:select.wireSync select2:clear.wireSync')
+                    .on('select2:select.wireSync select2:clear.wireSync', function () {
+                        this.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
             });
 
             if (window.__paymentSelect2Observer && window.__paymentSelect2Target) {

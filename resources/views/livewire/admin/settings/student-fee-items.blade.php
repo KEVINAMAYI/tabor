@@ -977,6 +977,19 @@ new class extends Component {
                     placeholder: $el.data('placeholder') || 'Search...',
                     allowClear: true,
                 });
+
+                // Select2 updates the underlying <select>'s value but does
+                // not reliably reach Livewire's own wire:model.live change
+                // listener in every case — explicitly re-dispatch a native
+                // DOM 'change' event so Livewire always picks it up.
+                // Without this, picking a student here can leave
+                // wire:model's student_id unset server-side, so the
+                // Enrollment dropdown below never actually filters to that
+                // student's own enrollments.
+                $el.off('select2:select.wireSync select2:clear.wireSync')
+                    .on('select2:select.wireSync select2:clear.wireSync', function () {
+                        this.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
             });
 
             if (window.__feeItemSelect2Observer && window.__feeItemSelect2Target) {

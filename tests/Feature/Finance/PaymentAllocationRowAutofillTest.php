@@ -352,3 +352,32 @@ test('unchecking auto-allocate-remaining leaves a reduced allocation genuinely u
         ->and($mainItem->fresh()->balance)->toEqual('2000.00')
         ->and($otherItem->fresh()->balance)->toEqual('2000.00', 'must stay untouched — nothing swept onto it');
 });
+
+test('opening an existing payment for edit defaults auto-allocate-remaining to off', function () {
+    // Reproduces a real production incident (Samantha Mbithi, Sep 2026): a
+    // payment manually split across two different enrollments had that
+    // split silently reverted and FIFO-swept back onto the wrong
+    // enrollment when re-opened and re-saved with the sweep still
+    // defaulted on (the create-flow default). Editing must default the
+    // sweep OFF so this class of accident fails safe — creating a brand
+    // new payment is unaffected and keeps auto-sweep on by default.
+    $student = makeAllocationTestStudent('11');
+    $enrollment = makeAllocationTestEnrollment($student, '11');
+    $item = makeAllocationTestFeeItem($student, $enrollment, '11a', 5000);
+
+    $component = Volt::test('admin.payments.index');
+    expect($component->get('autoAllocateRemaining'))->toBeTrue('creating a new payment keeps the sweep on by default');
+
+    $component->call('addPaymentAllocationRow')
+        ->set('paymentAllocationRows.0.student_fee_item_id', $item->id)
+        ->set('paymentAllocationRows.0.amount', 5000)
+        ->set('amount', 5000)
+        ->set('payment_method', 'mpesa')
+        ->set('paid_at', '2026-01-10')
+        ->call('addPayment');
+
+    $payment = \App\Models\Payment::latest('id')->first();
+
+    $component->call('editPayment', $payment->id);
+    expect($component->get('autoAllocateRemaining'))->toBeFalse('opening an existing payment for edit must default the sweep off');
+});
